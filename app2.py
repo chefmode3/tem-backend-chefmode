@@ -2,7 +2,7 @@ import streamlit as st
 import re
 import os
 from tiktok import download_tiktok
-from youtube import download_youtube
+from new_youtube import download_youtube
 from instagram import download_instagram_video
 from video_analyzer import process_video
 import time
@@ -29,7 +29,7 @@ def main():
                     description = process_video(output_filename)
                     st.markdown(description, unsafe_allow_html=True)
                 elif platform == "youtube":
-                    download_youtube(video_url)
+                    download_youtube(video_url, output_filename="downloaded_video.mp4")
                     # st.success("YouTube video downloaded successfully!")
                     time.sleep(2)
                     output_filename = "downloaded_video.mp4"
