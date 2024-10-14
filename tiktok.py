@@ -14,8 +14,8 @@ def download_tiktok(video_url, browser='chrome'):
     except Exception as e:
         print(f"An error occurred: {e}")
 
-# Replace this with the URL of the TikTok video you want to download
-video_url = 'https://www.tiktok.com/@tiktok/video/7106594312292453675?is_copy_url=1&is_from_webapp=v1'
-
-# Call the function to download the video
-download_tiktok(video_url)
+# # Replace this with the URL of the TikTok video you want to download
+# video_url = 'https://www.tiktok.com/@tiktok/video/7106594312292453675?is_copy_url=1&is_from_webapp=v1'
+#
+# # Call the function to download the video
+# download_tiktok(video_url)

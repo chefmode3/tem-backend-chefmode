@@ -6,13 +6,14 @@ from youtube import download_youtube
 from instagram import download_instagram_video
 from video_analyzer import process_video
 import time
+from recipe_extractor_website import scrape_and_analyze_recipe
 
 def main():
-    st.title("Video to Recipe")
-    st.write("Provide a video recipe link from Instagram, YouTube, or TikTok, and get a concise, no-nonsense recipe.")
+    st.title("Cookmode Recipe Extractor")
+    st.write("Provide a recipe link from any website or a video link from Instagram, YouTube, or TikTok, and get a concise, no-nonsense recipe.")
 
     # User inputs the video URL
-    video_url = st.text_input("Enter the video URL:")
+    video_url = st.text_input("Enter any URL:")
 
     # Button to start the download process
     if st.button("Get Recipe"):
@@ -25,24 +26,29 @@ def main():
                     # st.success("TikTok video downloaded successfully!")
                     output_filename = "downloaded_video.mp4"
                     time.sleep(2)
+                    description = process_video(output_filename)
+                    st.markdown(description, unsafe_allow_html=True)
                 elif platform == "youtube":
                     download_youtube(video_url)
                     # st.success("YouTube video downloaded successfully!")
                     time.sleep(2)
                     output_filename = "downloaded_video.mp4"
+                    description = process_video(output_filename)
+                    st.markdown(description, unsafe_allow_html=True)
                 elif platform == "instagram":
                     download_instagram_video(video_url)
                     # st.success("Instagram video downloaded successfully!")
                     time.sleep(2)
                     output_filename = "downloaded_video.mp4"
-                else:
-                    st.error("Unsupported video link. Please provide a valid Instagram, YouTube, or TikTok link.")
-                    return
+                    description = process_video(output_filename)
+                    st.markdown(description, unsafe_allow_html=True)
 
-                description = process_video(output_filename)
-                st.markdown(description, unsafe_allow_html=True)
+                elif platform == "website":
+                    description = scrape_and_analyze_recipe(video_url)
+                    st.markdown(description)
+
             else:
-                st.warning("Please enter a video URL.")
+                st.warning("Please enter a URL.")
 
 def identify_platform(video_url):
     """
@@ -55,7 +61,7 @@ def identify_platform(video_url):
     elif re.search(r"instagram.com", video_url):
         return "instagram"
     else:
-        return None
+        return "website"
 
 if __name__ == "__main__":
     main()

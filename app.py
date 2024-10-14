@@ -8,6 +8,7 @@ import re
 import os
 import random
 import time
+import tiktoken  # Import tiktoken
 
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -68,6 +69,14 @@ def get_image_with_retry(image_url, retries=5):
             continue
     return None
 
+def tokenize_text(text):
+    """
+    Tokenize the given text using tiktoken and return the token count.
+    """
+    encoding = tiktoken.get_encoding("cl100k_base")  # Use the GPT-4 tokenizer
+    tokens = encoding.encode(text)
+    return len(tokens), tokens
+
 def main():
     st.title("Recipe Scraper and Analyzer")
 
@@ -84,8 +93,17 @@ def main():
 
             # Extract title and body content from HTML
             title = soup.title.string if soup.title else "No title found"
-            body_content = " ".join([p.get_text() for p in soup.find_all('p')])
+            # Extract all text content from various relevant tags
+            body_content = " ".join(
+                element.get_text(separator=" ", strip=True)
+                for element in soup.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
+            )
+
             print(body_content)
+
+            # Tokenize the body content and print token count
+            token_count, tokens = tokenize_text(body_content)
+            st.write(f"Token Count: {token_count}")
 
             # Extract main image
             main_image_url = extract_main_image(soup)
