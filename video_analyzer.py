@@ -3,7 +3,6 @@ import cv2
 import base64
 import math
 import json
-from io import BytesIO
 import tempfile
 from pydub import AudioSegment
 from openai import OpenAI
@@ -72,6 +71,12 @@ def get_video_frames(video_path):
         if success:
             base64Frames.append(encode_frame(frame))
 
+    # Save the final frame as 'recipe_image.jpg' locally
+    video.set(cv2.CAP_PROP_POS_FRAMES, frame_count - frame_count)
+    success, frame = video.read()
+    if success:
+        cv2.imwrite('recipe_image.jpg', frame)
+
     video.release()
     print(f"Number of Frames Captured: {len(base64Frames)}")
     return base64Frames
@@ -95,7 +100,7 @@ def process_video(video_path):
                     "role": "user",
                     "content": [
                         f"You are a video recipe summarizer. "
-                        f"You get information from the video: recipe title, ingredients, directions. You will output in simple, clear markdown. You will ALWAYS supply ingredient amounts."
+                        f"You get information from the video: recipe title, servings, total time, ingredients, directions. You will output in simple, clear markdown. Never output a '''markdown identifier before you begin, just the pure formatting. You will ALWAYS supply ingredient amounts."
                         f"Here is a full transcript of the video: {transcript}.\n"
                         "These are descriptions of some of the frames from the video. Make sure to analyze the transcript and the frames holistically.",
                         *map(lambda x: {"type": "image_url",
@@ -117,5 +122,3 @@ def process_video(video_path):
             description = result.choices[0].message.content
 
     return description
-
-

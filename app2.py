@@ -27,6 +27,7 @@ def main():
                     output_filename = "downloaded_video.mp4"
                     time.sleep(2)
                     description = process_video(output_filename)
+                    st.image("recipe_image.jpg")
                     st.markdown(description, unsafe_allow_html=True)
                 elif platform == "youtube":
                     download_youtube(video_url, output_filename="downloaded_video.mp4")
@@ -34,6 +35,7 @@ def main():
                     time.sleep(2)
                     output_filename = "downloaded_video.mp4"
                     description = process_video(output_filename)
+                    st.image("recipe_image.jpg")
                     st.markdown(description, unsafe_allow_html=True)
                 elif platform == "instagram":
                     download_instagram_video(video_url)
@@ -41,10 +43,15 @@ def main():
                     time.sleep(2)
                     output_filename = "downloaded_video.mp4"
                     description = process_video(output_filename)
+                    st.image("recipe_image.jpg")
                     st.markdown(description, unsafe_allow_html=True)
 
                 elif platform == "website":
-                    description = scrape_and_analyze_recipe(video_url)
+                    description, got_image = scrape_and_analyze_recipe(video_url)
+                    if got_image:
+                        st.image("recipe_image.jpg")
+                    else:
+                        st.warning("Unable to retrieve image for this recipe.")
                     st.markdown(description)
 
             else:
