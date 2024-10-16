@@ -17,8 +17,8 @@ def download_instagram_video(instagram_url, output_filename="downloaded_video.mp
     # Step 2: Make the API request
     conn = http.client.HTTPSConnection("instagram-api-20231.p.rapidapi.com")
     headers = {
-        'x-rapidapi-key': "f2d1322fc9mshd04f3762ac0793ep11069cjsn4e55258922af",
-        'x-rapidapi-host': "instagram-api-20231.p.rapidapi.com"
+        "x-rapidapi-key": "1776083f1dmsh864701c7fc5a69dp1d97f3jsn8cb7620cf8c2",
+        "x-rapidapi-host": "instagram-api-20231.p.rapidapi.com"
     }
 
     conn.request("GET", f"/api/media_info_from_shortcode/{shortcode}", headers=headers)
