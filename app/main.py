@@ -8,12 +8,12 @@ load_dotenv(dotenv_path)
 
 from flask import Flask, request
 import re
-from tiktok import download_tiktok
-from new_youtube import download_youtube
-from instagram import download_instagram_video
-from video_analyzer import process_video
+from app.tiktok import download_tiktok
+from app.new_youtube import download_youtube
+from app.instagram import download_instagram_video
+from app.video_analyzer import process_video
 import time
-from recipe_extractor_website import scrape_and_analyze_recipe
+from app.recipe_extractor_website import scrape_and_analyze_recipe
 
 app = Flask(__name__)
 
