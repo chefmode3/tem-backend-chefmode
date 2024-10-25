@@ -117,18 +117,18 @@ def scrape_and_analyze_recipe(url):
     got_image = False
 
     # Display the main image if found
-    if main_image_url:
-        if not re.match(r'^https?:', main_image_url):
-            main_image_url = requests.compat.urljoin(url, main_image_url)
-        image = get_image_with_retry(main_image_url)
-        if image:
-            save_image_locally(image, 'recipe_image.jpg')  # Save the image locally
-            got_image = True
-        else:
-            print("Failed to retrieve the main image after multiple attempts.")
-            got_image = False
-    else:
-        print("No main image found.")
+    # if main_image_url:
+    #     if not re.match(r'^https?:', main_image_url):
+    #         main_image_url = requests.compat.urljoin(url, main_image_url)
+    #     image = get_image_with_retry(main_image_url)
+    #     if image:
+    #         save_image_locally(image, 'recipe_image.jpg')  # Save the image locally
+    #         got_image = True
+    #     else:
+    #         print("Failed to retrieve the main image after multiple attempts.")
+    #         got_image = False
+    # else:
+    #     print("No main image found.")
 
     # Use OpenAI to analyze the recipe content
     ai_response = client.chat.completions.create(
