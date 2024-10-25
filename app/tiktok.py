@@ -1,5 +1,5 @@
-import pyktok2 as pyk
-import re
+from app import pyktok2 as pyk
+
 
 # Function to download the TikTok video
 def download_tiktok(video_url, browser='chrome'):

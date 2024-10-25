@@ -24,16 +24,16 @@ def main():
                 if platform == "tiktok":
                     download_tiktok(video_url)
                     # st.success("TikTok video downloaded successfully!")
-                    output_filename = "downloaded_video.mp4"
+                    output_filename = "../downloaded_video.mp4"
                     time.sleep(2)
                     description = process_video(output_filename)
                     st.image("recipe_image.jpg")
                     st.markdown(description, unsafe_allow_html=True)
                 elif platform == "youtube":
-                    download_youtube(video_url, output_filename="downloaded_video.mp4")
+                    download_youtube(video_url, output_filename="../downloaded_video.mp4")
                     # st.success("YouTube video downloaded successfully!")
                     time.sleep(2)
-                    output_filename = "downloaded_video.mp4"
+                    output_filename = "../downloaded_video.mp4"
                     description = process_video(output_filename)
                     st.image("recipe_image.jpg")
                     st.markdown(description, unsafe_allow_html=True)
@@ -41,7 +41,7 @@ def main():
                     download_instagram_video(video_url)
                     # st.success("Instagram video downloaded successfully!")
                     time.sleep(2)
-                    output_filename = "downloaded_video.mp4"
+                    output_filename = "../downloaded_video.mp4"
                     description = process_video(output_filename)
                     st.image("recipe_image.jpg")
                     st.markdown(description, unsafe_allow_html=True)

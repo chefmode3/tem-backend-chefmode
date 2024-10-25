@@ -261,7 +261,7 @@ def save_tiktok(video_url,
                     headers['referer'] = 'https://www.tiktok.com/'
                     # include cookies with the video request
                     tt_video = requests.get(tt_video_url, allow_redirects=True, headers=headers, cookies=cookies)
-                    with open("downloaded_video.mp4", 'wb') as fn:
+                    with open("../downloaded_video.mp4", 'wb') as fn:
                         fn.write(tt_video.content)
                     slidecount += 1
             else:
@@ -271,7 +271,7 @@ def save_tiktok(video_url,
                 headers['referer'] = 'https://www.tiktok.com/'
                 # include cookies with the video request
                 tt_video = requests.get(tt_video_url, allow_redirects=True, headers=headers, cookies=cookies)
-            with open("downloaded_video.mp4", 'wb') as fn:
+            with open("../downloaded_video.mp4", 'wb') as fn:
                 fn.write(tt_video.content)
 
         if metadata_fn != '':
@@ -300,7 +300,7 @@ def save_tiktok(video_url,
             headers['referer'] = 'https://www.tiktok.com/'
             # include cookies with the video request
             tt_video = requests.get(tt_video_url, allow_redirects=True, headers=headers, cookies=cookies)
-            with open("downloaded_video.mp4", 'wb') as fn:
+            with open("../downloaded_video.mp4", 'wb') as fn:
                 fn.write(tt_video.content)
             print("Saved video\n", video_url, "\nto\n", os.getcwd())
 

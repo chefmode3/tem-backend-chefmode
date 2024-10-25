@@ -105,7 +105,7 @@ def scrape_and_analyze_recipe(url):
         for element in soup.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
     )
 
-    print(body_content)
+    # print(body_content)
 
     # Tokenize the body content and print token count
     token_count, tokens = tokenize_text(body_content)
