@@ -1,5 +1,3 @@
-
-import os
 from os.path import join, dirname
 from dotenv import load_dotenv
 
@@ -8,12 +6,12 @@ load_dotenv(dotenv_path)
 
 from flask import Flask, request
 import re
-from app.tiktok import download_tiktok
-from app.new_youtube import download_youtube
-from app.instagram import download_instagram_video
-from app.video_analyzer import process_video
+from tiktok import download_tiktok
+from new_youtube import download_youtube
+from instagram import download_instagram_video
+from video_analyzer import process_video
 import time
-from app.recipe_extractor_website import scrape_and_analyze_recipe
+from recipe_extractor_website import scrape_and_analyze_recipe
 
 app = Flask(__name__)
 
@@ -73,3 +71,6 @@ def image_extractor():
     }
 
 
+# Run Server
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)

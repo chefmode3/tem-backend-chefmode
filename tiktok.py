@@ -1,4 +1,4 @@
-from app import pyktok2 as pyk
+import pyktok2 as pyk
 
 
 # Function to download the TikTok video
