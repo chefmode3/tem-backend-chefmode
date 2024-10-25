@@ -6,12 +6,12 @@ import re
 
 def download_instagram_video(instagram_url, output_filename="downloaded_video.mp4"):
     # Step 1: Extract the shortcode from the provided Instagram URL
-    match = re.search(r"reels?/([^/?#&]+)", instagram_url)
-    if not match:
-        print("Invalid Instagram URL. Could not extract shortcode.")
-        return
+    match = re.search(r"(?:reels?|p)/([^/?#&]+)", instagram_url)
 
-    shortcode = match.group(1)
+    if not match:
+        raise ValueError("Invalid Instagram URL. Could not extract shortcode.")
+
+    shortcode = match.group(1)  # Extract the actual shortcode
     print(f"Extracted shortcode: {shortcode}")
 
     # Step 2: Make the API request
