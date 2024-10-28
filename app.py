@@ -12,8 +12,11 @@ from instagram import download_instagram_video
 from video_analyzer import process_video
 import time
 from recipe_extractor_website import scrape_and_analyze_recipe
+from flask_cors import CORS
+
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 
 def identify_platform(video_url):
