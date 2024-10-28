@@ -1,5 +1,6 @@
 from os.path import join, dirname
 from dotenv import load_dotenv
+import logging
 
 dotenv_path = join(dirname(__file__), '.env')
 load_dotenv(dotenv_path)
@@ -14,9 +15,8 @@ import time
 from recipe_extractor_website import scrape_and_analyze_recipe
 from flask_cors import CORS
 
-
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 def identify_platform(video_url):
@@ -32,8 +32,9 @@ def identify_platform(video_url):
     else:
         return "website"
 
+logging.getLogger('flask_cors').level = logging.DEBUG
 
-@app.route("/get/recipe", methods=['GET'])
+@app.route("/get/recipe", methods=['POST'])
 def image_extractor():
     data = request.json
     video_url = data['video_url']
