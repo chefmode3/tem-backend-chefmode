@@ -32,7 +32,9 @@ def identify_platform(video_url):
     else:
         return "website"
 
+
 logging.getLogger('flask_cors').level = logging.DEBUG
+
 
 @app.route("/get/recipe", methods=['POST'])
 def image_extractor():
@@ -44,16 +46,16 @@ def image_extractor():
     if platform == "tiktok":
         download_tiktok(video_url)
         # st.success("TikTok video downloaded successfully!")
-        output_filename = "../downloaded_video.mp4"
+        output_filename = "downloaded_video.mp4"
         time.sleep(2)
         final_content = process_video(output_filename)
         # st.image("recipe_image.jpg")
         # st.markdown(description, unsafe_allow_html=True)
     elif platform == "youtube":
-        download_youtube(video_url, output_filename="../downloaded_video.mp4")
+        download_youtube(video_url, output_filename="downloaded_video.mp4")
         # st.success("YouTube video downloaded successfully!")
         time.sleep(2)
-        output_filename = "../downloaded_video.mp4"
+        output_filename = "downloaded_video.mp4"
         final_content = process_video(output_filename)
         # st.image("recipe_image.jpg")
         # st.markdown(description, unsafe_allow_html=True)
@@ -61,7 +63,7 @@ def image_extractor():
         download_instagram_video(video_url)
         # st.success("Instagram video downloaded successfully!")
         time.sleep(2)
-        output_filename = "../downloaded_video.mp4"
+        output_filename = "downloaded_video.mp4"
         final_content = process_video(output_filename)
         # st.image("recipe_image.jpg")
         # st.markdown(description, unsafe_allow_html=True)
@@ -73,7 +75,6 @@ def image_extractor():
     return {
         "content": final_content,
     }
-
 
 # Run Server
 # if __name__ == '__main__':
