@@ -1,4 +1,4 @@
-import pyktok2 as pyk
+import extractors.pyktok2 as pyk
 
 
 # Function to download the TikTok video

@@ -82,7 +82,7 @@ def get_video_frames(video_path):
     return base64Frames
 
 def process_video(video_path):
-    descriptions = {}
+    description = ""
     filename = os.path.basename(video_path)
     print(f"Processing {video_path}...")
 

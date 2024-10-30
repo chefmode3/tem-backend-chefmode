@@ -3,6 +3,7 @@ import json
 import urllib.request
 import re
 
+
 def extract_video_id(youtube_url):
     # Regular expression to extract the video ID from various YouTube URL formats
     match = re.search(r"(?:v=|\/(vi|v|shorts)\/|\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})", youtube_url)
@@ -11,6 +12,7 @@ def extract_video_id(youtube_url):
     else:
         print("Error: Unable to extract video ID.")
         return None
+
 
 def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
     video_id = extract_video_id(youtube_url)
