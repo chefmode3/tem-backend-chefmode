@@ -18,8 +18,8 @@ cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
 celery = Celery(
     __name__,
-    broker="redis://redis:6379/0",
-    backend="redis://redis:6379/0"
+    broker="redis://redis-aerodynamic-57043:6379/0",
+    backend="redis://redis-aerodynamic-57043:6379/0"
 )
 
 
