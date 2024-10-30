@@ -1,33 +1,42 @@
+import os
 from os.path import join, dirname
 from dotenv import load_dotenv
 import logging
 import ssl
 from extractors import fetch_description
 
-dotenv_path = join(dirname(__file__), '.env')
-load_dotenv(dotenv_path)
+
 
 from flask import Flask, request
 from flask_cors import CORS
 
 from celery import Celery
 
-app = Flask(__name__)
-cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
-celery = Celery(
-    __name__,
-    broker="rediss://:p001004ca65035c7d381457ecf466defc3710bc746fcca3d97b41b0184759034c@ec2-18-206-109-119.compute-1.amazonaws.com:7830",
-    backend="rediss://:p001004ca65035c7d381457ecf466defc3710bc746fcca3d97b41b0184759034c@ec2-18-206-109-119.compute-1.amazonaws.com:7830",
-    broker_use_ssl={
-        'ssl_cert_reqs': ssl.CERT_NONE
-    },
-    redis_backend_use_ssl={
-        'ssl_cert_reqs': ssl.CERT_NONE
-    }
-)
+def create_app():
+    dotenv_path = join(dirname(__file__), '.env')
+    load_dotenv(dotenv_path)
+    print(dotenv_path)
+    print(os.getenv("TIME_ZONE"))
+    app = Flask(__name__)
+    cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
-logging.getLogger('flask_cors').level = logging.DEBUG
+    celery = Celery(
+        __name__,
+        broker="rediss://:p001004ca65035c7d381457ecf466defc3710bc746fcca3d97b41b0184759034c@ec2-18-206-109-119.compute-1.amazonaws.com:7830",
+        backend="rediss://:p001004ca65035c7d381457ecf466defc3710bc746fcca3d97b41b0184759034c@ec2-18-206-109-119.compute-1.amazonaws.com:7830",
+        broker_use_ssl={
+            'ssl_cert_reqs': ssl.CERT_NONE
+        },
+        redis_backend_use_ssl={
+            'ssl_cert_reqs': ssl.CERT_NONE
+        }
+    )
+
+    return app, celery
+
+
+app, celery = create_app()
 
 
 @celery.task(bind=True)
