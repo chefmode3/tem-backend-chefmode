@@ -40,6 +40,5 @@ def fetch_description(request_data):
 
     elif platform == "website":
         description, got_image = scrape_and_analyze_recipe(video_url)
-        if got_image:
-            final_content = description
+        final_content = description
     return final_content
