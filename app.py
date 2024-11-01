@@ -23,8 +23,8 @@ def create_app():
 
     celery = Celery(
         __name__,
-        broker="rediss://:p001004ca65035c7d381457ecf466defc3710bc746fcca3d97b41b0184759034c@ec2-18-206-109-119.compute-1.amazonaws.com:7830",
-        backend="rediss://:p001004ca65035c7d381457ecf466defc3710bc746fcca3d97b41b0184759034c@ec2-18-206-109-119.compute-1.amazonaws.com:7830",
+        broker="rediss://redis:6379",
+        backend="rediss://redis:6379",
         broker_use_ssl={
             'ssl_cert_reqs': ssl.CERT_NONE
         },
