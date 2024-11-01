@@ -35,6 +35,7 @@ mdurl==0.1.2
 narwhals==1.9.3
 numpy==2.0.2
 openai==1.51.2
+opencv-python-headless
 packaging==24.1
 pandas==2.2.3
 pillow==10.4.0
