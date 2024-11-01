@@ -23,14 +23,9 @@ def create_app():
 
     celery = Celery(
         __name__,
-        broker="rediss://redis:6379/0",
-        backend="rediss://redis:6379/0",
-        broker_use_ssl={
-            'ssl_cert_reqs': ssl.CERT_NONE
-        },
-        redis_backend_use_ssl={
-            'ssl_cert_reqs': ssl.CERT_NONE
-        }
+        broker="redis://redis:6379",
+        backend="redis://redis:6379",
+
     )
 
     return app, celery
