@@ -23,8 +23,8 @@ def create_app():
 
     celery = Celery(
         __name__,
-        broker="redis://redis:6379",
-        backend="redis://redis:6379",
+        broker="rediss://:p001004ca65035c7d381457ecf466defc3710bc746fcca3d97b41b0184759034c@ec2-107-22-116-4.compute-1.amazonaws.com:2977",
+        backend="rediss://:p001004ca65035c7d381457ecf466defc3710bc746fcca3d97b41b0184759034c@ec2-107-22-116-4.compute-1.amazonaws.com:29779",
 
     )
 
