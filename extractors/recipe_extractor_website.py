@@ -10,7 +10,7 @@ import time
 import tiktoken  # Import tiktoken
 
 # Initialize OpenAI client
-client = OpenAI(api_key="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")
+client = OpenAI(api_key="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")
 
 
 def extract_main_image(soup):
