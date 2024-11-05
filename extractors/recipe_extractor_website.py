@@ -117,17 +117,17 @@ def scrape_and_analyze_recipe(url):
     got_image = False
 
     # Display the main image if found
-    if main_image_url:
-        if not re.match(r'^https?:', main_image_url):
-            main_image_url = requests.compat.urljoin(url, main_image_url)
-        image = get_image_with_retry(main_image_url)
-        if image:
-            save_image_locally(image, 'recipe_image.jpg')  # Save the image locally
-            got_image = True
-        else:
-            print("Failed to retrieve the main image after multiple attempts.")
-            got_image = False
-    else:
+    if not main_image_url:
+    #     if not re.match(r'^https?:', main_image_url):
+    #         main_image_url = requests.compat.urljoin(url, main_image_url)
+    #     image = get_image_with_retry(main_image_url)
+    #     if image:
+    #         save_image_locally(image, 'recipe_image.jpg')  # Save the image locally
+    #         got_image = True
+    #     else:
+    #         print("Failed to retrieve the main image after multiple attempts.")
+    #         got_image = False
+    # else:
         print("No main image found.")
 
     # Use OpenAI to analyze the recipe content
@@ -139,7 +139,7 @@ def scrape_and_analyze_recipe(url):
                 "content": (
                     "You get information from recipe websites: recipe title, servings, total time, ingredients, "
                     "directions. "
-                    "You will output in simple markdown. You will not output any description of the recipe. "
+                    "You will output in object format. You will not output any description of the recipe. "
                     "You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text."
                 )
             },
@@ -154,5 +154,5 @@ def scrape_and_analyze_recipe(url):
     # Display the AI response
     print(recipe_info)
 
-    return recipe_info, got_image
+    return recipe_info, got_image, main_image_url
 

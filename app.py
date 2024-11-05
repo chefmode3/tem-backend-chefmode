@@ -60,4 +60,6 @@ def fetch_results():
     if res.state == 'PENDING':
         return {"status": "PENDING"}
     elif res.state == 'SUCCESS':
-        return {"content": res.result}
+        return res.result
+    elif res.state == 'FAILURE':
+        return {"status": "FAILURE", "message": str(res.result)}
