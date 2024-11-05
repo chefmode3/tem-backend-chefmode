@@ -154,8 +154,9 @@ def scrape_and_analyze_recipe(url):
                 "role": "system",
                 "content": (
                     "You get information from recipe websites: recipe title, servings, total time, ingredients, "
-                    "directions. Provide in object format and  don't make nested object under total time, directions and ingredients."
-                    # "You will output in object format. You will not output any description of the recipe, and don't make nested object under total time, directions and ingredients. "
+                    "directions. "
+                    "You will output in object format. You will not output any description of the recipe"
+                    "and don't make nested object under total time, directions and ingredients. "
                     "You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text."
                 )
             },
