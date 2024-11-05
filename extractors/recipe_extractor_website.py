@@ -91,28 +91,43 @@ def save_image_locally(image, filename='recipe_image.jpg'):
 
 def scrape_and_analyze_recipe(url):
     # Make a request to the given URL with retries and user-agent spoofing
+    start = time.time()
     response = get_website_content(url)
+    end = time.time()
+    print(f"get_website_content took {end - start} seconds")
 
     # Parse the HTML content
+    start = time.time()
     soup = BeautifulSoup(response.text, 'html.parser')
+    end = time.time()
+    print(f"parsing html took {end - start} seconds")
 
     # Extract title and body content from HTML
     title = soup.title.string if soup.title else "No title found"
 
+    start = time.time()
     # Extract all text content from various relevant tags
     body_content = " ".join(
         element.get_text(separator=" ", strip=True)
         for element in soup.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
     )
+    end = time.time()
+    print(f"Extract all text content took {end - start} seconds")
 
     # print(body_content)
 
+    start = time.time()
     # Tokenize the body content and print token count
     token_count, tokens = tokenize_text(body_content)
-    print(f"Token Count: {token_count}")
+    # print(f"Token Count: {token_count}")
+    end = time.time()
+    print(f"Tokenize text content took {end - start} seconds")
 
+    start = time.time()
     # Extract main image
     main_image_url = extract_main_image(soup)
+    end = time.time()
+    print(f"Main Image extraction took {end - start} seconds")
 
     got_image = False
 
@@ -130,6 +145,7 @@ def scrape_and_analyze_recipe(url):
     # else:
         print("No main image found.")
 
+    start = time.time()
     # Use OpenAI to analyze the recipe content
     ai_response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -138,8 +154,8 @@ def scrape_and_analyze_recipe(url):
                 "role": "system",
                 "content": (
                     "You get information from recipe websites: recipe title, servings, total time, ingredients, "
-                    "directions. "
-                    "You will output in object format. You will not output any description of the recipe. "
+                    "directions. Provide in object format and  don't make nested object under total time, directions and ingredients."
+                    # "You will output in object format. You will not output any description of the recipe, and don't make nested object under total time, directions and ingredients. "
                     "You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text."
                 )
             },
@@ -148,11 +164,13 @@ def scrape_and_analyze_recipe(url):
                                         f"formatting."}
         ]
     )
+    end = time.time()
+    print(f"OpenAI took {end - start} seconds")
 
     recipe_info = ai_response.choices[0].message.content
 
     # Display the AI response
-    print(recipe_info)
+    # print(recipe_info)
 
     return recipe_info, got_image, main_image_url
 
