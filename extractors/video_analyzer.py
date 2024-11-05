@@ -103,7 +103,7 @@ def process_video(video_path):
                         f"You get information from the video: recipe title, servings, total time, ingredients, directions." "You will output in object format. You will not output any description of the recipe"
                     "and don't make nested object under total time, directions and ingredients. " "You will ALWAYS supply ingredient amounts."
                         f"Here is a full transcript of the video: {transcript}.\n"
-                        "These are descriptions of some of the frames from the video. Make sure to analyze the transcript and the frames holistically.",
+                        "These are descriptions of some of the frames from the video. Make sure to analyze the transcript and the frames holistically. Never output a '''markdown identifier before you begin, just the pure formatting.",
                         *map(lambda x: {"type": "image_url",
                                         "image_url": {"url": f"data:image/jpeg;base64,{x}", "detail": "low"}},
                              base64Frames),
