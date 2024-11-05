@@ -160,9 +160,7 @@ def scrape_and_analyze_recipe(url):
                     "You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text."
                 )
             },
-            {"role": "user", "content": f"Title: {title}\nContent: {body_content}\n\n"
-                                        f"Never output a '''markdown identifier before you begin, just the pure "
-                                        f"formatting."}
+            {"role": "user", "content": f"Title: {title}\nURL: {url}\n\n"}
         ]
     )
     end = time.time()
