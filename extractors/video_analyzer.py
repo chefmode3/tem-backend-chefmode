@@ -1,4 +1,6 @@
 import os
+import time
+
 import cv2
 import base64
 import math
@@ -86,40 +88,37 @@ def process_video(video_path):
     filename = os.path.basename(video_path)
     print(f"Processing {video_path}...")
 
+    start = time.time()
     video_clip_path, audio_clip_path = split_video_audio(video_path)
 
     if audio_clip_path:
         transcript = extract_transcript(audio_clip_path)
 
+        end = time.time()
+        print(f"Overall time to generate transcript {end - start} seconds")
+
         if transcript:
-            base64Frames = get_video_frames(video_clip_path)
+            result = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "Extract recipe information from video transcripts in a consistent, structured format. For each recipe described in the video, retrieve ONLY the following fields: "
 
-            # Prepare the prompt for GPT-4
-            PROMPT_MESSAGES = [
-                {
-                    "role": "user",
-                    "content": [
-                        f"You are a video recipe summarizer. "
-                        f"You get information from the video: recipe title, servings, total time, ingredients, directions." "You will output in object format. You will not output any description of the recipe"
-                    "and don't make nested object under total time, directions and ingredients. " "You will ALWAYS supply ingredient amounts."
-                        f"Here is a full transcript of the video: {transcript}.\n"
-                        "These are descriptions of some of the frames from the video. Make sure to analyze the transcript and the frames holistically. Never output a '''markdown identifier before you begin, just the pure formatting.",
-                        *map(lambda x: {"type": "image_url",
-                                        "image_url": {"url": f"data:image/jpeg;base64,{x}", "detail": "low"}},
-                             base64Frames),
-                    ],
-                },
-            ]
-
-            # Define parameters for the API request
-            params = {
-                "model": "gpt-4o-mini",
-                "messages": PROMPT_MESSAGES,
-                "max_tokens": 2000,
-            }
-
-            # Send the request to GPT-4
-            result = client.chat.completions.create(**params)
+                            "title: (The recipe's name),"
+                            "servings: (Number of servings, if stated),"
+                            "total_time: (Total preparation and cooking time as a single string),"
+                            "ingredients: (Each ingredient should include the amount and name.),"
+                            "directions: (A list of steps for making the recipe, numbered or as separate entries, exactly as described in the order they appear in the video)."
+                            "Never output a '''markdown identifier before you begin and return the value in object format that can easily convert into the json"
+                            "Provide this data in the same order and structure for each recipe without additional comments, descriptions, or variations.  maintain the structure."
+                        )
+                    },
+                    {"role": "user", "content": f"Here is the transcript of the video {transcript}"}
+                ]
+            )
             description = result.choices[0].message.content
+
 
     return description
