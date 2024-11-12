@@ -10,7 +10,10 @@ from pydub import AudioSegment
 from openai import OpenAI
 import concurrent.futures
 
-client = OpenAI(api_key="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")
+client = OpenAI(
+    api_key="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",
+    organization="org-xYVDxzYujg2ErOpXDcsttD83")
+
 
 # Function to split video and audio
 def split_video_audio(video_path):
@@ -27,6 +30,7 @@ def split_video_audio(video_path):
         print(f"An error occurred while splitting video and audio: {e}")
         return None, None
 
+
 # Function to extract transcript using OpenAI Whisper
 def extract_transcript(audio_file_path):
     try:
@@ -40,6 +44,7 @@ def extract_transcript(audio_file_path):
         print(f"An error occurred while extracting the transcript: {e}")
         return None
 
+
 # Function to calculate frame step
 def calculate_frame_step(video_length_seconds, max_frames=60):
     if video_length_seconds < max_frames:
@@ -47,10 +52,12 @@ def calculate_frame_step(video_length_seconds, max_frames=60):
     else:
         return max(1, math.ceil(video_length_seconds / max_frames))
 
+
 # Function to encode frame
 def encode_frame(frame):
     _, buffer = cv2.imencode(".jpg", frame)
     return base64.b64encode(buffer).decode("utf-8")
+
 
 # Function to get video frames as base64
 def get_video_frames(video_path):
@@ -83,6 +90,7 @@ def get_video_frames(video_path):
     print(f"Number of Frames Captured: {len(base64Frames)}")
     return base64Frames
 
+
 def process_video(video_path):
     description = ""
     filename = os.path.basename(video_path)
@@ -97,6 +105,7 @@ def process_video(video_path):
         end = time.time()
         print(f"Overall time to generate transcript {end - start} seconds")
 
+        start = time.time()
         if transcript:
             result = client.chat.completions.create(
                 model="gpt-4o-mini",
@@ -105,7 +114,6 @@ def process_video(video_path):
                         "role": "system",
                         "content": (
                             "Extract recipe information from video transcripts in a consistent, structured format. For each recipe described in the video, retrieve ONLY the following fields: "
-
                             "title: (The recipe's name),"
                             "servings: (Number of servings, if stated),"
                             "total_time: (Total preparation and cooking time as a single string),"
@@ -119,6 +127,8 @@ def process_video(video_path):
                 ]
             )
             description = result.choices[0].message.content
-
+    end = time.time()
+    print(f"OpenAI took {end - start} seconds")
+    print(description)
 
     return description

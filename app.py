@@ -6,7 +6,6 @@ import ssl
 from extractors import fetch_description
 
 
-
 from flask import Flask, request
 from flask_cors import CORS
 
@@ -62,4 +61,5 @@ def fetch_results():
     elif res.state == 'SUCCESS':
         return res.result
     elif res.state == 'FAILURE':
-        return {"status": "FAILURE", "message": str(res.result)}
+        print("Failure Message:", res.result)
+        return {"status": "FAILURE"}
