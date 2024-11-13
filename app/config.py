@@ -1,13 +1,12 @@
 import os
-import os
 from os.path import join, dirname
 from dotenv import load_dotenv
 
 
-dotenv_path = join(dirname(__file__), '.env')
+dotenv_path = join(dirname(__file__), '.flaskenv')
 load_dotenv(dotenv_path)
-# print(dotenv_path)
-
+print(dotenv_path)
+print(os.getenv('DATABASE_URL'))
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
