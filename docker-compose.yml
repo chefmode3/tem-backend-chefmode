@@ -1,7 +1,9 @@
 version: '3.8'
 
 services:
-
+  redis:
+    image: redis
+  
   web:
     build:
       context: .
@@ -22,6 +24,18 @@ services:
     links:
       - chef_mode_backend
 
+  celery:
+    build:
+        context: .
+    environment:
+      FLASK_APP: app
+      OPENAI_API_KEY: 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
+    volumes:
+      - .:/app
+    command: celery -A app.celery worker --loglevel=info
+    depends_on:
+      - redis
+      
   chef_mode_backend:
     container_name: ChefModeBackend
     build:
