@@ -22,7 +22,8 @@ class CallbackResource(Resource):
             request=token_request,
             audience=GOOGLE_CLIENT_ID
         )
-        print(json.dumps(id_info, indent=4))
-        session["google_id"] = id_info.get("sub")
-        session["name"] = id_info.get("name")
+
+        google_id = id_info.get('sub')
+        name = id_info.get('name')
+        email = id_info.get('email')
         return redirect('https://www.google.com')
