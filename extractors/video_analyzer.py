@@ -6,9 +6,10 @@ import base64
 import math
 import json
 import tempfile
+
+from moviepy.video.io.VideoFileClip import VideoFileClip
 from pydub import AudioSegment
 from openai import OpenAI
-import concurrent.futures
 
 client = OpenAI(
     api_key="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",
@@ -96,39 +97,45 @@ def process_video(video_path):
     filename = os.path.basename(video_path)
     print(f"Processing {video_path}...")
 
-    start = time.time()
-    video_clip_path, audio_clip_path = split_video_audio(video_path)
+    video = VideoFileClip(video_path)
+    if not video.audio:
+        print("No audio track found in the video.")
+        transcript = "No Transcript available, do not mention this in the final recipe."
+    else:
 
-    if audio_clip_path:
-        transcript = extract_transcript(audio_clip_path)
+        video_clip_path, audio_clip_path = split_video_audio(video_path)
 
-        end = time.time()
-        print(f"Overall time to generate transcript {end - start} seconds")
+        if audio_clip_path:
+            transcript = extract_transcript(audio_clip_path)
+        else:
+            transcript = "No Transcript available, do not mention this in the final recipe."
 
-        start = time.time()
-        if transcript:
-            result = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "Extract recipe information from video transcripts in a consistent, structured format. For each recipe described in the video, retrieve ONLY the following fields: "
-                            "title: (The recipe's name),"
-                            "servings: (Number of servings, if stated),"
-                            "total_time: (Total preparation and cooking time as a single string),"
-                            "ingredients: (Each ingredient should include the amount and name.),"
-                            "directions: (A list of steps for making the recipe, numbered or as separate entries, exactly as described in the order they appear in the video)."
-                            "Never output a '''markdown identifier before you begin and return the value in object format that can easily convert into the json"
-                            "Provide this data in the same order and structure for each recipe without additional comments, descriptions, or variations.  maintain the structure."
-                        )
-                    },
-                    {"role": "user", "content": f"Here is the transcript of the video {transcript}"}
-                ]
-            )
-            description = result.choices[0].message.content
-    end = time.time()
-    print(f"OpenAI took {end - start} seconds")
-    print(description)
+        base64Frames = get_video_frames(video_path)
+
+        PROMPT_MESSAGES = [
+                {
+                    "role": "system",
+                    "content": (
+                        "Extract recipe information from video transcripts in a consistent, structured format. For each recipe described in the video, retrieve ONLY the following fields: "
+                        "title: (The recipe's name),"
+                        "servings: (Number of servings, if stated),"
+                        "total_time: (Total preparation and cooking time as a single string),"
+                        "ingredients: (Each ingredient should include the amount and name.),"
+                        "directions: (A list of steps for making the recipe, numbered or as separate entries, exactly as described in the order they appear in the video)."
+                        "Never output a '''markdown identifier before you begin and return the value in object format that can easily convert into the json"
+                        "Provide this data in the same order and structure for each recipe without additional comments, descriptions, or variations.  maintain the structure."
+                    )
+                },
+                {"role": "user", "content": f"Here is the transcript of the video {transcript}"}
+            ]
+
+        params = {
+            "model": "gpt-4o-mini",
+            "messages": PROMPT_MESSAGES,
+            "max_tokens": 2000,
+        }
+
+        result = client.chat.completions.create(**params)
+        description = result.choices[0].message.content
 
     return description
