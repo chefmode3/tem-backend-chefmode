@@ -155,14 +155,11 @@ def scrape_and_analyze_recipe(url):
             {
                 "role": "system",
                 "content": (
-                    """Extract recipe information in JSON format and remove newline characters from response, following this exact structure:"
-                    '{"title": 'Recipe name as shown',
-                    "servings": 'Number of servings',
-                    "total_time": 'Total preparation and cooking time as a single string',
-                    "ingredients": ['Amount and name of each ingredient, or name only if amount is missing'],
-                    "directions": ['List each step exactly as shown']
-                    }'
-                    "Ensure all fields are present. If any field is missing, leave it blank but retain the JSON structure. Do not add extra comments or formatting. Output only the JSON object."""
+                    "You get information from recipe websites: recipe title, servings, total time, ingredients, "
+                    "directions. "
+                    "You will output in object format. You will not output any description of the recipe"
+                    "and don't make nested object under total time, directions and ingredients. "
+                    "You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text."
                 )
             },
             {"role": "user", "content": f"Title: {title}\nURL: {url}\n\n"}
@@ -174,6 +171,6 @@ def scrape_and_analyze_recipe(url):
     recipe_info = ai_response.choices[0].message.content
 
     # Display the AI response
-    # print(recipe_info)
+    print(recipe_info)
 
     return recipe_info, got_image, main_image_url
