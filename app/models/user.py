@@ -4,10 +4,11 @@ from datetime import datetime
 
 class User(db.Model):
     user_id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(64),  nullable=False)
+    name = db.Column(db.String(64),  nullable=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    google_token = db.Column(db.String(120), unique=True, nullable=True)
-    google_id = db.Column(db.String(120), unique=True, nullable=True)
+    google_token = db.Column(db.String(255), unique=True, nullable=True)
+    google_id = db.Column(db.String(255), unique=True, nullable=True)
+    password = db.Column(db.String(255), unique=True, nullable=True)
     # subscription_id = db.Column(db.Integer, db.ForeignKey('subscriptions.id'), nullable=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
