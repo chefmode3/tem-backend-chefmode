@@ -116,12 +116,14 @@ def process_video(video_path):
                 {
                     "role": "system",
                     "content": (
-                        "Extract recipe information from video transcripts in a consistent, structured format. For each recipe described in the video, retrieve ONLY the following fields: "
+                        "Extract recipe information from video transcripts in a consistent, structured format. For each recipe described in the video, retrieve ONLY the "
+                        "following fields:"
                         "title: (The recipe's name),"
                         "servings: (Number of servings, if stated),"
                         "total_time: (Total preparation and cooking time as a single string),"
-                        "ingredients: (Each ingredient should include the amount and name.),"
+                        "ingredients: (Each ingredient should a single line for it),"
                         "directions: (A list of steps for making the recipe, numbered or as separate entries, exactly as described in the order they appear in the video)."
+                        "No nested objects other than these ones."
                         "Never output a '''markdown identifier before you begin and return the value in object format that can easily convert into the json"
                         "Provide this data in the same order and structure for each recipe without additional comments, descriptions, or variations.  maintain the structure."
                     )
@@ -133,6 +135,7 @@ def process_video(video_path):
             "model": "gpt-4o-mini",
             "messages": PROMPT_MESSAGES,
             "max_tokens": 2000,
+            "response_format":{"type": "json_object"}
         }
 
         result = client.chat.completions.create(**params)

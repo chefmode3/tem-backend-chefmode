@@ -163,7 +163,8 @@ def scrape_and_analyze_recipe(url):
                 )
             },
             {"role": "user", "content": f"Title: {title}\nURL: {url}\n\n"}
-        ]
+        ],
+        response_format={"type": "json_object"}
     )
     end = time.time()
     print(f"OpenAI took {end - start} seconds")
