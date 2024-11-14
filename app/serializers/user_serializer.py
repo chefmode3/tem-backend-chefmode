@@ -1,0 +1,26 @@
+from marshmallow import Schema, fields, validate, ValidationError
+
+class UserSignupSchema(Schema):
+
+    email = fields.Email(required=True)
+    password = fields.Str(required=True, validate=validate.Length(min=8))
+
+class UserLoginSchema(Schema):
+    email = fields.Email(required=True)
+    password = fields.Str(required=True)
+
+class UserSchema(Schema):
+    user_id = fields.Int(required=True)
+    name = fields.Str(required=False)
+    email = fields.Email(required=True)
+    google_token =fields.Str(required=False)
+    google_id = fields.Str(required=False)
+
+
+class UserResponseSchema(Schema):
+    user_id = fields.Int(required=True)
+    name = fields.Str(required=False)
+    email = fields.Email(required=True)
+    google_token = fields.Str(required=False)
+    google_id = fields.Str(required=False)
+    access_token = fields.Str(required=True)

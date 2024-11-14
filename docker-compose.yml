@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis
+  
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python run.py run -h 0.0.0.0 -p 5000
+    container_name: web
+    ports:
+      - 5000:5000
+    volumes:
+      - .:/usr/src/app
+    environment:
+      - FLASK_DEBUG=1
+      - APP_SETTINGS=app.config.DevelopmentConfig
+      - DATABASE_URL=postgresql://postgres:postgres@chef_mode_backend:5432/chef_mode_backend
+      - SECRET_KEY='MY SECRET'
+    depends_on:
+      - chef_mode_backend
+    links:
+      - chef_mode_backend
+
+  celery:
+    build:
+        context: .
+    environment:
+      FLASK_APP: app
+      OPENAI_API_KEY: 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
+    volumes:
+      - .:/app
+    command: celery -A app.celery worker --loglevel=info
+    depends_on:
+      - redis
+      
+  chef_mode_backend:
+    container_name: ChefModeBackend
+    build:
+      context: ./infrastructure/db
+      dockerfile: Dockerfile
+    ports:
+      - 5435:5432
+    environment:
+      - POSTGRES_PROFILE=postgres
+      - POSTGRES_PASSWORD=postgres
