@@ -17,6 +17,16 @@ class UserSchema(Schema):
     google_id = fields.Str(required=False)
 
 
+class UserRegisterSchema(Schema):
+    user_id = fields.Int(required=True)
+    name = fields.Str(required=False)
+    email = fields.Email(required=True)
+    activate = fields.Boolean(required=False)
+    google_token = fields.Str(required=False)
+    google_id = fields.Str(required=False)
+    access_token = fields.Str(required=True)
+
+
 class UserResponseSchema(Schema):
     user_id = fields.Int(required=True)
     name = fields.Str(required=False)

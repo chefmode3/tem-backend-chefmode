@@ -17,11 +17,9 @@ class UserService:
     def signup(email, password):
         """Registers a new user."""
         if User.query.filter_by(email=email).first():
-            return {"error": "Email address already exist"}
-
+            return None
         user = User(email=email, username=email.split('@')[0])
         user.password = generate_password_hash(password)
-
         db.session.add(user)
         db.session.commit()
 
@@ -42,7 +40,6 @@ class UserService:
         user = User.query.filter_by(email=email).first()
         if not user or not check_password_hash(user.password, password):
             return None
-
         access_token = create_access_token(identity=email)
         return {
             "id": user.user_id,
@@ -61,7 +58,7 @@ class UserService:
         """Retrieves a user by their ID."""
         user = User.query.get(user_id)
         if not user:
-            return {"error": "User not found."}
+            return None
         return {
             "id": user.user_id,
             "email": user.email,
@@ -73,8 +70,7 @@ class UserService:
         """Generates a password reset token and sends it via email."""
         user = User.query.filter_by(email=email).first()
         if not user:
-           return {"error": "User not found."}
-
+           return None
         reset_token = secrets.token_urlsafe(16)
         user.reset_token = reset_token
         db.session.commit()
@@ -104,10 +100,9 @@ class UserService:
         """Resets the user's password if the token is valid."""
         user = User.query.filter_by(reset_token=token).first()
         if not user:
-           return {"error": "Invalid or expired reset token."}
-
+           return None
         if len(new_password) < 8:
-            return {"error": "Password must be at least 8 characters."}
+            return {"error": "password must be at least 8 characters"}
 
         user.password = generate_password_hash(new_password)
         user.reset_token = None
@@ -120,7 +115,7 @@ class UserService:
         """Updates user profile information."""
         user = User.query.get(user_id)
         if not user:
-            return {"error": "User not found."}
+            return None
 
         for key, value in kwargs.items():
             setattr(user, key, value)
@@ -138,7 +133,7 @@ class UserService:
         """Deletes a user from the database."""
         user = User.query.get(user_id)
         if not user:
-            return {"error": "User not found."}
+            return None
 
         db.session.delete(user)
         db.session.commit()
@@ -149,9 +144,9 @@ class UserService:
         """Changes the user's password if the old password is correct."""
         user = User.query.get(user_id)
         if not user or not check_password_hash(user.password, old_password):
-            return {"error": "User not found."}
+            return None
         if len(new_password) < 8:
-           return {"error": "Password must be at least 8 characters."}
+           return None
 
         user.password = generate_password_hash(new_password)
         db.session.commit()
@@ -163,7 +158,7 @@ class UserService:
         user_email = get_jwt_identity()
         user = User.query.filter_by(email=user_email).first()
         if not user:
-            return {"error": "User not found."}
+            return None
 
         return {
             "id": user.user_id,

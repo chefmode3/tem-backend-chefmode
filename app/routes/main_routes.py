@@ -56,6 +56,7 @@ class SignupConfirmResource(Resource):
     @auth_ns.response(201, "User Account successfully activated", model=user_response_model)
     @auth_ns.response(400, "Validation Error")
     def post(self, token):
+
         email = verification_tokens.get(token)
         if email:
             # Mark the user as verified
@@ -101,11 +102,13 @@ class PasswordResetRequestResource(Resource):
     @auth_ns.response(400, "Validation Error")
     def post(self):
         try:
-            data = request.get_json()
-            email = data.get("email")
+            data = password_reset_request_schema.load(request.get_json())
+            email = data["email"]
             return UserService.request_password_reset(email)
+        except ValidationError as err:
+            return {"errors": err.messages}, 400
         except Exception as err:
-            return {"errors": err}, 500
+            return {"errors": str(err)}, 500
 
 
 
@@ -117,8 +120,10 @@ class ResetPasswordResource(Resource):
     @auth_ns.response(400, "Validation Error")
     def post(self, token):
         try:
-            data = request.get_json()
-            new_password = data.get("new_password")
+            data = reset_password_schema.load(request.get_json())
+            new_password = data["new_password"]
             return UserService.reset_password(token, new_password)
+        except ValidationError as err:
+            return {"errors": err.messages}, 400
         except Exception as err:
-            return {"errors": err}, 500
+            return {"errors": str(err)}, 500
