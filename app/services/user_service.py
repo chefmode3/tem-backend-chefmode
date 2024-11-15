@@ -105,7 +105,7 @@ class UserService:
 
         # Send email (assuming Mail is configured and initialized in the app)
         msg = Message("Password Reset Request",
-                      sender=os.getenv('MAIL_USERNAME', 'inforeply@gmail.com'),
+                      sender=os.getenv('DEFAULT_FROM_EMAIL'),
                       recipients=[email])
         msg.body = (f"Click the link to reset your password: "
                     f"{url_for('auth_reset_password_resource', token=reset_token, _external=True)}")
