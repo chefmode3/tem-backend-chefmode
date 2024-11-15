@@ -1,9 +1,9 @@
 from app.models.user import User
 from app.extensions import db
-from flask import jsonify, abort
+from flask import jsonify, abort, url_for
 from flask_jwt_extended import create_access_token, get_jwt_identity, get_jwt
 import secrets
-from datetime import timedelta
+from app.extensions import mail
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Message
 import os
@@ -30,6 +30,7 @@ class UserService:
             "id": user.user_id,
             "email": user.email,
             "username": user.username,
+            "activate": user.activate,
             "google_token": "string",
             "google_id": "string",
             "access_token": access_token
@@ -50,10 +51,9 @@ class UserService:
             "access_token": access_token
         }
 
-    @staticmethod
-    def logout(jti):
+    def logout(self, jti):
         """Logs out a user by revoking their token."""
-        revoked_tokens.add(jti)
+        self.revoked_tokens.add(jti)
         return {"message": "Successfully logged out"}
 
     @staticmethod
@@ -81,10 +81,10 @@ class UserService:
 
         # Send email (assuming Mail is configured and initialized in the app)
         msg = Message("Password Reset Request",
-                      sender=os.getenv('MAIL_USERNAME'),
+                      sender=os.getenv('MAIL_USERNAME', 'inforeply@gmail.com'),
                       recipients=[email])
         msg.body = (f"Click the link to reset your password: "
-                    f"{url_for('auth.reset_password', token=reset_token, _external=True)}")
+                    f"{url_for('auth_reset_password_resource', token=reset_token, _external=True)}")
         mail.send(msg)
 
         return {"message": "Password reset email sent"}
@@ -103,7 +103,7 @@ class UserService:
         user.reset_token = None
         db.session.commit()
 
-        return {"message": "Password reset successful"}
+        return {"message": "Password has been reset successfully"}
 
     @staticmethod
     def update_user(user_id, **kwargs):

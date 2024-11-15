@@ -39,7 +39,7 @@ services:
   chef_mode_backend:
     container_name: ChefModeBackend
     build:
-      context: ./infrastructure/db
+      context: instance/
       dockerfile: Dockerfile
     ports:
       - 5435:5432

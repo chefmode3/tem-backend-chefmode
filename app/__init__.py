@@ -1,11 +1,13 @@
 from flask import Flask
 from flask_jwt_extended import JWTManager
+from app.extensions import mail
 from flask_restx import Api
 from flask_cors import CORS
 from app.extensions import db, migrate
 from app.config import DevelopmentConfig
 from app import cli
 from app.routes.main_routes import auth_ns
+from app.routes.login_ressource import auth_google_ns
 
 
 def create_app(config_class=DevelopmentConfig):
@@ -16,9 +18,11 @@ def create_app(config_class=DevelopmentConfig):
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
-    jwt = JWTManager(app)
+
     # Enable CORS
     CORS(app)
+    mail.init_app(app)
+    jwt = JWTManager(app)
 
     url_api = '/api/v1'
 

@@ -12,6 +12,7 @@ from app.config import flow
 
 auth_google_ns = Namespace('auth', description="Opérations d'authentification")
 
+
 @auth_google_ns.route('/Login')
 class LoginResource(Resource):
 
@@ -20,6 +21,7 @@ class LoginResource(Resource):
         session["state"] = state
         return {'authorization_url': authorization_url}
 
+
 @auth_google_ns.route('/Logout')
 class LogoutResource(Resource):
 
@@ -27,11 +29,14 @@ class LogoutResource(Resource):
         session.clear()
         return {'message': 'Logged out successfully'}
 
+
 @auth_google_ns.route('/Callback')
 class CallbackResource(Resource):
 
-
-    def get(self):
+    # @auth_google_ns.expect(password_reset_request_model)
+    # @auth_google_ns.response(200, "Password reset email sent", model=password_reset_request_model)
+    @auth_google_ns.response(400, "Validation Error")
+    def post(self):
         flow.fetch_token(authorization_response=request.url)
         credentials = flow.credentials
         request_session = requests.session()
@@ -47,5 +52,3 @@ class CallbackResource(Resource):
         name = id_info.get('name')
         email = id_info.get('email')
         return redirect('https://www.google.com')
-
-
