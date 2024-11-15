@@ -15,18 +15,18 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
-        return f'<User {self.username}>'
+        return f'<User {self.name}>'
 
     def __init__(
             self,
-            username,
+            name,
           email,
           activate = False,
           password=None,
           google_token=None,
           google_id=None
     ):
-        self.username = username
+        self.name = name
         self.email = email
         self.password = password
         self.activate = activate

@@ -1,13 +1,15 @@
-from app.models.user import User
-from app.extensions import db
-from flask import jsonify, abort, url_for
-from flask_jwt_extended import create_access_token, get_jwt_identity, get_jwt
 import secrets
-from app.extensions import mail
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_mail import Message
 import os
 
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_mail import Message
+from flask import jsonify, abort, url_for
+from flask_jwt_extended import create_access_token, get_jwt_identity, get_jwt
+
+from app.models.user import User
+from app.extensions import db
+from app.extensions import mail
+from app.serializers.user_serializer import UserSchema
 
 class UserService:
 
@@ -57,9 +59,31 @@ class UserService:
         return {"message": "Successfully logged out"}
 
     @staticmethod
+    def create_user(name, email, password=None, google_id=None, google_token=None, activate=False):
+        """Creates a new user."""
+        if User.query.filter_by(email=email).first():
+            abort(400, description="Email already exists.")
+
+        user = User(email=email, name=name,  google_id=google_id, google_token=google_token, activate=activate)
+        if password:
+            user.password = generate_password_hash(password)
+
+        db.session.add(user)
+        db.session.commit()
+        return UserSchema().dump(user)
+
+    @staticmethod
+    def get_user_by_email(user_email):
+        """Retrieves a user by their ID."""
+        user = User.query.filter_by(email=user_email).first()
+        if not user:
+            return None
+        return UserSchema().dump(user)
+
+    @staticmethod
     def get_user_by_id(user_id):
         """Retrieves a user by their ID."""
-        user = User.query.get(user_id)
+        user = User.query.get(user_id=user_id)
         if not user:
             abort(404, description="User not found.")
         return {

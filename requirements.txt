@@ -29,4 +29,5 @@ google-api-python-client==2.153.0
 google-auth-httplib2==0.2.0
 marshmallow==3.22.0
 flask_mail==0.10.0
+marshmallow_sqlalchemy==1.1.0
 
