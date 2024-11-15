@@ -1,15 +1,13 @@
-import secrets
-import os
-
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_mail import Message
-from flask import jsonify, abort, url_for
-from flask_jwt_extended import create_access_token, get_jwt_identity, get_jwt
-
 from app.models.user import User
 from app.extensions import db
+from flask import abort, url_for
+from flask_jwt_extended import create_access_token, get_jwt_identity
+import secrets
 from app.extensions import mail
-from app.serializers.user_serializer import UserSchema
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_mail import Message
+import os
+
 
 class UserService:
 
@@ -19,7 +17,7 @@ class UserService:
     def signup(email, password):
         """Registers a new user."""
         if User.query.filter_by(email=email).first():
-            abort(400, description="Email already exists.")
+            return {"error": "Email address already exist"}
 
         user = User(email=email, username=email.split('@')[0])
         user.password = generate_password_hash(password)
@@ -43,7 +41,7 @@ class UserService:
         """Logs in a user if credentials are valid."""
         user = User.query.filter_by(email=email).first()
         if not user or not check_password_hash(user.password, password):
-            abort(401, description="Invalid credentials.")
+            return None
 
         access_token = create_access_token(identity=email)
         return {
@@ -59,33 +57,11 @@ class UserService:
         return {"message": "Successfully logged out"}
 
     @staticmethod
-    def create_user(name, email, password=None, google_id=None, google_token=None, activate=False):
-        """Creates a new user."""
-        if User.query.filter_by(email=email).first():
-            abort(400, description="Email already exists.")
-
-        user = User(email=email, name=name,  google_id=google_id, google_token=google_token, activate=activate)
-        if password:
-            user.password = generate_password_hash(password)
-
-        db.session.add(user)
-        db.session.commit()
-        return UserSchema().dump(user)
-
-    @staticmethod
-    def get_user_by_email(user_email):
-        """Retrieves a user by their ID."""
-        user = User.query.filter_by(email=user_email).first()
-        if not user:
-            return None
-        return UserSchema().dump(user)
-
-    @staticmethod
     def get_user_by_id(user_id):
         """Retrieves a user by their ID."""
-        user = User.query.get(user_id=user_id)
+        user = User.query.get(user_id)
         if not user:
-            abort(404, description="User not found.")
+            return {"error": "User not found."}
         return {
             "id": user.user_id,
             "email": user.email,
@@ -97,19 +73,29 @@ class UserService:
         """Generates a password reset token and sends it via email."""
         user = User.query.filter_by(email=email).first()
         if not user:
-            abort(404, description="User not found.")
+           return {"error": "User not found."}
 
         reset_token = secrets.token_urlsafe(16)
         user.reset_token = reset_token
         db.session.commit()
 
-        # Send email (assuming Mail is configured and initialized in the app)
-        msg = Message("Password Reset Request",
-                      sender=os.getenv('MAIL_USERNAME', 'inforeply@gmail.com'),
-                      recipients=[email])
-        msg.body = (f"Click the link to reset your password: "
-                    f"{url_for('auth_reset_password_resource', token=reset_token, _external=True)}")
-        mail.send(msg)
+        # Send email
+        try:
+            msg = Message(
+                "Password Reset Request",
+                sender=os.getenv('DEFAULT_FROM_EMAIL'),
+                recipients=[email]
+            )
+            reset_url = url_for('auth_reset_password_resource', token=reset_token, _external=True)
+            msg.body = (f"Hello,\n\n"
+                        f"We received a request to reset your password. Click the link below to reset your password:\n"
+                        f"{reset_url}\n\n"
+                        f"If you didn't request this, you can ignore this email.")
+
+            mail.send(msg)
+        except Exception as e:
+            print(f"Error sending email: {e}")
+            return {"error": f"Error sending email: {e}"}
 
         return {"message": "Password reset email sent"}
 
@@ -118,10 +104,10 @@ class UserService:
         """Resets the user's password if the token is valid."""
         user = User.query.filter_by(reset_token=token).first()
         if not user:
-            abort(400, description="Invalid or expired reset token.")
+           return {"error": "Invalid or expired reset token."}
 
         if len(new_password) < 8:
-            abort(400, description="Password must be at least 8 characters.")
+            return {"error": "Password must be at least 8 characters."}
 
         user.password = generate_password_hash(new_password)
         user.reset_token = None
@@ -134,7 +120,7 @@ class UserService:
         """Updates user profile information."""
         user = User.query.get(user_id)
         if not user:
-            abort(404, description="User not found.")
+            return {"error": "User not found."}
 
         for key, value in kwargs.items():
             setattr(user, key, value)
@@ -152,7 +138,7 @@ class UserService:
         """Deletes a user from the database."""
         user = User.query.get(user_id)
         if not user:
-            abort(404, description="User not found.")
+            return {"error": "User not found."}
 
         db.session.delete(user)
         db.session.commit()
@@ -163,10 +149,9 @@ class UserService:
         """Changes the user's password if the old password is correct."""
         user = User.query.get(user_id)
         if not user or not check_password_hash(user.password, old_password):
-            abort(400, description="Invalid old password.")
-
+            return {"error": "User not found."}
         if len(new_password) < 8:
-            abort(400, description="Password must be at least 8 characters.")
+           return {"error": "Password must be at least 8 characters."}
 
         user.password = generate_password_hash(new_password)
         db.session.commit()
@@ -178,7 +163,7 @@ class UserService:
         user_email = get_jwt_identity()
         user = User.query.filter_by(email=user_email).first()
         if not user:
-            abort(404, description="User not found.")
+            return {"error": "User not found."}
 
         return {
             "id": user.user_id,
