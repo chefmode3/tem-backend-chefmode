@@ -18,7 +18,6 @@ class AnonymousUserRecipe(db.Model):
     __tablename__ = 'anonymous_user_recipe'
     anonymous_user_id = db.Column(db.Integer, db.ForeignKey('anonymous_user.id'), primary_key=True)
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), primary_key=True)
-    request_count = db.Column(db.Integer, default=0)
 
     anonymous_user = db.relationship('AnonymousUser', back_populates='recipes_association')
     recipe = db.relationship('Recipe', back_populates='anonymous_users_association')
@@ -28,7 +27,7 @@ class User(db.Model):
 
     __tablename__ = 'user'
 
-    user_id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64),  nullable=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     activate = db.Column(db.Boolean, default=False)
@@ -37,8 +36,17 @@ class User(db.Model):
     password = db.Column(db.String(255), unique=True, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    recipes_association = db.relationship('UserRecipe', back_populates='user')
-    recipes = db.relationship('Recipe', secondary='user_recipe', back_populates='users')
+    recipes_association = db.relationship(
+        'UserRecipe',
+        back_populates='user',
+        overlaps="recipes"
+    )
+    recipes = db.relationship(
+        'Recipe',
+        secondary='user_recipe',
+        back_populates='users',
+        overlaps="recipes_association,user"
+    )
     payments = db.relationship('Payment', backref='user', lazy=True)
 
     def __repr__(self):
@@ -46,6 +54,7 @@ class User(db.Model):
 
     def __init__(
             self,
+            id,
             name,
             email,
             activate = False,
@@ -53,6 +62,7 @@ class User(db.Model):
             google_token=None,
             google_id=None
     ):
+        self.id = id
         self.name = name
         self.email = email
         self.password = password
@@ -67,8 +77,17 @@ class AnonymousUser(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     identifier = db.Column(db.String(50), nullable=False, unique=True)
 
-    recipes_association = db.relationship('AnonymousUserRecipe', back_populates='anonymous_user')
-    recipes = db.relationship('Recipe', secondary='anonymous_user_recipe', back_populates='anonymous_users')
+    recipes_association = db.relationship(
+        'AnonymousUserRecipe',
+        back_populates='anonymous_user',
+        overlaps="recipes"
+    )
+    recipes = db.relationship(
+        'Recipe',
+        secondary='anonymous_user_recipe',
+        back_populates='anonymous_users',
+        overlaps="recipes_association,anonymous_user"
+    )
 
 
 class Recipe(db.Model):
@@ -77,18 +96,36 @@ class Recipe(db.Model):
     title = db.Column(db.String(255), nullable=False)
     origin = db.Column(db.String(255), nullable=False)
     servings = db.Column(db.Integer, nullable=True)
+    flag = db.Column(db.Boolean, default=False)
     preparation_time = db.Column(db.Integer, nullable=True)
     description = db.Column(db.Text, nullable=True)
     image_url = db.Column(db.String(255), nullable=True)
 
-    users_association = db.relationship('UserRecipe', back_populates='recipe')
-    users = db.relationship('User', secondary='user_recipe', back_populates='recipes')
-    anonymous_users_association = db.relationship('AnonymousUserRecipe', back_populates='recipe')
-    anonymous_users = db.relationship('AnonymousUser', secondary='anonymous_user_recipe', back_populates='recipes')
+    users_association = db.relationship(
+        'UserRecipe',
+        back_populates='recipe',
+        overlaps="users"
+    )
+    users = db.relationship(
+        'User',
+        secondary='user_recipe',
+        back_populates='recipes',
+        overlaps="users_association,recipe"
+    )
+    anonymous_users_association = db.relationship(
+        'AnonymousUserRecipe',
+        back_populates='recipe',
+        overlaps="anonymous_users"
+    )
+    anonymous_users = db.relationship(
+        'AnonymousUser',
+        secondary='anonymous_user_recipe',
+        back_populates='recipes',
+        overlaps="anonymous_users_association,recipe"
+    )
 
     ingredients = db.relationship('Ingredient', backref='recipe', lazy=True)
     processes = db.relationship('Process', backref='recipe', lazy=True)
-
 
 
 class Ingredient(db.Model):

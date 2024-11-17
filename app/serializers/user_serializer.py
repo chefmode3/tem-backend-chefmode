@@ -10,7 +10,7 @@ class UserLoginSchema(Schema):
     password = fields.Str(required=True)
 
 class UserSchema(Schema):
-    user_id = fields.Int(required=True)
+    id = fields.Int(required=True)
     name = fields.Str(required=False)
     email = fields.Email(required=True)
     google_token =fields.Str(required=False)
@@ -18,7 +18,7 @@ class UserSchema(Schema):
 
 
 class UserRegisterSchema(Schema):
-    user_id = fields.Int(required=True)
+    id = fields.Int(required=True)
     name = fields.Str(required=False)
     email = fields.Email(required=True)
     activate = fields.Boolean(required=False)
@@ -28,7 +28,7 @@ class UserRegisterSchema(Schema):
 
 
 class UserResponseSchema(Schema):
-    user_id = fields.Int(required=True)
+    id = fields.Int(required=True)
     name = fields.Str(required=False)
     email = fields.Email(required=True)
     activate = fields.Boolean(required=False)

@@ -127,3 +127,4 @@ class ResetPasswordResource(Resource):
             return {"errors": err.messages}, 400
         except Exception as err:
             return {"errors": str(err)}, 500
+
