@@ -29,7 +29,7 @@ def create_app(config_class=DevelopmentConfig):
     # Register blueprints
 
     api.add_namespace(auth_ns, path="/auth")
-    api.add_namespace(auth_google_ns, path="/google")
+    api.add_namespace(auth_google_ns, path="/auth")
 
     cli.register(app)
 

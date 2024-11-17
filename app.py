@@ -3,6 +3,9 @@ from os.path import join, dirname
 from dotenv import load_dotenv
 import logging
 import ssl
+
+from app.extensions import mail
+from app.config import Config
 from extractors import fetch_description
 
 
@@ -19,6 +22,12 @@ def create_app():
     print(dotenv_path)
     print(os.getenv("TIME_ZONE"))
     app = Flask(__name__)
+
+    app.config.from_object(Config)
+
+    # Initialiser Flask-Mail
+    mail.init_app(app)
+
     cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
     celery = Celery(

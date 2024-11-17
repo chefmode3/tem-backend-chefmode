@@ -29,7 +29,7 @@ class UserService:
 
         access_token = create_access_token(identity=email)
         return {
-            "id": user.user_id,
+            "id": user.id,
             "email": user.email,
             "username": user.username,
             "activate": user.activate,
@@ -47,7 +47,7 @@ class UserService:
 
         access_token = create_access_token(identity=email)
         return {
-            "id": user.user_id,
+            "id": user.id,
             "email": user.email,
             "username": user.username,
             "access_token": access_token
@@ -83,11 +83,11 @@ class UserService:
     @staticmethod
     def get_user_by_id(user_id):
         """Retrieves a user by their ID."""
-        user = User.query.get(user_id=user_id)
+        user = User.query.get(id=id)
         if not user:
             abort(404, description="User not found.")
         return {
-            "id": user.user_id,
+            "id": user.id,
             "email": user.email,
             "username": user.username
         }
@@ -130,9 +130,9 @@ class UserService:
         return {"message": "Password has been reset successfully"}
 
     @staticmethod
-    def update_user(user_id, **kwargs):
+    def update_user(id, **kwargs):
         """Updates user profile information."""
-        user = User.query.get(user_id)
+        user = User.query.get(id)
         if not user:
             abort(404, description="User not found.")
 
@@ -141,7 +141,7 @@ class UserService:
 
         db.session.commit()
         return {
-            "id": user.user_id,
+            "id": userid,
             "email": user.email,
             "username": user.username,
 
@@ -181,7 +181,7 @@ class UserService:
             abort(404, description="User not found.")
 
         return {
-            "id": user.user_id,
+            "id": userid,
             "email": user.email,
             "username": user.username
         }
