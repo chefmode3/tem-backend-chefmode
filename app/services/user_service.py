@@ -18,7 +18,7 @@ class UserService:
         """Registers a new user."""
         if User.query.filter_by(email=email).first():
             return None
-        user = User(email=email, username=email.split('@')[0])
+        user = User(email=email, name=email.split('@')[0])
         user.password = generate_password_hash(password)
         db.session.add(user)
         db.session.commit()
@@ -27,7 +27,7 @@ class UserService:
         return {
             "id": user.user_id,
             "email": user.email,
-            "username": user.username,
+            "name": user.username,
             "activate": user.activate,
             "google_token": "string",
             "google_id": "string",
@@ -44,7 +44,7 @@ class UserService:
         return {
             "id": user.user_id,
             "email": user.email,
-            "username": user.username,
+            "name": user.name,
             "access_token": access_token
         }
 
@@ -62,7 +62,7 @@ class UserService:
         return {
             "id": user.user_id,
             "email": user.email,
-            "username": user.username
+            "name": user.name
         }
 
     @staticmethod
@@ -124,7 +124,7 @@ class UserService:
         return {
             "id": user.user_id,
             "email": user.email,
-            "username": user.username,
+            "name": user.name,
 
         }
 
@@ -163,5 +163,5 @@ class UserService:
         return {
             "id": user.user_id,
             "email": user.email,
-            "username": user.username
+            "name": user.name
         }

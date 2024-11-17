@@ -1,4 +1,4 @@
-# penetration testing with wapiti
+# CHEFMODE
 # Run with docker compose
 
 clone the code and run the following command
