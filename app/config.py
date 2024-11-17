@@ -1,9 +1,9 @@
 import os
-from os.path import join, dirname
 from dotenv import load_dotenv
 from utils.settings import BASE_DIR
 
 from google_auth_oauthlib.flow import Flow
+
 
 dotenv_path = BASE_DIR / '.flaskenv'
 load_dotenv(dotenv_path)
@@ -13,20 +13,24 @@ client_secrets_file = BASE_DIR / "client_secret.json"
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 flow = Flow.from_client_secrets_file(
     client_secrets_file=client_secrets_file,
-    scopes=["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"],
+    scopes=[
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "openid"
+    ],
     redirect_uri="http://localhost:5000/callback"
 )
+
+
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(os.path.dirname(os.path.dirname(__file__)), 'app.db')
+    SECRET_KEY = os.environ.get('SECRET_KEY', "")
+    SQLALCHEMY_DATABASE_URI = os.environ.get(
+        'DATABASE_URL', 'sqlite:///' + os.path.join(os.path.dirname(os.path.dirname(__file__)), 'app.db')
+    )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     """Base configuration"""
     TESTING = False
-    SECRET_KEY = os.environ.get('SECRET_KEY')
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    DEBUG_TB_ENABLED = True
     CSRF_ENABLED = True
 
     # SMTP setup to reset password
@@ -57,6 +61,7 @@ class TestingConfig(Config):
     """Testing configuration"""
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_TEST_URL')
+
 
 # defining production config
 class ProductionConfig(Config):
