@@ -66,5 +66,3 @@ class Process(db.Model):
     instructions = db.Column(db.Text, nullable=True)
 
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
-
-
