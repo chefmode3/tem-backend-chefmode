@@ -21,7 +21,7 @@ class UserService:
         if User.query.filter_by(email=email).first():
             abort(400, description="Email already exists.")
 
-        user = User(email=email, username=email.split('@')[0])
+        user = User(email=email, name=email.split('@')[0])
         user.password = generate_password_hash(password)
 
         db.session.add(user)

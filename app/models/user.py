@@ -26,6 +26,7 @@ class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=True)
+    username = db.Column(db.String(64), nullable=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     activate = db.Column(db.Boolean, default=False)
     google_token = db.Column(db.String(255), unique=True, nullable=True)
@@ -40,12 +41,11 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.name}>'
 
-    def __init__(self, name, email, activate=False, password=None, google_token=None, google_id=None):
+    def __init__(self, name, email, activate=False, password=None, google_token=None, google_id=None, username=None):
         self.name = name
         self.email = email
         self.password = password
         self.activate = activate
         self.google_id = google_id
         self.google_token = google_token
-
-
+        self.username = username
