@@ -20,5 +20,4 @@ def convert_marshmallow_to_restx_model(api, schema):
             model[field_name] = fields.Boolean(required=field.required, description=field.metadata.get("description", ""))
 
 
-
     return api.model(schema.__class__.__name__, model)

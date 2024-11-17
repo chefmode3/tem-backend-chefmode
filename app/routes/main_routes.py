@@ -1,5 +1,5 @@
 from flask_restx import Namespace, Resource
-from flask import request, jsonify
+from flask import request, abort
 from marshmallow import ValidationError
 
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
@@ -43,7 +43,10 @@ class SignupResource(Resource):
             # Validate and deserialize input
             data = signup_schema.load(request.get_json())
             user_data = UserService.signup(data['email'], data['password'])
-            return user_response_schema.dump(user_data), 201
+            if user_data:
+                return user_response_schema.dump(user_data), 201
+            else:
+                abort(400, description="Email already exists.")
         except ValidationError as err:
             return {"errors": err.messages}, 400
 
@@ -53,6 +56,7 @@ class SignupConfirmResource(Resource):
     @auth_ns.response(201, "User Account successfully activated", model=user_response_model)
     @auth_ns.response(400, "Validation Error")
     def post(self, token):
+
         email = verification_tokens.get(token)
         if email:
             # Mark the user as verified
@@ -72,7 +76,11 @@ class LoginResource(Resource):
             # Validate and deserialize input
             data = login_schema.load(request.get_json())
             user_data = UserService.login(data['email'], data['password'])
-            return user_response_schema.dump(user_data), 200
+            if user_data:
+                return user_response_schema.dump(user_data), 200
+            else:
+                abort(401, description="Invalid credentials.")
+
         except ValidationError as err:
             return {"errors": err.messages}, 400
 
@@ -93,9 +101,15 @@ class PasswordResetRequestResource(Resource):
     @auth_ns.response(200, "Password reset email sent", model=password_reset_request_model)
     @auth_ns.response(400, "Validation Error")
     def post(self):
-        data = request.get_json()
-        email = data.get("email")
-        return UserService.request_password_reset(email)
+        try:
+            data = password_reset_request_schema.load(request.get_json())
+            email = data["email"]
+            return UserService.request_password_reset(email)
+        except ValidationError as err:
+            return {"errors": err.messages}, 400
+        except Exception as err:
+            return {"errors": str(err)}, 500
+
 
 
 @auth_ns.route('/reset_password/<string:token>')
@@ -105,6 +119,12 @@ class ResetPasswordResource(Resource):
     @auth_ns.response(200, "Password has been reset successfully", model=reset_password_model)
     @auth_ns.response(400, "Validation Error")
     def post(self, token):
-        data = request.get_json()
-        new_password = data.get("new_password")
-        return UserService.reset_password(token, new_password)
+        try:
+            data = reset_password_schema.load(request.get_json())
+            new_password = data["new_password"]
+            return UserService.reset_password(token, new_password)
+        except ValidationError as err:
+            return {"errors": err.messages}, 400
+        except Exception as err:
+            return {"errors": str(err)}, 500
+

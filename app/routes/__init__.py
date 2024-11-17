@@ -8,3 +8,10 @@ from app.routes.main_routes import (
     ResetPasswordResource,
 
 )
+from app.routes.usecase_route import (
+    GetRecipeResource,
+    GetAllRecipesResource,
+    GetMyRecipesResource,
+    FlagRecipeResource,
+    IsRecipeFlaggedResource
+)
