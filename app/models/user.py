@@ -49,20 +49,3 @@ class User(db.Model):
         self.google_token = google_token
 
 
-class AnonymousUser(db.Model):
-    __tablename__ = 'anonymous_user'
-    id = db.Column(db.Integer, primary_key=True)
-    identifier = db.Column(db.String(50), nullable=False, unique=True)
-    request_count = db.Column(db.Integer, default=0)
-
-    recipes_association = db.relationship('AnonymousUserRecipe', back_populates='anonymous_user')
-    recipes = db.relationship('Recipe', secondary='anonymous_user_recipe', back_populates='anonymous_users')
-
-
-class Process(db.Model):
-    __tablename__ = 'process'
-    id = db.Column(db.Integer, primary_key=True)
-    step_number = db.Column(db.Integer, nullable=True)
-    instructions = db.Column(db.Text, nullable=True)
-
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
