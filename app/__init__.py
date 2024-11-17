@@ -1,9 +1,14 @@
 from flask import Flask
+from flask_jwt_extended import JWTManager
+from app.extensions import mail
 from flask_restx import Api
 from flask_cors import CORS
 from app.extensions import db, migrate
 from app.config import DevelopmentConfig
 from app import cli
+from app.routes.main_routes import auth_ns
+from app.routes.usecase_route import recipe_ns
+from app.routes.login_ressource import auth_google_ns
 
 
 def create_app(config_class=DevelopmentConfig):
@@ -17,18 +22,16 @@ def create_app(config_class=DevelopmentConfig):
 
     # Enable CORS
     CORS(app)
+    mail.init_app(app)
+    jwt = JWTManager(app)
 
     url_api = '/api/v1'
-    # Register blueprints
-    from app.routes.logout_routes import LogoutResource
-    from app.routes import LoginResource
-    from app.routes import ProtectedAreaResource
-    from app.routes import CallbackResource
 
-    api.add_resource(LoginResource, f'/login')
-    api.add_resource(CallbackResource, f'/callback')
-    api.add_resource(LogoutResource, f'/logout')
-    api.add_resource(ProtectedAreaResource, f'/protected_area')
+    # Register blueprints
+
+    api.add_namespace(auth_ns, path="/auth")
+    api.add_namespace(recipe_ns, path="/recipe")
+    api.add_namespace(auth_google_ns, path="/google")
 
     cli.register(app)
 
