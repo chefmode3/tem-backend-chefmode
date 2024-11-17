@@ -124,7 +124,7 @@ class Recipe(db.Model):
         overlaps="anonymous_users_association,recipe"
     )
 
-    ingredients = db.relationship('Ingredient', backref='recipe', lazy=True)
+    ingredients = db.relationship('Ingredient', back_populates='recipe', lazy=True)
     processes = db.relationship('Process', backref='recipe', lazy=True)
 
 
@@ -136,6 +136,19 @@ class Ingredient(db.Model):
     unit = db.Column(db.String(20), nullable=True)
 
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipe.id'), nullable=False)
+    recipe = db.relationship('Recipe', back_populates='ingredients')
+    nutrition = db.relationship('Nutrition', back_populates='ingredient', cascade="all, delete-orphan")
+
+
+class Nutrition(db.Model):
+    __tablename__ = 'nutrition'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    quantity = db.Column(db.Float, nullable=False)
+    unit = db.Column(db.String(10), nullable=True)
+
+    ingredient_id = db.Column(db.Integer, db.ForeignKey('ingredient.id'), nullable=False)
+    ingredient = db.relationship('Ingredient', back_populates='nutrition')
 
 
 class Process(db.Model):

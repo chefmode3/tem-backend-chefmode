@@ -1,5 +1,6 @@
 from flask_restx import Namespace, Resource
 from flask import request, abort
+from flask_jwt_extended import jwt_required, get_jwt
 from marshmallow import ValidationError
 
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
@@ -11,7 +12,6 @@ from app.serializers.user_serializer import (
     PasswordResetRequestSchema,
     ResetPasswordSchema
 )
-from flask_jwt_extended import jwt_required, get_jwt
 
 
 auth_ns = Namespace('auth', description="user authentication")
