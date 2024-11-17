@@ -7,7 +7,6 @@ from app.extensions import db, migrate
 from app.config import DevelopmentConfig
 from app import cli
 from app.routes.main_routes import auth_ns
-from app.routes.usecase_route import recipe_ns
 from app.routes.login_ressource import auth_google_ns
 
 
@@ -30,8 +29,7 @@ def create_app(config_class=DevelopmentConfig):
     # Register blueprints
 
     api.add_namespace(auth_ns, path="/auth")
-    api.add_namespace(recipe_ns, path="/recipe")
-    api.add_namespace(auth_google_ns, path="/google")
+    api.add_namespace(auth_google_ns, path="/auth")
 
     cli.register(app)
 
