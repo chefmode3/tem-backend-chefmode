@@ -3,7 +3,7 @@ import os
 
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Message
-from flask import jsonify, abort, url_for
+from flask import abort, url_for
 from flask_jwt_extended import create_access_token, get_jwt_identity, get_jwt
 
 from app.models.user import User
@@ -21,7 +21,7 @@ class UserService:
         if User.query.filter_by(email=email).first():
             abort(400, description="Email already exists.")
 
-        user = User(email=email, username=email.split('@')[0])
+        user = User(email=email, name=email.split('@')[0])
         user.password = generate_password_hash(password)
 
         db.session.add(user)
@@ -31,7 +31,7 @@ class UserService:
         return {
             "id": user.id,
             "email": user.email,
-            "username": user.username,
+            "name": user.name,
             "activate": user.activate,
             "google_token": "string",
             "google_id": "string",
@@ -49,7 +49,7 @@ class UserService:
         return {
             "id": user.id,
             "email": user.email,
-            "username": user.username,
+            "name": user.name,
             "access_token": access_token
         }
 
@@ -89,7 +89,7 @@ class UserService:
         return {
             "id": user.id,
             "email": user.email,
-            "username": user.username
+            "name": user.name
         }
 
     @staticmethod
@@ -141,9 +141,9 @@ class UserService:
 
         db.session.commit()
         return {
-            "id": userid,
+            "id": id,
             "email": user.email,
-            "username": user.username,
+            "name": user.name,
 
         }
 
@@ -181,7 +181,7 @@ class UserService:
             abort(404, description="User not found.")
 
         return {
-            "id": userid,
+            "id": id,
             "email": user.email,
-            "username": user.username
+            "name": user.name
         }

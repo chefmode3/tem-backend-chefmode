@@ -11,7 +11,6 @@ from app.models.process import Process
 from app.models.payment import Payment
 
 
-
 class RecipeService:
 
     @staticmethod
