@@ -1,5 +1,9 @@
 from marshmallow import Schema, fields, validate
 
+
+class GoogleCallBackSchema(Schema):
+    code = fields.Str(required=True)
+
 class UserSignupSchema(Schema):
 
     email = fields.Email(required=True)

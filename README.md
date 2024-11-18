@@ -1,4 +1,4 @@
-# penetration testing with wapiti
+# CHEFMODE
 # Run with docker compose
 
 clone the code and run the following command
@@ -6,6 +6,35 @@ clone the code and run the following command
 `docker-compose up -d --build`
 
 access the app on your local
+
+## database 
+connect to the db container using the following command
+
+```docker exec -it chef_mode_db bash```
+
+### connet to psql using the following command
+
+`psql -U postgres`
+### create a new user and password for the db
+
+    CREATE USER chefmode WITH PASSWORD chefmodedb
+
+### create a new database for the db
+    CREATE DATABASE chef_mode_backend OWNER chefmode;
+
+
+## Run migrations
+connect to the web container using the following command
+
+    docker exec -it chef_mode bash
+
+Run the following commands
+
+```python manage.py db init```
+
+```python manage.py db migrate```
+
+```python manage.py db upgrade```
 
 https://localhost:5000/admin/
 
@@ -29,23 +58,6 @@ To get started, install Postgres on your local computer, if you don’t have it 
 will be good for us to develop locally on the same database. If you don’t have Postgres installed, Postgres.app is an
 easy way to get up and running for Mac OS X users. Consult the download page for more info.
 
-Once you have Postgres installed and running, create a database called wordcount_dev to use as our local development
-database:
-
-CREATE DATABASE  name of your database( for example: pentest_db)
-and exit
-#### SQL
-    
-    $ psql
-    # create database pentest_db;
-    # \q
-
-we are going to add a DATABASE_URL variable. Run this in the terminal:
-
-    $ export DATABASE_URL="postgresql:///pentest_db"
-
-! note that pentest_db is the name of your database that you have 
-create
 
 ## Local Migration
 
