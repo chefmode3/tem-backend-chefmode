@@ -24,12 +24,6 @@ def call_fetch_description(self, data):
         # Fetch the description
         description_result = fetch_description(data)
 
-        # Update task result in database
-        RecipeTaskService.update_task_result(
-            task_id=self.request.id,
-            status='SUCCESS',
-            result=description_result
-        )
 
         return {
             'status': 'success',

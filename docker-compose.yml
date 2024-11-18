@@ -1,34 +1,58 @@
-version: '3.8'
+version: "3.9"
 
 services:
+  redis:
+    image: redis
 
   web:
     build:
       context: .
-      dockerfile: Dockerfile
-    command: python run.py run -h 0.0.0.0 -p 5000
+      target: dev-container
     container_name: web
     ports:
-      - 5000:5000
+      - "0.0.0.0:5001:5001"
     volumes:
-      - .:/usr/src/app
+      - .:/app/:delegated
+    env_file:
+      - .env
     environment:
       - FLASK_DEBUG=1
-      - APP_SETTINGS=infrastructure.framework.config.DevelopmentConfig
-      - DATABASE_URL=postgresql://postgres:postgres@chefmode:5432/pentest_db
+      - APP_SETTINGS=app.config.DevelopmentConfig
+      - DATABASE_URL=postgresql://chefmode:chefmodedb@chef_mode_db:5432/chef_mode_backend
       - SECRET_KEY='MY SECRET'
+    networks:
+      - default
     depends_on:
-      - chefmode
-    links:
-      - chefmode
+      - chef_mode_db
 
-  chefmode:
-    container_name: chefmode
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - 5435:5432
+  celery:
+    build: .
+    env_file:
+      - .env
     environment:
-      - POSTGRES_PROFILE=postgres
-      - POSTGRES_PASSWORD=postgres
+      -  FLASK_DEBUG=1
+      - APP_SETTINGS=app.config.DevelopmentConfig
+    volumes:
+      - .:/app
+    command: celery -A app.extensions.celery worker --loglevel=info
+    depends_on:
+      - redis
+      - web
+
+  chef_mode_db:
+    image: postgres:16-alpine
+    hostname: chef_mode_db
+    container_name: chef_mode_db
+    environment:
+      - POSTGRES_PASSWORD=chefmodedb
+      - POSTGRES_USER=chefmode
+    networks:
+      - default
+    ports:
+      - "0.0.0.0:5432:5432/tcp"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+    driver: local
