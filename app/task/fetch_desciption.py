@@ -1,6 +1,6 @@
 from app.extensions import celery
 from celery.utils.log import get_task_logger
-from app.services.celery_recipe_service import RecipeTaskService
+from app.services import RecipeCelService
 from celery.exceptions import MaxRetriesExceededError
 
 from extractors import fetch_description
@@ -38,12 +38,4 @@ def call_fetch_description(self, data):
             self.retry(exc=exc)
 
         except MaxRetriesExceededError:
-            # Update database with failure status
-            RecipeTaskService.update_task_result(
-                task_id=self.request.id,
-                status='FAILURE',
-                error=str(exc)
-            )
-
-            # Re-raise the exception
-            raise exc
+            return {'error': f"Error in fetch_description task: {str(exc)}" }

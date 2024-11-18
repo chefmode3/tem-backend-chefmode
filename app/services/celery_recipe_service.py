@@ -2,6 +2,7 @@ from app.extensions import db
 from app.models import Nutrition, Recipe, Ingredient, Process
 
 
+
 class RecipeCelService:
 
 
@@ -38,7 +39,7 @@ class RecipeCelService:
     @staticmethod
     def create_ingredient(ingredient_data: dict, recipe: Recipe) -> Ingredient:
         # get the nutrition of the ingredient and the store it
-        ingredient_nutrition = RecipeService.create_nutrition(ingredient_data['nutrition'])
+        ingredient_nutrition = RecipeCelService.create_nutrition(ingredient_data['nutrition'])
 
         # create the ingredient and store it
         ingredient = Ingredient(
@@ -74,12 +75,13 @@ class RecipeCelService:
         processes_data = recipe_data['processes']
 
         # create and store recipe
-        recipe = RecipeService.create_recipe(recipe_info)
+        recipe = RecipeCelService.create_recipe(recipe_info)
 
         # add the  ingrédients
         for ingredient in ingredients_data:
-            RecipeService.create_ingredient(recipe)
+            RecipeCelService.create_ingredient(ingredient, recipe)
 
         # add step to recipe
         for process in processes_data:
-            RecipeService.create_process(recipe)
+            RecipeCelService.create_process(process, recipe)
+

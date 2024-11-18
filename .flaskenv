@@ -13,3 +13,5 @@ DEFAULT_FROM_EMAIL = 'hello@demomailtrap.com'
 MAIL_PORT = 587
 MAIL_USE_SSL = False
 MAIL_USE_TLS = True
+CELERY_BROKER_URL="redis://redis:6379/0"
+CELERY_RESULT_BACKEND="redis://redis:6379/0"

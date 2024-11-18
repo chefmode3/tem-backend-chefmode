@@ -21,8 +21,9 @@ task_id_schema = TaskIdSchema()
 task_id_model = convert_marshmallow_to_restx_model(recipe_ns, task_id_schema)
 
 
+@recipe_ns.route('/fetch_results')
 class RecipeScrap(Resource):
-    @recipe_ns.route('/fetch_results')
+
     @recipe_ns.response(200, "Recipe fetched successfully", model=link_recipe_model)
     @recipe_ns.response(404, "Recipe not found")
     def post(self):
@@ -38,7 +39,10 @@ class RecipeScrap(Resource):
         except Exception as e:
             abort(400, description=str(e))
 
-    @recipe_ns.route('/gen_recipe/<string:task_id>/')
+
+@recipe_ns.route('/gen_recipe/<string:task_id>/')
+class RecipeScrapPost(Resource):
+
     @recipe_ns.response(200, "Recipe fetched successfully", model=link_recipe_model)
     @recipe_ns.response(404, "Recipe not found")
     def get(self, task_id):
