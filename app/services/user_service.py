@@ -1,13 +1,14 @@
 import secrets
 import os
 
+from flask_login import login_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Message
 from flask import abort, url_for
 from flask_jwt_extended import create_access_token, get_jwt_identity, get_jwt
 
 from app.models.user import User
-from app.extensions import db
+from app.extensions import db, login_manager
 from app.extensions import mail
 from app.serializers.user_serializer import UserSchema
 
@@ -46,6 +47,7 @@ class UserService:
             abort(401, description="Invalid credentials.")
 
         access_token = create_access_token(identity=email)
+        login_user(user)
         return {
             "id": user.id,
             "email": user.email,
@@ -173,15 +175,19 @@ class UserService:
         return {"message": "Password updated successfully"}
 
     @staticmethod
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+
+    @staticmethod
     def get_current_user():
         """Returns information about the currently authenticated user."""
-        user_email = get_jwt_identity()
-        user = User.query.filter_by(email=user_email).first()
-        if not user:
-            abort(404, description="User not found.")
+        user = current_user
+        if not user.is_authenticated:
+            return None
 
         return {
-            "id": id,
+            "id": user.id,
             "email": user.email,
             "name": user.name
         }

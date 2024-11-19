@@ -11,18 +11,22 @@ ENV PIP_DEFAULT_TIMEOUT=100
 ENV VIRTUAL_ENV="/home/pythonrunner/.venv"
 ENV PATH="/home/pythonrunner/.local/bin:${VIRTUAL_ENV}/bin:${PATH}"
 
-# Disable APT::Update::Post-Invoke script
-RUN echo 'APT::Update::Post-Invoke {"0";};' > /etc/apt/apt.conf.d/99no-scripts
+
+
+
 
 # install environment dependencies
-RUN apt update
-# Verify network connectivity
-RUN curl -I http://deb.debian.org/debian
+RUN apt-get update -yqq && apt-get install -yqq --no-install-recommends netcat && apt-get -q clean
 
-# install dependencies
+CMD ["ulimit", "-u", "4096"]
+
+COPY . .
+
 RUN pip install --upgrade pip
-COPY ./requirements.txt /app/requirements.txt
-RUN pip install -r requirements.txt
+CMD ["pip", "install", "greenlet"]
+
+
+RUN pip install -r requirements.txt --timeout 3600
 
 FROM builder AS dev-container
 USER root

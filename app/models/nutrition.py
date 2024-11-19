@@ -1,6 +1,5 @@
 from app.extensions import db
 
-
 class Nutrition(db.Model):
     __tablename__ = 'nutritions'
 
@@ -13,7 +12,4 @@ class Nutrition(db.Model):
     sodium = db.Column(db.Float, nullable=False)
     sugar = db.Column(db.Float, nullable=False)
 
-    # Relations avec Recipe, Ingredient, Process
-    recipes = db.relationship('Recipe', back_populates='nutrition')
-    ingredients = db.relationship('Ingredient', back_populates='nutrition')
-    processes = db.relationship('Process', back_populates='nutrition')
+    ingredient = db.relationship('Ingredient', back_populates='nutrition', uselist=False)

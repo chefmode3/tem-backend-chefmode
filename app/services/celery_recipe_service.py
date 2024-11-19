@@ -1,6 +1,6 @@
 from app.extensions import db
-from app.models import Nutrition, Recipe, Ingredient, Process
-
+from app.models import Nutrition, Recipe, Ingredient, Process, UserRecipe, AnonymousUserRecipe
+from app.services import UserService
 
 
 class RecipeCelService:
@@ -10,44 +10,57 @@ class RecipeCelService:
     @staticmethod
     def create_nutrition(nutrition_data: dict) -> Nutrition:
         nutrition = Nutrition(
-            calories=nutrition_data['calories'],
-            carbohydrates=nutrition_data['carbohydrates'],
-            fats=nutrition_data['fats'],
-            fiber=nutrition_data['fiber'],
-            proteins=nutrition_data['proteins'],
-            sodium=nutrition_data['sodium'],
-            sugar=nutrition_data['sugar']
+            calories=nutrition_data.get('calories'),
+            carbohydrates=nutrition_data.get('carbohydrates'),
+            fats=nutrition_data.get('fats'),
+            fiber=nutrition_data.get('fiber'),
+            proteins=nutrition_data.get('proteins'),
+            sodium=nutrition_data.get('sodium'),
+            sugar=nutrition_data.get('sugar')
         )
         db.session.add(nutrition)
         db.session.commit()
         return nutrition
 
     @staticmethod
-    def create_recipe(self, recipe_data: dict) -> Recipe:
-        recipe = Recipe(
-            title=recipe_data['title'],
-            description=recipe_data['description'],
-            image_url=recipe_data['image_url'],
-            preparation_time=recipe_data['preparation_time'],
-            servings=recipe_data['servings']
+    def create_recipe(recipe_data: dict) -> Recipe:
+
+            recipe = Recipe(
+                title=recipe_data.get('title'),
+                description=recipe_data.get('description'),
+                image_url=recipe_data.get('image_url'),
+                preparation_time=recipe_data.get('preparation_time'),
+                servings=recipe_data.get('servings'),
+                origin=recipe_data.get('origin')
+            )
+            db.session.add(recipe)
+            db.session.commit()
+            return recipe
+
+
+    @staticmethod
+    def create_user_recipe(user_id:int, recipe_id:int):
+        user_recipe = UserRecipe(
+            user_id=user_id,
+            recipe_id=recipe_id
         )
-        db.session.add(recipe)
+        db.session.add(user_recipe)
         db.session.commit()
-        return recipe
+        return user_recipe
 
     # store ingredient
     @staticmethod
     def create_ingredient(ingredient_data: dict, recipe: Recipe) -> Ingredient:
         # get the nutrition of the ingredient and the store it
-        ingredient_nutrition = RecipeCelService.create_nutrition(ingredient_data['nutrition'])
+        ingredient_nutrition = RecipeCelService.create_nutrition(ingredient_data.get('nutrition'))
 
         # create the ingredient and store it
         ingredient = Ingredient(
-            name=ingredient_data['name'],
-            quantity=ingredient_data['quantity'],
-            unit=ingredient_data['unit'],
-            nutrition=ingredient_nutrition,  # Lier la nutrition spécifique
-            recipe=recipe  # Lier l'ingrédient à la recette
+            name=ingredient_data.get('name'),
+            quantity=ingredient_data.get('quantity'),
+            unit=ingredient_data.get('unit'),
+            nutrition_id=ingredient_nutrition.id,  # Lier la nutrition spécifique
+            recipe_id=recipe.id  # Lier l'ingrédient à la recette
         )
         db.session.add(ingredient)
         db.session.commit()
@@ -57,9 +70,9 @@ class RecipeCelService:
     @staticmethod
     def create_process(process_data: dict, recipe: Recipe) -> Process:
         process = Process(
-            step_number=process_data['step_number'],
-            instructions=process_data['instructions'],
-            recipe=recipe  # Lier le processus à la recette
+            step_number=process_data.get('step_number'),
+            instructions=process_data.get('instructions'),
+            recipe_id=recipe.id  # Lier le processus à la recette
         )
         db.session.add(process)
         db.session.commit()
@@ -69,19 +82,39 @@ class RecipeCelService:
     @staticmethod
     def convert_and_store_recipe(recipe_json: dict):
         # Extraire data from JSON
-        recipe_data = recipe_json['content']
-        recipe_info = recipe_data['recipe_information']
-        ingredients_data = recipe_data['ingredients']
-        processes_data = recipe_data['processes']
+        recipe_data = recipe_json.get('content')
+        print(recipe_data.get('origin'))
+        user = UserService.get_current_user()
+
+        recipe_info = recipe_data.get('recipe_information')
+        recipe_info['origin'] = recipe_json['origin']
+
+        ingredients_data = recipe_data.get('ingredients')
+        processes_data = recipe_data.get('processes')
 
         # create and store recipe
         recipe = RecipeCelService.create_recipe(recipe_info)
+        if user:
+            RecipeCelService.create_user_recipe(user_id=user['id'], recipe_id=recipe.id)
+        else:
+            RecipeCelService.create_anonyme_user_recipe(user_id=user.id, recipe_id=recipe.id)
 
-        # add the  ingrédients
+        # # add the  ingrédients
         for ingredient in ingredients_data:
             RecipeCelService.create_ingredient(ingredient, recipe)
-
-        # add step to recipe
+        #
+        # # add step to recipe
         for process in processes_data:
             RecipeCelService.create_process(process, recipe)
+
+    @classmethod
+    def create_anonyme_user_recipe(cls, user_id, recipe_id):
+        user_recipe = AnonymousUserRecipe(
+            anonymous_user_id=user_id,
+            recipe_id=recipe_id
+        )
+        db.session.add(user_recipe)
+        db.session.commit()
+        return user_recipe
+        pass
 

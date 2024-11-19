@@ -107,10 +107,8 @@ def scrape_and_analyze_recipe(url):
 
     start = time.time()
     # Extract all text content from various relevant tags
-    body_content = " ".join(
-        element.get_text(separator=" ", strip=True)
-        for element in soup.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
-    )
+
+    body_content = soup.body.get_text(separator=" ", strip=True)
     end = time.time()
     print(f"Extract all text content took {end - start} seconds")
 
@@ -153,23 +151,65 @@ def scrape_and_analyze_recipe(url):
             {
                 "role": "system",
                 "content": (
-                    "You get information from recipe websites: recipe title, servings, total time, ingredients, "
-                    "directions. "
-                    "You will output in object format. You will not output any description of the recipe"
-                    "and don't make nested object under total time, directions and ingredients. "
-                    "You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text."
+                    "You are a culinary and nutrition expert. Your task is to extract recipe information from websites and calculate "
+                    "nutritional values based on the provided details. Ensure the response is strictly in JSON format and follows this structure:"
+
+                    "{ "
+                    "  'recipe_information': { "
+                    "    'title': 'string', "
+                    "    'servings': integer, "
+                    "    'preparation_time': integer, "
+                    "    'description': 'string', "
+                    "    'image_url': 'string' "
+                    "  }, "
+                    "  'ingredients': [ "
+                    "    { "
+                    "      'name': 'string', "
+                    "      'quantity': float, "
+                    "      'unit': 'string', "
+                    "      'nutrition': { "
+                    "        'calories': float, "
+                    "        'proteins': float, "
+                    "        'carbohydrates': float, "
+                    "        'fats': float, "
+                    "        'fiber': float, "
+                    "        'sugar': float, "
+                    "        'sodium': float "
+                    "      } "
+                    "    } "
+                    "  ], "
+                    "  'processes': [ "
+                    "    { "
+                    "      'step_number': integer, "
+                    "      'instructions': 'string' "
+                    "    } "
+                    "  ], "
+                    "  'total_nutrition': { "
+                    "    'calories': float, "
+                    "    'proteins': float, "
+                    "    'carbohydrates': float, "
+                    "    'fats': float, "
+                    "    'fiber': float, "
+                    "    'sugar': float, "
+                    "    'sodium': float "
+                    "  } "
+                    "} "
+
+                    "Ensure all numerical values are numbers, not text. Ingredients must include quantity and unit when available. "
+                    "Processes must be sequentially numbered starting from 1. Provide the output exactly as JSON and do not include any explanations, "
+                    "headers, or additional text outside of the JSON structure."
                 )
             },
-            {"role": "user", "content": f"Title: {title}\nURL: {url}\n\n"}
+            {
+                "role": "user", "content": f"Title: {title}\nURL: {url}\n\n"
+            }
         ]
     )
+
     end = time.time()
     print(f"OpenAI took {end - start} seconds")
 
     recipe_info = ai_response.choices[0].message.content
-
-    # Display the AI response
-    # print(recipe_info)
 
     return recipe_info, got_image, main_image_url
 

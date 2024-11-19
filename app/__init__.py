@@ -2,7 +2,7 @@ import os
 
 from flask import Flask
 from flask_jwt_extended import JWTManager
-from app.extensions import mail
+from app.extensions import mail, login_manager
 from flask_restx import Api
 from flask_cors import CORS
 from app.extensions import db, migrate, celery
@@ -18,8 +18,8 @@ def create_app(script_info=None):
 
     app_settings = os.getenv('APP_SETTINGS')
 
-    app.config.from_object(app_settings)
-
+    # app.config.from_object(app_settings)
+    app.config.from_object(DevelopmentConfig)
     api = Api(app, version='1.0', title='API', description='API documentation')
 
     # Initialize extensions
@@ -30,6 +30,7 @@ def create_app(script_info=None):
     CORS(app)
     mail.init_app(app)
     JWTManager(app)
+    login_manager.init_app(app)
 
     url_api = '/api/v1'
 
@@ -37,7 +38,7 @@ def create_app(script_info=None):
 
     api.add_namespace(auth_ns, path="/auth")
     api.add_namespace(auth_google_ns, path="/auth")
-    # api.add_namespace(recipe_ns, path="/recipe")
+    api.add_namespace(recipe_ns, path="/recipe")
     cli.register(app)
 
     return app

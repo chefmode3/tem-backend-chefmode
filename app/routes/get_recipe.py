@@ -23,7 +23,7 @@ task_id_model = convert_marshmallow_to_restx_model(recipe_ns, task_id_schema)
 
 @recipe_ns.route('/fetch_results')
 class RecipeScrap(Resource):
-
+    @recipe_ns.expect(link_recipe_model)
     @recipe_ns.response(200, "Recipe fetched successfully", model=link_recipe_model)
     @recipe_ns.response(404, "Recipe not found")
     def post(self):
@@ -42,7 +42,6 @@ class RecipeScrap(Resource):
 
 @recipe_ns.route('/gen_recipe/<string:task_id>/')
 class RecipeScrapPost(Resource):
-
     @recipe_ns.response(200, "Recipe fetched successfully", model=link_recipe_model)
     @recipe_ns.response(404, "Recipe not found")
     def get(self, task_id):
@@ -61,13 +60,14 @@ class RecipeScrapPost(Resource):
             return {"status": "PENDING"}, 202
         elif res.state == 'SUCCESS':
             result: dict = res.result
-            content = result['content']
+
+            content = result.get('result')
             # Supprimer les guillemets et les échappements
             # content = content.replace("\n", '')
-
-            data = json.loads(result.get('content'))
-            RecipeCelService.convert_and_store_recipe(data)
-            return res.result, 200
+            print(json.dumps(content, indent=4))
+            # data = json.loads(result.get('content'))
+            RecipeCelService.convert_and_store_recipe(content)
+            return content, 200
         elif res.state == 'FAILURE':
             return {"status": "FAILURE", "message": str(res.result)}, 500
         else:
