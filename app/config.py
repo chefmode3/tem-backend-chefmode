@@ -38,6 +38,12 @@ class Config:
     EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
     EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS')
     EMAIL_USE_SLL = os.getenv('EMAIL_USE_SLL')
+    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
+    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND')
+    CELERY_REDIS_MAX_CONNECTIONS = 10
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_ACCEPT_CONTENT = ['json']
 
 
 # defining dev config
@@ -64,3 +70,4 @@ class ProductionConfig(Config):
     """Production configuration"""
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     DEBUG = False  # Deactivate debug mode in production environment
+

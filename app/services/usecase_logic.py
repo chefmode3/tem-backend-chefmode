@@ -14,7 +14,6 @@ from app.models.user import (
     Nutrition
 )
 
-
 class RecipeService:
 
     @staticmethod
