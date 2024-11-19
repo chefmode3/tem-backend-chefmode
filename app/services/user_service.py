@@ -60,6 +60,11 @@ class UserService:
         self.revoked_tokens.add(jti)
         return {"message": "Successfully logged out"}
 
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload):
+        jti = jwt_payload['jti']
+        return jti in revoked_tokens
+
     @staticmethod
     def create_user(name, email, password=None, google_id=None, google_token=None, activate=False):
         """Creates a new user."""

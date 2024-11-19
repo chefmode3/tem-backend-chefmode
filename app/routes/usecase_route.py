@@ -190,25 +190,3 @@ class IngredientNutritionResource(Resource):
             return {"error": "Ingredient not found", "details": str(ve)}, 404
         except Exception as e:
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
-
-
-@recipe_ns.route('/save')
-class SaveRecipeResource(Resource):
-    @recipe_ns.expect(recipe_response_model)
-    @recipe_ns.response(201, "Recipe saved successfully.", model=recipe_response_model)
-    @recipe_ns.response(400, "Validation error.")
-    @recipe_ns.response(500, "Unexpected error.")
-    def post(self):
-        """
-        Save a new recipe to the database.
-        """
-        try:
-            # Validate data
-            data = recipe_response_schema.load(request.get_json())
-            recipe = RecipeService.save_recipe_data(data)
-
-            return {"message": "Recipe saved successfully.", "recipe_id": recipe.id}, 201
-        except ValidationError as ve:
-            return {"error": "Validation error", "details": ve.messages}, 400
-        except Exception as e:
-            return {"error": "Unexpected error", "details": str(e)}, 500

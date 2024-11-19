@@ -9,7 +9,7 @@ from app.extensions import db, migrate, celery
 from app.config import DevelopmentConfig
 from app import cli
 from app.routes.usecase_route import recipe_ns
-from app.routes.get_recipe import recipe_ns
+from app.routes.get_recipe import recipe_ns as recipe_name_space
 from app.routes.main_routes import auth_ns
 from app.routes.login_ressource import auth_google_ns
 
@@ -40,6 +40,9 @@ def create_app(script_info=None):
     api.add_namespace(auth_ns, path="/auth")
     api.add_namespace(auth_google_ns, path="/auth")
     api.add_namespace(recipe_ns, path="/recipe")
+    api.add_namespace(recipe_name_space, path="/recipe")
+
+
     cli.register(app)
 
     return app
