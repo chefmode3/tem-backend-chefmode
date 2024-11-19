@@ -1,6 +1,8 @@
+from flask_login import login_required
 from flask_restx import Namespace, Resource
 from flask import request, abort
 from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
+from flask_login import login_required
 from marshmallow import ValidationError
 
 
@@ -20,9 +22,9 @@ from app.serializers.usecase_serializer import (
 recipe_ns = Namespace('recipe', description="user recipe")
 
 # Schemas and models
-recipe_response_model = convert_marshmallow_to_restx_model(recipe_ns, RecipeResponseSchema())
-recipe_ns.models[recipe_response_model.name] = recipe_response_model
 recipe_response_schema = RecipeResponseSchema()
+recipe_response_model = convert_marshmallow_to_restx_model(recipe_ns, recipe_response_schema)
+recipe_ns.models[recipe_response_model.name] = recipe_response_model
 
 flag_recipe_schema = RecipeRequestSchema()
 flag_recipe_model = convert_marshmallow_to_restx_model(recipe_ns, flag_recipe_schema)
@@ -75,7 +77,7 @@ class GetAllRecipesResource(Resource):
 
 @recipe_ns.route('/get_my_recipes')
 class GetMyRecipesResource(Resource):
-    @jwt_required()
+    @login_required
     @recipe_ns.response(200, "My recipes fetched successfully", model=recipe_response_model)
     def get(self):
         """
@@ -99,7 +101,7 @@ class GetMyRecipesResource(Resource):
 
 @recipe_ns.route('/flag_recipe')
 class FlagRecipeResource(Resource):
-    @jwt_required()
+    @login_required
     @recipe_ns.expect(flag_recipe_model)
     @recipe_ns.response(200, "Recipe flagged successfully.")
     def post(self):
@@ -119,7 +121,7 @@ class FlagRecipeResource(Resource):
 
 @recipe_ns.route('/get_recipe/<int:recipe_id>/flag')
 class IsRecipeFlaggedResource(Resource):
-    @jwt_required()
+    @login_required
     @recipe_ns.response(200, "Flagged status fetched successfully.", model=flag_status_model)
     def get(self, recipe_id):
         """
@@ -188,3 +190,25 @@ class IngredientNutritionResource(Resource):
             return {"error": "Ingredient not found", "details": str(ve)}, 404
         except Exception as e:
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
+
+
+@recipe_ns.route('/save')
+class SaveRecipeResource(Resource):
+    @recipe_ns.expect(recipe_response_model)
+    @recipe_ns.response(201, "Recipe saved successfully.", model=recipe_response_model)
+    @recipe_ns.response(400, "Validation error.")
+    @recipe_ns.response(500, "Unexpected error.")
+    def post(self):
+        """
+        Save a new recipe to the database.
+        """
+        try:
+            # Validate data
+            data = recipe_response_schema.load(request.get_json())
+            recipe = RecipeService.save_recipe_data(data)
+
+            return {"message": "Recipe saved successfully.", "recipe_id": recipe.id}, 201
+        except ValidationError as ve:
+            return {"error": "Validation error", "details": ve.messages}, 400
+        except Exception as e:
+            return {"error": "Unexpected error", "details": str(e)}, 500

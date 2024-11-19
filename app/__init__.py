@@ -2,12 +2,14 @@ import os
 
 from flask import Flask
 from flask_jwt_extended import JWTManager
+from flask_login import LoginManager
 from app.extensions import mail
 from flask_restx import Api
 from flask_cors import CORS
 from app.extensions import db, migrate
 from app.config import DevelopmentConfig
 from app import cli
+from app.routes.usecase_route import recipe_ns
 from app.routes.main_routes import auth_ns
 from app.routes.login_ressource import auth_google_ns
 
@@ -22,6 +24,9 @@ def create_app(script_info=None):
     api = Api(app, version='1.0', title='API', description='API documentation')
 
     # Initialize extensions
+    login_manager = LoginManager()
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'  # Exemple
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
     migrate.init_app(app, db)
 
@@ -35,6 +40,7 @@ def create_app(script_info=None):
     # Register blueprints
 
     api.add_namespace(auth_ns, path="/auth")
+    api.add_namespace(recipe_ns, path="/recipe")
     api.add_namespace(auth_google_ns, path="/auth")
 
     cli.register(app)
