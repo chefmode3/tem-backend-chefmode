@@ -23,6 +23,24 @@ class RecipeCelService:
         return nutrition
 
     @staticmethod
+    def get_or_create_recipe(recipe_data: dict) -> tuple[Recipe, bool]:
+        """
+        Vérifie si une recette existe déjà, sinon la crée.
+        Retourne un tuple (recipe, created) où created est True si une nouvelle recette a été créée.
+        """
+        # Recherche basée sur le titre et d'autres critères pertinents
+        existing_recipe = Recipe.query.filter_by(
+            title=recipe_data.get('title'),
+            origin=recipe_data.get('origin'),
+            preparation_time=recipe_data.get('preparation_time'),
+            servings=recipe_data.get('servings')
+        ).first()
+
+        if existing_recipe:
+            return existing_recipe, False
+        return RecipeCelService.create_recipe(recipe_data), True
+
+    @staticmethod
     def create_recipe(recipe_data: dict) -> Recipe:
 
             recipe = Recipe(
@@ -93,7 +111,7 @@ class RecipeCelService:
         processes_data = recipe_data.get('processes')
 
         # create and store recipe
-        recipe = RecipeCelService.create_recipe(recipe_info)
+        recipe, _ = RecipeCelService.get_or_create_recipe(recipe_info)
         if user:
             RecipeCelService.create_user_recipe(user_id=user['id'], recipe_id=recipe.id)
         else:

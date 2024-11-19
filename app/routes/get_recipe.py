@@ -40,7 +40,7 @@ class RecipeScrap(Resource):
             abort(400, description=str(e))
 
 
-@recipe_ns.route('/gen_recipe/<string:task_id>/')
+@recipe_ns.route('/gen_recipe/')
 class RecipeScrapPost(Resource):
     @recipe_ns.response(200, "Recipe fetched successfully", model=link_recipe_model)
     @recipe_ns.response(404, "Recipe not found")
