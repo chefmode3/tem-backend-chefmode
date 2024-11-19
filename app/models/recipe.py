@@ -1,4 +1,6 @@
 from app.extensions import db
+from pygments.lexer import default
+
 
 class Recipe(db.Model):
     __tablename__ = 'recipes'
@@ -7,6 +9,7 @@ class Recipe(db.Model):
     title = db.Column(db.String(255), nullable=False)
     origin = db.Column(db.String(255), nullable=False)
     servings = db.Column(db.Integer, nullable=True)
+    flag = db.Column(db.Boolean, default=False)
     preparation_time = db.Column(db.Integer, nullable=True)
     description = db.Column(db.Text, nullable=True)
     image_url = db.Column(db.String(255), nullable=True)

@@ -17,6 +17,7 @@ from app.serializers.usecase_serializer import (
     NutrientSchema,
     IngredientIDSchema
 )
+from app.serializers.recipe_serializer import RecipeSerializer
 
 
 recipe_ns = Namespace('recipe', description="user recipe")
@@ -48,7 +49,7 @@ class GetRecipeResource(Resource):
         """
         try:
             recipe = RecipeService.get_recipe_by_id(recipe_id)
-            return recipe_response_schema.dump(recipe), 200
+            return RecipeSerializer(many=True).dump(recipe), 200
         except Exception as e:
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
 
@@ -65,7 +66,7 @@ class GetAllRecipesResource(Resource):
             page_size = request.args.get("page_size", 10, type=int)
             data = RecipeService.get_all_recipes(page, page_size)
             return {
-                "data": recipe_response_schema.dump(data["data"]),
+                "data": RecipeSerializer(many=True).dump(data["data"]),
                 "total": data["total"],
                 "pages": data["pages"],
                 "current_page": data["current_page"],
@@ -89,7 +90,7 @@ class GetMyRecipesResource(Resource):
             page_size = request.args.get("page_size", 10, type=int)
             data = RecipeService.get_my_recipes(user_id, page, page_size)
             return {
-                "data": recipe_response_schema.dump(data["data"]),
+                "data": RecipeSerializer(many=True).dump(data["data"]),
                 "total": data["total"],
                 "pages": data["pages"],
                 "current_page": data["current_page"],
@@ -159,7 +160,7 @@ class SearchRecipesResource(Resource):
             results = RecipeService.search_recipes(search_term, page, page_size)
 
             return {
-                "data": recipe_response_schema.dump(results["data"], many=True),
+                "data": RecipeSerializer(many=True).dump(results["data"]),
                 "total": results["total"],
                 "pages": results["pages"],
                 "current_page": results["current_page"],

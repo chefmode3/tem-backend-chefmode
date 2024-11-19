@@ -12,5 +12,6 @@ from app.routes.usecase_route import (
     GetAllRecipesResource,
     GetMyRecipesResource,
     FlagRecipeResource,
-    IsRecipeFlaggedResource
+    IsRecipeFlaggedResource,
+    SearchRecipesResource
 )

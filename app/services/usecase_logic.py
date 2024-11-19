@@ -7,7 +7,6 @@ from app.models.anonymous_user import AnonymousUser
 from app.models.recipe import Recipe
 from app.models.ingredient import Ingredient
 from app.models.process import Process
-from app.models.payment import Payment
 from app.models.nutrition import Nutrition
 
 class RecipeService:
@@ -17,11 +16,7 @@ class RecipeService:
         """
         Get a recipe with its ingredients and processes by ID.
         """
-        recipe = Recipe.query.options(
-            joinedload(Recipe.ingredients),
-            joinedload(Recipe.processes)
-        ).filter_by(id=recipe_id).first()
-
+        recipe = Recipe.query.filter_by(id=recipe_id).first()
         if not recipe:
             return None
 
@@ -32,11 +27,7 @@ class RecipeService:
         """
         Get all recipes with pagination and related ingredients and processes.
         """
-        query = Recipe.query.options(
-            joinedload(Recipe.ingredients),
-            joinedload(Recipe.processes)
-        ).order_by(Recipe.id.desc())
-
+        query = Recipe.query.order_by(Recipe.id.desc())
         pagination = query.paginate(page=page, per_page=page_size, error_out=False)
 
         return {
@@ -44,7 +35,21 @@ class RecipeService:
             "pages": pagination.pages,
             "current_page": pagination.page,
             "page_size": pagination.per_page,
-            "data": pagination.items
+            "data": [
+                {
+                    "id": recipe.id,
+                    "title": recipe.title,
+                    "origin": recipe.origin,
+                    "servings": recipe.servings,
+                    "flag": recipe.flag,
+                    "preparation_time": recipe.preparation_time,
+                    "description": recipe.description,
+                    "image_url": recipe.image_url,
+                    "ingredients": recipe.ingredients,
+                    "processes": recipe.processes,
+                }
+                for recipe in pagination.items
+            ]
         }
 
     @staticmethod
@@ -54,19 +59,29 @@ class RecipeService:
         """
         query = Recipe.query.join(UserRecipe).filter(
             UserRecipe.user_id == user_id
-        ).options(
-            joinedload(Recipe.ingredients),
-            joinedload(Recipe.processes)
         ).order_by(Recipe.id.desc())
 
         pagination = query.paginate(page=page, per_page=page_size, error_out=False)
-
         return {
             "total": pagination.total,
             "pages": pagination.pages,
             "current_page": pagination.page,
             "page_size": pagination.per_page,
-            "data": pagination.items
+            "data": [
+                {
+                    "id": recipe.id,
+                    "title": recipe.title,
+                    "origin": recipe.origin,
+                    "servings": recipe.servings,
+                    "flag": recipe.flag,
+                    "preparation_time": recipe.preparation_time,
+                    "description": recipe.description,
+                    "image_url": recipe.image_url,
+                    "ingredients": recipe.ingredients,
+                    "processes": recipe.processes,
+                }
+                for recipe in pagination.items
+            ]
         }
 
     @staticmethod
@@ -74,7 +89,7 @@ class RecipeService:
         """
         Mark a recipe as flagged for a specific user.
         """
-        user_recipe = UserRecipe.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
+        user_recipe = Recipe.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
 
         if not user_recipe:
             return None
@@ -92,7 +107,7 @@ class RecipeService:
         """
         Check if a recipe is flagged by the current user.
         """
-        user_recipe = UserRecipe.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
+        user_recipe = Recipe.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
 
         if not user_recipe:
             return None
@@ -112,11 +127,25 @@ class RecipeService:
             pagination = query.paginate(page=page, per_page=page_size, error_out=False)
 
             return {
-                "data": pagination.items,
                 "total": pagination.total,
                 "pages": pagination.pages,
                 "current_page": pagination.page,
                 "page_size": pagination.per_page,
+                "data": [
+                    {
+                        "id": recipe.id,
+                        "title": recipe.title,
+                        "origin": recipe.origin,
+                        "servings": recipe.servings,
+                        "flag": recipe.flag,
+                        "preparation_time": recipe.preparation_time,
+                        "description": recipe.description,
+                        "image_url": recipe.image_url,
+                        "ingredients": recipe.ingredients,
+                        "processes": recipe.processes,
+                    }
+                    for recipe in pagination.items
+                ]
             }
         except SQLAlchemyError as e:
             raise RuntimeError(f"Database error: {str(e)}")

@@ -8,7 +8,6 @@ class UserRecipe(db.Model):
     __tablename__ = 'user_recipe'
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'), primary_key=True)
-    flag = db.Column(db.Boolean, default=False)
 
     user = db.relationship('User', back_populates='recipes_association')
     recipe = db.relationship('Recipe', back_populates='users_association')
