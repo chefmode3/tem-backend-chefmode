@@ -8,4 +8,3 @@ class AnonymousUser(db.Model):
     request_count = db.Column(db.Integer, default=0)
 
     recipes_association = db.relationship('AnonymousUserRecipe', back_populates='anonymous_user')
-    recipes = db.relationship('Recipe', secondary='anonymous_user_recipe', back_populates='anonymous_users')

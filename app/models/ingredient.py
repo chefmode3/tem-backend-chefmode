@@ -10,6 +10,6 @@ class Ingredient(db.Model):
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'), nullable=False)
     nutrition_id = db.Column(db.Integer, db.ForeignKey('nutritions.id'), nullable=False)
     # Relationships
-    recipe = db.relationship('Recipe', back_populates='ingredients')
-    nutrition = db.relationship('Nutrition', back_populates='ingredient', uselist=False)
-
+    # recipe = db.relationship('Recipe', back_populates='ingredients')
+    # nutrition = db.relationship('Nutrition', back_populates='ingredient', uselist=False)
+    #

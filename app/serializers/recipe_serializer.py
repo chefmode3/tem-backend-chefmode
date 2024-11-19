@@ -9,3 +9,10 @@ class TaskIdSchema(Schema):
 
 class LinkRecipeSchema(Schema):
     link = fields.Str(required=True)
+
+
+class RecipeSerializer(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Recipe
+        include_relationships = True
+        load_instance = True

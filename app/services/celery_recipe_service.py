@@ -23,7 +23,42 @@ class RecipeCelService:
         return nutrition
 
     @staticmethod
-    def create_recipe(recipe_data: dict) -> Recipe:
+    def get_or_create_user_recipe(user_id: int, recipe_id: int) -> tuple[UserRecipe, bool]:
+        """
+        Vérifie si l'association user-recipe existe, sinon la crée.
+        Retourne un tuple (user_recipe, created) où created est True si nouvelle association.
+        """
+        existing_user_recipe = UserRecipe.query.filter_by(
+            user_id=user_id,
+            recipe_id=recipe_id
+        ).first()
+
+        if existing_user_recipe:
+            return existing_user_recipe, False
+
+
+        return RecipeCelService.create_user_recipe(user_id, recipe_id), True
+
+    @staticmethod
+    def get_or_create_recipe(recipe_data: dict, ingredients_data, processes_data) -> tuple[Recipe, bool]:
+        """
+        Vérifie si une recette existe déjà, sinon la crée.
+        Retourne un tuple (recipe, created) où created est True si une nouvelle recette a été créée.
+        """
+        # Recherche basée sur le titre et d'autres critères pertinents
+        existing_recipe = Recipe.query.filter_by(
+            title=recipe_data.get('title'),
+            origin=recipe_data.get('origin'),
+            preparation_time=recipe_data.get('preparation_time'),
+            servings=recipe_data.get('servings')
+        ).first()
+
+        if existing_recipe:
+            return existing_recipe, False
+        return RecipeCelService.create_recipe(recipe_data, ingredients_data, processes_data), True
+
+    @staticmethod
+    def create_recipe(recipe_data: dict, ingredients_data: dict=None, processes_data: dict=None) -> Recipe:
 
             recipe = Recipe(
                 title=recipe_data.get('title'),
@@ -31,7 +66,9 @@ class RecipeCelService:
                 image_url=recipe_data.get('image_url'),
                 preparation_time=recipe_data.get('preparation_time'),
                 servings=recipe_data.get('servings'),
-                origin=recipe_data.get('origin')
+                origin=recipe_data.get('origin'),
+                ingredients=ingredients_data,
+                processes=processes_data
             )
             db.session.add(recipe)
             db.session.commit()
@@ -93,19 +130,20 @@ class RecipeCelService:
         processes_data = recipe_data.get('processes')
 
         # create and store recipe
-        recipe = RecipeCelService.create_recipe(recipe_info)
+        recipe, _ = RecipeCelService.get_or_create_recipe(recipe_info, ingredients_data, processes_data)
         if user:
-            RecipeCelService.create_user_recipe(user_id=user['id'], recipe_id=recipe.id)
+            RecipeCelService.get_or_create_user_recipe(user_id=user['id'], recipe_id=recipe.id)
         else:
-            RecipeCelService.create_anonyme_user_recipe(user_id=user.id, recipe_id=recipe.id)
+            RecipeCelService.create_anonyme_user_recipe(user_id=1, recipe_id=recipe.id)
 
-        # # add the  ingrédients
-        for ingredient in ingredients_data:
-            RecipeCelService.create_ingredient(ingredient, recipe)
-        #
-        # # add step to recipe
-        for process in processes_data:
-            RecipeCelService.create_process(process, recipe)
+        # # # add the  ingrédients
+        # for ingredient in ingredients_data:
+        #     RecipeCelService.create_ingredient(ingredient, recipe)
+        # #
+        # # # add step to recipe
+        # for process in processes_data:
+        #     RecipeCelService.create_process(process, recipe)
+        return recipe
 
     @classmethod
     def create_anonyme_user_recipe(cls, user_id, recipe_id):

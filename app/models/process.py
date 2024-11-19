@@ -9,4 +9,4 @@ class Process(db.Model):
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'), nullable=False)
 
     # Relationships
-    recipe = db.relationship('Recipe', back_populates='processes')
+    # recipe = db.relationship('Recipe', back_populates='processes')
