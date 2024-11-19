@@ -12,4 +12,4 @@ class Nutrition(db.Model):
     sodium = db.Column(db.Float, nullable=False)
     sugar = db.Column(db.Float, nullable=False)
 
-    ingredient = db.relationship('Ingredient', back_populates='nutrition', uselist=False)
+    # ingredient = db.relationship('Ingredient', back_populates='nutrition', uselist=False)

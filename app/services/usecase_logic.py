@@ -1,5 +1,6 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.extensions import db
 from app.models.user import User, UserRecipe, AnonymousUserRecipe
@@ -40,15 +41,8 @@ class RecipeService:
 
             db.session.commit()
 
-            return {
-                "id": recipe.id,
-                "title": recipe.title,
-                "origin": recipe.origin,
-                "servings": recipe.servings,
-                "preparation_time": recipe.preparation_time,
-                "description": recipe.description,
-                "image_url": recipe.image_url,
-            }
+            return RecipeService._format_recipe_response(recipe)
+
         except IntegrityError as e:
             db.session.rollback()
             raise ValueError(f"Database error: {str(e)}")
@@ -61,16 +55,15 @@ class RecipeService:
         """
         Save a recipe without ingredients or processes.
         """
-        if not data.get('title') or not data.get('origin'):
-            raise ValueError("Recipe title and origin are required.")
+        if not data.get('title') or not data.get('description'):
+            raise ValueError("Recipe title and description are required.")
 
         recipe = Recipe(
             title=data.get('title'),
-            origin=data.get('origin'),
             servings=data.get('servings'),
             preparation_time=data.get('preparation_time'),
             description=data.get('description'),
-            image_url=data.get('image_url')
+            image_url=data.get('image_url'),
         )
         db.session.add(recipe)
         db.session.flush()
@@ -80,7 +73,7 @@ class RecipeService:
     @staticmethod
     def _add_ingredients(recipe_id, ingredients_data):
         """
-        Add ingredients to a recipe.
+        Add ingredients to a recipe along with their nutrients.
         """
         for ingredient_data in ingredients_data:
             ingredient = Ingredient(
@@ -90,6 +83,24 @@ class RecipeService:
                 recipe_id=recipe_id
             )
             db.session.add(ingredient)
+            db.session.flush()
+
+            if 'nutrition' in ingredient_data:
+                RecipeService._add_nutrients(ingredient.id, ingredient_data['nutrition'])
+
+    @staticmethod
+    def _add_nutrients(ingredient_id, nutrients_data):
+        """
+        Add nutrients for a specific ingredient.
+        """
+        for nutrient_name, nutrient_details in nutrients_data.items():
+            nutrient = Nutrient(
+                name=nutrient_name,
+                quantity=nutrient_details.get('quantity'),
+                unit=nutrient_details.get('unit'),
+                ingredient_id=ingredient_id
+            )
+            db.session.add(nutrient)
 
     @staticmethod
     def _add_processes(recipe_id, processes_data):
@@ -129,6 +140,43 @@ class RecipeService:
             anonymous_user_id=anonymous_user.id, recipe_id=recipe_id, request_count=1
         )
         db.session.add(anon_user_recipe)
+
+    @staticmethod
+    def _format_recipe_response(recipe):
+        """
+        Format the recipe response to include its ingredients, processes, and nutrients.
+        """
+        return {
+            "id": recipe.id,
+            "title": recipe.title,
+            "servings": recipe.servings,
+            "preparation_time": recipe.preparation_time,
+            "description": recipe.description,
+            "image_url": recipe.image_url,
+            "ingredients": [
+                {
+                    "name": ingredient.name,
+                    "quantity": ingredient.quantity,
+                    "unit": ingredient.unit,
+                    "nutrition": [
+                        {
+                            "name": nutrient.name,
+                            "quantity": nutrient.quantity,
+                            "unit": nutrient.unit
+                        }
+                        for nutrient in ingredient.nutrients
+                    ]
+                }
+                for ingredient in recipe.ingredients
+            ],
+            "processes": [
+                {
+                    "step_number": process.step_number,
+                    "instructions": process.instructions
+                }
+                for process in recipe.processes
+            ]
+        }
 
     @staticmethod
     def get_recipe_by_id(recipe_id):
@@ -238,3 +286,19 @@ class RecipeService:
             }
         except SQLAlchemyError as e:
             raise RuntimeError(f"Database error: {str(e)}")
+
+    @staticmethod
+    def get_nutrition_by_ingredient(ingredient_id):
+        """
+        Fetch nutrition data for a specific ingredient.
+        :param ingredient_id: ID of the ingredient
+        :return: List of nutrients associated with the ingredient
+        """
+        try:
+            nutrients = Nutrition.query.filter_by(ingredient_id=ingredient_id).all()
+            if not nutrients:
+                return None
+
+            return nutrients
+        except Exception as e:
+            raise RuntimeError(f"Unexpected error: {str(e)}")

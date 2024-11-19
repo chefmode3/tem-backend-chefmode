@@ -1,17 +1,20 @@
+from flask_restx import Namespace, Resource
+from flask import request, abort
+from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
+from marshmallow import ValidationError
+
+
+from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
+from app.services.usecase_logic import RecipeService
 from app.serializers.usecase_serializer import (
     RecipeResponseSchema,
     FlagStatusResponseSchema,
     RecipeRequestSchema,
     FlagStatusResponseSchema,
-    RecipeQuerySchema
+    RecipeQuerySchema,
+    NutrientSchema,
+    IngredientIDSchema
 )
-from flask_restx import Namespace, Resource
-from flask import request, abort
-from marshmallow import ValidationError
-from flask_jwt_extended import jwt_required, get_jwt
-
-from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
-from app.services.usecase_logic import RecipeService
 
 
 recipe_ns = Namespace('recipe', description="user recipe")
@@ -28,6 +31,9 @@ flag_status_schema = FlagStatusResponseSchema()
 flag_status_model = convert_marshmallow_to_restx_model(recipe_ns, flag_status_schema)
 
 recipe_query_schema = RecipeQuerySchema()
+
+nutrition_response_model = convert_marshmallow_to_restx_model(recipe_ns, NutrientSchema())
+nutrition_response_schema = IngredientIDSchema()
 
 
 @recipe_ns.route('/get_recipe/<int:recipe_id>')
@@ -159,5 +165,26 @@ class SearchRecipesResource(Resource):
             }, 200
         except ValidationError as err:
             return {"errors": err.messages}, 400
+        except Exception as e:
+            return {"error": "An unexpected error occurred", "details": str(e)}, 500
+
+
+@recipe_ns.route('/ingredient/<int:ingredient_id>/nutrition')
+class IngredientNutritionResource(Resource):
+    @recipe_ns.response(200, "Nutrition data fetched successfully.", model=nutrition_response_model)
+    @recipe_ns.response(404, "Ingredient not found.")
+    @recipe_ns.response(500, "Unexpected error.")
+    def get(self, ingredient_id):
+        """
+        Get nutrition data for a specific ingredient.
+        """
+        try:
+            nutrition_data = RecipeService.get_nutrition_by_ingredient(ingredient_id)
+            if not nutrition_data:
+                return {"message": "No nutrition data found for this ingredient."}, 200
+
+            return nutrition_response_model.dump(nutrition_data), 200
+        except ValueError as ve:
+            return {"error": "Ingredient not found", "details": str(ve)}, 404
         except Exception as e:
             return {"error": "An unexpected error occurred", "details": str(e)}, 500

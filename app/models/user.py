@@ -19,11 +19,9 @@ class AnonymousUserRecipe(db.Model):
 
     anonymous_user_id = db.Column(db.Integer, db.ForeignKey('anonymous_user.id'), primary_key=True)
     recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'), primary_key=True)
-
-    # Relationships
+    flag = db.Column(db.Boolean, default=False)
     anonymous_user = db.relationship('AnonymousUser', back_populates='recipes_association')
     recipe = db.relationship('Recipe', back_populates='anonymous_users_association')
-
 
 
 class User(db.Model, UserMixin):
@@ -40,16 +38,16 @@ class User(db.Model, UserMixin):
 
     # Relationships
     recipes_association = db.relationship('UserRecipe', back_populates='user')
-    recipes = db.relationship('Recipe', secondary='user_recipe', back_populates='users')
+
 
     def __repr__(self):
         return f'<User {self.name}>'
 
-    def __init__(self, name, email, activate=False, password=None, google_token=None, google_id=None, username=None):
+    def __init__(self, name, email, activate=False, password=None, google_token=None, google_id=None):
         self.name = name
         self.email = email
         self.password = password
         self.activate = activate
         self.google_id = google_id
         self.google_token = google_token
-        self.username = username
+        
