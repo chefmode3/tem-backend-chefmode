@@ -8,6 +8,7 @@ Flask-SQLAlchemy==3.1.1
 Flask-WTF==1.2.1
 Jinja2==3.1.4
 SQLAlchemy==2.0.25
+sqlalchemy-fsm==2.0.12
 WTForms==3.1.2
 celery==5.4.0
 gunicorn==23.0.0
@@ -33,4 +34,4 @@ flask_mail==0.10.0
 marshmallow_sqlalchemy==1.1.0
 browser-cookie3==0.19.1
 gunicorn==23.0.0
-
+stripe==11.2.0
