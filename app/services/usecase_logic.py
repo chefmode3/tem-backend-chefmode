@@ -1,7 +1,9 @@
+from flask_restx import abort
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.extensions import db
+from app.models import UserRecipe
 from app.models.anonymous_user import AnonymousUser
 from app.models.recipe import Recipe
 from app.models.ingredient import Ingredient
@@ -76,10 +78,10 @@ class RecipeService:
         """
         Mark a recipe as flagged for a specific user.
         """
-        user_recipe = Recipe.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
+        user_recipe = UserRecipe.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
 
         if not user_recipe:
-            return None
+            return {"message": f"Recipe {user_recipe}."}
         user_recipe.flag = True
         try:
             db.session.commit()

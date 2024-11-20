@@ -22,13 +22,27 @@ def create_app(script_info=None):
     # app.config.from_object(app_settings)
     app.config.from_object(DevelopmentConfig)
     api = Api(app, version='1.0', title='API', description='API documentation')
+    app.config['MAIL_SERVER'] = 'localhost'
+    app.config['MAIL_PORT'] = 8025
+    app.config['MAIL_USERNAME'] = None
+    app.config['MAIL_PASSWORD'] = None
+    app.config['MAIL_USE_TLS'] = False
+    app.config['MAIL_USE_SSL'] = False
 
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
+    class ContextTask(celery.Task):
+        """Ajoute le contexte Flask aux tâches Celery."""
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return self.run(*args, **kwargs)
+
+    celery.Task = ContextTask
     celery.conf.update(app.config)
     # Enable CORS
     CORS(app)
+
     mail.init_app(app)
     JWTManager(app)
     login_manager.init_app(app)

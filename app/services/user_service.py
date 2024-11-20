@@ -3,13 +3,14 @@ import os
 
 from flask_login import login_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_mail import Message
+from flask_mailman import EmailMessage
+
 from flask import abort, url_for
 from flask_jwt_extended import create_access_token, get_jwt_identity, get_jwt
 
 from app.models.user import User
-from app.extensions import db, login_manager
-from app.extensions import mail
+from app.extensions import db, login_manager, mail
+
 from app.serializers.user_serializer import UserSchema
 
 class UserService:
@@ -96,7 +97,7 @@ class UserService:
         }
 
     @staticmethod
-    def request_password_reset(email):
+    def request_password_reset(email) -> User:
         """Generates a password reset token and sends it via email."""
         user = User.query.filter_by(email=email).first()
         if not user:
@@ -105,16 +106,10 @@ class UserService:
         reset_token = secrets.token_urlsafe(16)
         user.reset_token = reset_token
         db.session.commit()
+        # return User
 
-        # Send email (assuming Mail is configured and initialized in the app)
-        msg = Message("Password Reset Request",
-                      sender=os.getenv('DEFAULT_FROM_EMAIL'),
-                      recipients=[email])
-        msg.body = (f"Click the link to reset your password: "
-                    f"{url_for('auth_reset_password_resource', token=reset_token, _external=True)}")
-        mail.send(msg)
 
-        return {"message": "Password reset email sent"}
+        return user
 
     @staticmethod
     def reset_password(token, new_password):

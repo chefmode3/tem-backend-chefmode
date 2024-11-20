@@ -1,10 +1,11 @@
 import os
 import ssl
 
+from flask_mailman import Mail
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
-from flask_mail import Mail
+
 from celery import Celery
 from flask_login import LoginManager
 
@@ -23,6 +24,7 @@ def create_celery():
     celery.redis_backend_use_ssl = {
         'ssl_cert_reqs': ssl.CERT_NONE
     } # True
+
 
     return celery
 

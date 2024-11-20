@@ -1,8 +1,10 @@
+import os
+
 from flask_restx import Namespace, Resource
-from flask import request, abort
+from flask import request, abort, jsonify, render_template
 from flask_jwt_extended import jwt_required, get_jwt
 from marshmallow import ValidationError
-
+from app.task.send_email import send_reset_email
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.user_service import UserService
 from app.serializers.user_serializer import (
@@ -101,9 +103,23 @@ class PasswordResetRequestResource(Resource):
     @auth_ns.response(400, "Validation Error")
     def post(self):
         try:
-            data = request.get_json()
+            data = password_reset_request_schema.load(request.get_json())
             email = data.get("email")
-            return UserService.request_password_reset(email)
+            url_frontend = " http://127.0.0.1:5000/auth/reset_password/"
+            user_token = UserService.request_password_reset(email)
+            reset_url = f"{url_frontend}?email={email}&token={user_token.reset_token}"
+            user = UserService.get_current_user()
+            subject = "Password Reset Request"
+            name = user.get('name')
+            to = os.getenv('DEFAULT_FROM_EMAIL')
+            # Render the HTML template with context
+            body = render_template('password_reset_email.html', name=name, reset_url=reset_url)
+            response = send_reset_email(email=email, body=body, subject=subject, recipient=to)
+            # email, body, subject, recipient
+            return response
+        except ValidationError as err:
+            return {"errors": err.messages}, 400
+
         except Exception as err:
             return {"errors": err}, 500
 
