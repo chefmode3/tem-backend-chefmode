@@ -1,7 +1,8 @@
 import os
 
+from flask_login import login_required
 from flask_restx import Namespace, Resource
-from flask import request, abort, jsonify, render_template
+from flask import request, abort, jsonify, render_template, session
 from flask_jwt_extended import jwt_required, get_jwt
 from marshmallow import ValidationError
 from app.task.send_email import send_reset_email
@@ -89,10 +90,10 @@ class LoginResource(Resource):
 @auth_ns.route('/logout')
 class LogoutResource(Resource):
 
-    @jwt_required()
+    @login_required
     def post(self):
-        jti = get_jwt()["jti"]
-        return UserService.logout(jti)
+        session.clear()
+        return {'message': 'Logged out successfully'}
 
 
 @auth_ns.route('/password_reset_request')

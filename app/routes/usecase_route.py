@@ -1,7 +1,5 @@
-from flask_login import login_required
 from flask_restx import Namespace, Resource
-from flask import request, abort
-from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
+from flask import request
 from flask_login import login_required
 from marshmallow import ValidationError
 
@@ -10,7 +8,6 @@ from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.usecase_logic import RecipeService
 from app.serializers.usecase_serializer import (
     RecipeResponseSchema,
-    FlagStatusResponseSchema,
     RecipeRequestSchema,
     FlagStatusResponseSchema,
     RecipeQuerySchema,
@@ -57,6 +54,10 @@ class GetRecipeResource(Resource):
 
 @recipe_ns.route('/get_all_recipes')
 class GetAllRecipesResource(Resource):
+    @recipe_ns.doc(params={
+        'page': 'Page number (default: 1)',
+        'page_size': 'Number of results per page (default: 10)'
+    })
     @recipe_ns.response(200, "Recipes fetched successfully", model=recipe_response_model)
     def get(self):
         """
@@ -64,7 +65,7 @@ class GetAllRecipesResource(Resource):
         """
         try:
             page = request.args.get("page", default=1, type=int)
-            page_size = request.args.get("page_size", default=10, type=int)
+            page_size = request.args.get("page_size", default=3, type=int)
             data = RecipeService.get_all_recipes(page, page_size)
 
             return {
@@ -81,6 +82,10 @@ class GetAllRecipesResource(Resource):
 @recipe_ns.route('/get_my_recipes')
 class GetMyRecipesResource(Resource):
     @login_required
+    @recipe_ns.doc(params={
+        'page': 'Page number (default: 1)',
+        'page_size': 'Number of results per page (default: 10)'
+    })
     @recipe_ns.response(200, "My recipes fetched successfully", model=recipe_response_model)
     def get(self):
         """
@@ -90,7 +95,7 @@ class GetMyRecipesResource(Resource):
             user = UserService.get_current_user()
             user_id = user['id']
             page = request.args.get("page", default=1, type=int)
-            page_size = request.args.get("page_size", default=10, type=int)
+            page_size = request.args.get("page_size", default=3, type=int)
             data = RecipeService.get_my_recipes(user_id, page, page_size)
             return {
                 "data": RecipeSerializer(many=True).dump(data["data"]),
@@ -107,7 +112,7 @@ class GetMyRecipesResource(Resource):
 class FlagRecipeResource(Resource):
     @login_required
     @recipe_ns.expect(flag_recipe_model)
-    @recipe_ns.response(200, "Recipe flagged successfully.")
+    @recipe_ns.response(201, "Recipe flagged successfully.")
     def post(self):
         """
         Mark a recipe as flagged for the current user.
@@ -117,7 +122,7 @@ class FlagRecipeResource(Resource):
             user = UserService.get_current_user()
             user_id = user['id']
             response = RecipeService.flag_recipe(data["recipe_id"], user_id)
-            return response, 200
+            return response, 201
         except ValidationError as err:
             return {"errors": err.messages}, 400
         except Exception as e:
@@ -127,7 +132,7 @@ class FlagRecipeResource(Resource):
 @recipe_ns.route('/get_recipe/<int:recipe_id>/flag')
 class IsRecipeFlaggedResource(Resource):
     @login_required
-    @recipe_ns.response(200, "Flagged status fetched successfully.", model=flag_status_model)
+    @recipe_ns.response(200, "Flagged status fetched successfully.")
     def get(self, recipe_id):
         """
         Check if a recipe is flagged by the current user.
@@ -157,7 +162,7 @@ class SearchRecipesResource(Resource):
         try:
             search_term = request.args.get("search", default="", type=str)
             page = request.args.get("page", default=1, type=int)
-            page_size = request.args.get("page_size", default=10, type=int)
+            page_size = request.args.get("page_size", default=3, type=int)
 
             if not search_term:
                 return {"message": "Search term is required."}, 400

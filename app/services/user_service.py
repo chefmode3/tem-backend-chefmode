@@ -56,12 +56,6 @@ class UserService:
             "access_token": access_token
         }
 
-    def logout(self, jti):
-        """Logs out a user by revoking their token."""
-        self.revoked_tokens.add(jti)
-        return {"message": "Successfully logged out"}
-
-
     @staticmethod
     def create_user(name, email, password=None, google_id=None, google_token=None, activate=False):
         """Creates a new user."""
