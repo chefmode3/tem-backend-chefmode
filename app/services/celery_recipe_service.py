@@ -69,6 +69,7 @@ class RecipeCelService:
                 origin=recipe_data.get('origin'),
                 ingredients=recipe_data.get('ingredients'),
                 processes=recipe_data.get('processes'),
+                nutritions=recipe_data.get('nutrition'),
             )
             db.session.add(recipe)
             db.session.commit()

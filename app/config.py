@@ -31,13 +31,15 @@ class Config:
 
     # SMTP setup to reset password
 
-    EMAIL_HOST = os.getenv('EMAIL_HOST')
-    EMAIL_PORT = os.getenv('EMAIL_PORT')
+    MAIL_HOST = os.getenv('MAIL_HOST')
+    MAIL_PORT = os.getenv('MAIL_PORT')
+    MAIL_SERVER = os.getenv('MAIL_SERVER')
+    MAIL_BACKEND = os.getenv('MAIL_BACKEND')
     DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
-    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS')
-    EMAIL_USE_SLL = os.getenv('EMAIL_USE_SLL')
+    MAIL_HOST_USER = os.getenv('MAIL_HOST_USER')
+    MAIL_HOST_PASSWORD = os.getenv('MAIL_HOST_PASSWORD')
+    MAIL_USE_TLS = os.getenv('MAIL_USE_TLS')
+    MAIL_USE_SLL = os.getenv('MAIL_USE_SLL')
     CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
     CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND')
     CELERY_REDIS_MAX_CONNECTIONS = 10

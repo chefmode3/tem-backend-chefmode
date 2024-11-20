@@ -67,6 +67,7 @@ class GetAllRecipesResource(Resource):
             page = request.args.get("page", default=1, type=int)
             page_size = request.args.get("page_size", default=3, type=int)
             data = RecipeService.get_all_recipes(page, page_size)
+
             return {
                 "data": RecipeSerializer(many=True).dump(data["data"]),
                 "total": data["total"],
