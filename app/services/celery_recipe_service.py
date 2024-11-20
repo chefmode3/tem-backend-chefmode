@@ -40,7 +40,7 @@ class RecipeCelService:
         return RecipeCelService.create_user_recipe(user_id, recipe_id), True
 
     @staticmethod
-    def get_or_create_recipe(recipe_data: dict, ingredients_data, processes_data) -> tuple[Recipe, bool]:
+    def get_or_create_recipe(recipe_data: dict) -> tuple[Recipe, bool]:
         """
         Vérifie si une recette existe déjà, sinon la crée.
         Retourne un tuple (recipe, created) où created est True si une nouvelle recette a été créée.
@@ -55,7 +55,7 @@ class RecipeCelService:
 
         if existing_recipe:
             return existing_recipe, False
-        return RecipeCelService.create_recipe(recipe_data, ingredients_data, processes_data), True
+        return RecipeCelService.create_recipe(recipe_data), True
 
     @staticmethod
     def create_recipe(recipe_data: dict, ingredients_data: dict=None, processes_data: dict=None) -> Recipe:
@@ -67,8 +67,8 @@ class RecipeCelService:
                 preparation_time=recipe_data.get('preparation_time'),
                 servings=recipe_data.get('servings'),
                 origin=recipe_data.get('origin'),
-                ingredients=ingredients_data,
-                processes=processes_data
+                ingredients=recipe_data.get('ingredients'),
+                processes=recipe_data.get('processes'),
             )
             db.session.add(recipe)
             db.session.commit()
@@ -126,11 +126,13 @@ class RecipeCelService:
         recipe_info = recipe_data.get('recipe_information')
         recipe_info['origin'] = recipe_json['origin']
 
-        ingredients_data = recipe_data.get('ingredients')
-        processes_data = recipe_data.get('processes')
+        recipe_info['ingredients'] = recipe_data.get('ingredients')
+        recipe_info['processes'] = recipe_data.get('processes')
+        recipe_info['nutrition'] = recipe_data.get('nutrition')
+        recipe_info['image_url'] = recipe_json.get('image_url')
 
-        # create and store recipe
-        recipe, _ = RecipeCelService.get_or_create_recipe(recipe_info, ingredients_data, processes_data)
+         # create and store recipe
+        recipe, _ = RecipeCelService.get_or_create_recipe(recipe_info)
         if user:
             RecipeCelService.get_or_create_user_recipe(user_id=user['id'], recipe_id=recipe.id)
         else:

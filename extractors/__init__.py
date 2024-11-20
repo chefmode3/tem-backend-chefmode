@@ -81,9 +81,10 @@ def fetch_description(request_data):
 
     final_content = {
         "content": json.loads(recipe),
-        "origin":video_url
+        "origin":video_url,
+        "image_url": image_url
     }
-    if image_url is not None:
-        final_content.update({"image_url": image_url})
+    # if image_url is not None:
+    #     final_content.update({"image_url": image_url})
     return final_content
 

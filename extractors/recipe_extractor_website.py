@@ -23,6 +23,7 @@ def extract_main_image(soup):
         return image['content']
     image_tags = soup.find_all('img', src=True)  # Fallback for cases where no og:image
     if image_tags:
+        print(image_tags)
         return image_tags[0]['src']
     return None
 
@@ -107,12 +108,22 @@ def scrape_and_analyze_recipe(url):
     title = soup.title.string if soup.title else "No title found"
 
     start = time.time()
-    # Extract all text content from various relevant tags
 
-    body_content = soup.body.get_text(separator=" ", strip=True)
+    # Extraire le contenu du corps de la page
+    body = soup.find('body')
+
+    # Extraire toutes les balises <img> à l'intérieur du corps
+
+
+    # Extraire le texte de différentes balises à l'intérieur du corps
+    text_elements = body.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
+    body_content = " ".join(
+        element.get_text(separator=" ", strip=True)
+        for element in text_elements
+    )
+
     end = time.time()
     print(f"Extract all text content took {end - start} seconds")
-
     # print(body_content)
 
     start = time.time()
@@ -142,6 +153,8 @@ def scrape_and_analyze_recipe(url):
         #         print("Failed to retrieve the main image after multiple attempts.")
         #         got_image = False
         # else:
+        # images = body.find_all('img')
+        # main_image_url = [img.get('src') for img in images if img.get('src')][0]
         print("No main image found.")
 
     start = time.time()
@@ -168,15 +181,6 @@ def scrape_and_analyze_recipe(url):
                     "      'name': 'string', "
                     "      'quantity': float, "
                     "      'unit': 'string', "
-                    "      'nutrition': { "
-                    "        'calories': float, "
-                    "        'proteins': float, "
-                    "        'carbohydrates': float, "
-                    "        'fats': float, "
-                    "        'fiber': float, "
-                    "        'sugar': float, "
-                    "        'sodium': float "
-                    "      } "
                     "    } "
                     "  ], "
                     "  'processes': [ "
@@ -185,24 +189,28 @@ def scrape_and_analyze_recipe(url):
                     "      'instructions': 'string' "
                     "    } "
                     "  ], "
-                    "  'total_nutrition': { "
-                    "    'calories': float, "
-                    "    'proteins': float, "
-                    "    'carbohydrates': float, "
-                    "    'fats': float, "
-                    "    'fiber': float, "
-                    "    'sugar': float, "
-                    "    'sodium': float "
-                    "  } "
-                    "} "
-
-                    "Ensure all numerical values are numbers, not text. Ingredients must include quantity and unit when available. "
-                    "Processes must be sequentially numbered starting from 1. Provide the output exactly as JSON and do not include any explanations, "
-                    "headers, or additional text outside of the JSON structure."
+                    "  'nutrition': ["
+                    "    {"
+                    "      'name': 'string',"
+                    "      'quantity': float,"
+                    "      'unit': 'string'"
+                    "    }"
+                    "  ]"
+                    "}"
+                    "Guidelines:"
+                    "1. All numerical values must be numbers, not text."
+                    "2. Ingredients must always include a 'quantity' and 'unit' when available."
+                    "3. Processes must be sequentially numbered starting from 1."
+                    "4. Nutritional information must include commonly available nutrients like calories, proteins, carbohydrates, fats, fiber, sugar, and sodium. Include as many as possible based on the data provided."
+                    "5. Ensure the output is **exactly** in JSON format with no additional explanations, comments, or headers."
+                    "6. Always use the exact ingredient amounts and details as found in the input text."
+                    "7. Do not nest objects under the `recipe_information`, `ingredients`, or `processes`. Flatten the structure for clarity."
+                    "8. Provide the output only as a JSON object without any extra descriptive text."
+                    "Return only the JSON output as specified above."
                 )
             },
             {
-                "role": "user", "content": f"Title: {title}\nURL: {url}\n\n"
+                "role": "user", "content": f"Title: {title}\nURL: {url}"
             }
         ]
     )

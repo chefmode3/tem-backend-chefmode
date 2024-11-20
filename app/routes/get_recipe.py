@@ -64,7 +64,7 @@ class RecipeScrapPost(Resource):
             content = result.get('result')
             # Supprimer les guillemets et les échappements
             # content = content.replace("\n", '')
-            print(json.dumps(content, indent=4))
+            # print(json.dumps(content, indent=4))
             # data = json.loads(result.get('content'))
             recipe = RecipeCelService.convert_and_store_recipe(content)
 

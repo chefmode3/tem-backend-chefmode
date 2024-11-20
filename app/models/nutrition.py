@@ -4,12 +4,9 @@ class Nutrition(db.Model):
     __tablename__ = 'nutritions'
 
     id = db.Column(db.Integer, primary_key=True)
-    calories = db.Column(db.Float, nullable=False)
-    carbohydrates = db.Column(db.Float, nullable=False)
-    fats = db.Column(db.Float, nullable=False)
-    fiber = db.Column(db.Float, nullable=False)
-    proteins = db.Column(db.Float, nullable=False)
-    sodium = db.Column(db.Float, nullable=False)
-    sugar = db.Column(db.Float, nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    quantity = db.Column(db.Float, nullable=False)
+    unit = db.Column(db.String(50), nullable=False)
+    # recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'), nullable=True)
 
-    # ingredient = db.relationship('Ingredient', back_populates='nutrition', uselist=False)
+    # nutrition = db.relationship('Recipe', back_populates='nutrition', uselist=True)

@@ -26,7 +26,9 @@ class RecipeService:
         """
         Get all recipes with pagination and related ingredients and processes.
         """
-        query = Recipe.query.order_by(Recipe.id.desc())
+        query = Recipe.query.options(
+            db.joinedload(Recipe.users_association)
+        )
         pagination = query.paginate(page=page, per_page=page_size, error_out=False)
 
         return {
@@ -34,21 +36,7 @@ class RecipeService:
             "pages": pagination.pages,
             "current_page": pagination.page,
             "page_size": pagination.per_page,
-            "data": [
-                {
-                    "id": recipe.id,
-                    "title": recipe.title,
-                    "origin": recipe.origin,
-                    "servings": recipe.servings,
-                    "flag": recipe.flag,
-                    "preparation_time": recipe.preparation_time,
-                    "description": recipe.description,
-                    "image_url": recipe.image_url,
-                    "ingredients": recipe.ingredients,
-                    "processes": recipe.processes,
-                }
-                for recipe in pagination.items
-            ]
+            "data": [recipe for recipe in pagination.items]
         }
 
     @staticmethod

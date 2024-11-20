@@ -9,13 +9,14 @@ class Recipe(db.Model):
     title = db.Column(db.String(255), nullable=False)
     origin = db.Column(db.String(255), nullable=False)
     servings = db.Column(db.Integer, nullable=True)
-    flag = db.Column(db.Boolean, default=False)
+
     preparation_time = db.Column(db.Integer, nullable=True)
     description = db.Column(db.Text, nullable=True)
     image_url = db.Column(db.String(255), nullable=True)
 
     ingredients = db.Column(db.JSON, nullable=True)
     processes = db.Column(db.JSON, nullable=True)
+    nutritions = db.Column(db.JSON, nullable=True)
 
     # Relationships
     users_association = db.relationship('UserRecipe', back_populates='recipe')
