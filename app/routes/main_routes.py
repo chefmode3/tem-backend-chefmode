@@ -125,7 +125,7 @@ class PasswordResetRequestResource(Resource):
 
 
 
-@auth_ns.route('/reset_password/<string:token>')
+@auth_ns.route('/reset_password')
 class ResetPasswordResource(Resource):
 
     @auth_ns.expect(reset_password_model)
