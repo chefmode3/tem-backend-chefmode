@@ -17,6 +17,7 @@ from app.serializers.usecase_serializer import (
     NutrientSchema,
     IngredientIDSchema
 )
+from app.services.user_service import UserService
 from app.serializers.recipe_serializer import RecipeSerializer
 
 
@@ -49,7 +50,7 @@ class GetRecipeResource(Resource):
         """
         try:
             recipe = RecipeService.get_recipe_by_id(recipe_id)
-            return RecipeSerializer(many=True).dump(recipe), 200
+            return RecipeSerializer().dump(recipe), 200
         except Exception as e:
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
 
@@ -62,8 +63,8 @@ class GetAllRecipesResource(Resource):
         Fetch all recipes with pagination.
         """
         try:
-            page = request.args.get("page", 1, type=int)
-            page_size = request.args.get("page_size", 10, type=int)
+            page = request.args.get("page", default=1, type=int)
+            page_size = request.args.get("page_size", default=10, type=int)
             data = RecipeService.get_all_recipes(page, page_size)
             return {
                 "data": RecipeSerializer(many=True).dump(data["data"]),
@@ -85,9 +86,10 @@ class GetMyRecipesResource(Resource):
         Fetch recipes created by the logged-in user.
         """
         try:
-            user_id = get_jwt_identity()
-            page = request.args.get("page", 1, type=int)
-            page_size = request.args.get("page_size", 10, type=int)
+            user = UserService.get_current_user()
+            user_id = user['id']
+            page = request.args.get("page", default=1, type=int)
+            page_size = request.args.get("page_size", default=10, type=int)
             data = RecipeService.get_my_recipes(user_id, page, page_size)
             return {
                 "data": RecipeSerializer(many=True).dump(data["data"]),
@@ -111,7 +113,8 @@ class FlagRecipeResource(Resource):
         """
         try:
             data = flag_recipe_schema.load(request.get_json())
-            user_id = get_jwt_identity()
+            user = UserService.get_current_user()
+            user_id = user['id']
             response = RecipeService.flag_recipe(data["recipe_id"], user_id)
             return response, 200
         except ValidationError as err:
@@ -129,7 +132,8 @@ class IsRecipeFlaggedResource(Resource):
         Check if a recipe is flagged by the current user.
         """
         try:
-            user_id = get_jwt_identity()
+            user = UserService.get_current_user()
+            user_id = user['id']
             response = RecipeService.is_recipe_flagged_by_user(recipe_id, user_id)
             return flag_status_schema.dump(response), 200
         except Exception as e:
@@ -186,7 +190,7 @@ class IngredientNutritionResource(Resource):
             if not nutrition_data:
                 return {"message": "No nutrition data found for this ingredient."}, 200
 
-            return nutrition_response_model.dump(nutrition_data), 200
+            return RecipeSerializer().dump(nutrition_data), 200
         except ValueError as ve:
             return {"error": "Ingredient not found", "details": str(ve)}, 404
         except Exception as e:

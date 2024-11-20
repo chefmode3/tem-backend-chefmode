@@ -1,5 +1,4 @@
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.extensions import db
