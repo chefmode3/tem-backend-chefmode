@@ -1,12 +1,10 @@
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.exc import SQLAlchemyError
+from flask import abort
 
 from app.extensions import db
-from app.models.anonymous_user import AnonymousUser
 from app.models.recipe import Recipe
-from app.models.ingredient import Ingredient
-from app.models.process import Process
 from app.models.nutrition import Nutrition
+from app.models.user import UserRecipe
 
 class RecipeService:
 
@@ -60,7 +58,6 @@ class RecipeService:
                     "title": recipe.title,
                     "origin": recipe.origin,
                     "servings": recipe.servings,
-                    "flag": recipe.flag,
                     "preparation_time": recipe.preparation_time,
                     "description": recipe.description,
                     "image_url": recipe.image_url,
@@ -76,25 +73,29 @@ class RecipeService:
         """
         Mark a recipe as flagged for a specific user.
         """
-        user_recipe = Recipe.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
+        user_recipe = UserRecipe.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
 
         if not user_recipe:
             return None
-        user_recipe.flag = True
+        user_recipe.flag = not user_recipe.flag
+
         try:
             db.session.commit()
+            return {
+                "message": "Recipe flag status updated successfully.",
+                "flag": user_recipe.flag
+            }
         except SQLAlchemyError as e:
             db.session.rollback()
             abort(500, description=f"Database error: {str(e)}")
 
-        return {"message": "Recipe flagged successfully."}
 
     @staticmethod
     def is_recipe_flagged_by_user(recipe_id, user_id):
         """
         Check if a recipe is flagged by the current user.
         """
-        user_recipe = Recipe.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
+        user_recipe = UserRecipe.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
 
         if not user_recipe:
             return None
@@ -124,7 +125,6 @@ class RecipeService:
                         "title": recipe.title,
                         "origin": recipe.origin,
                         "servings": recipe.servings,
-                        "flag": recipe.flag,
                         "preparation_time": recipe.preparation_time,
                         "description": recipe.description,
                         "image_url": recipe.image_url,
