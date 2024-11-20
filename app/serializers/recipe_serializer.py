@@ -16,3 +16,11 @@ class RecipeSerializer(SQLAlchemyAutoSchema):
         model = Recipe
         include_relationships = True
         load_instance = True
+        exclude = ('nutritions',)
+
+class RecipeSchemaSerializer(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Recipe
+        include_relationships = True
+        load_instance = True
+
