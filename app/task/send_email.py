@@ -1,10 +1,11 @@
-from flask import render_template
-
 from flask_mailman import EmailMessage
-from app.extensions import celery
-from celery import current_task
+from celery import current_task, shared_task
 
-@celery.task
+from app.utils.utils import with_app_context
+
+
+@shared_task
+@with_app_context
 def send_reset_email(email, body, subject,  recipient, type="html"):
     """Tâche asynchrone pour envoyer un e-mail de réinitialisation de mot de passe."""
     try:
@@ -18,7 +19,6 @@ def send_reset_email(email, body, subject,  recipient, type="html"):
 
         # Envoi du message
         msg.send()
-        return {"status": "Email task sent to queue"}, 200
     except Exception as e:
         current_task.update_state(state="FAILURE", meta={"error": str(e)})
         raise

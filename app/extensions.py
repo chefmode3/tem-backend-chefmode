@@ -18,12 +18,12 @@ def create_celery():
     celery = Celery(__name__)
     celery.conf.broker = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
     celery.conf.backend = os.environ.get("CELERY_RESULT_BACKEND", "redis://redis:6379/0")
-    celery.broker_use_ssl ={
+    celery.broker_use_ssl = {
         'ssl_cert_reqs': ssl.CERT_NONE
-    } # True
+    }  # True
     celery.redis_backend_use_ssl = {
         'ssl_cert_reqs': ssl.CERT_NONE
-    } # True
+    }
 
 
     return celery
