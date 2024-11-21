@@ -137,8 +137,8 @@ class RecipeCelService:
         if user:
             RecipeCelService.get_or_create_user_recipe(user_id=user['id'], recipe_id=recipe.id)
         else:
-            user_id, is_exist = RecipeCelService.get_or_create_anonyme_user()
-            RecipeCelService.create_anonyme_user_recipe(user_id=user_id, recipe_id=recipe.id)
+            anonymous_user, is_exist = RecipeCelService.get_or_create_anonyme_user()
+            RecipeCelService.create_anonyme_user_recipe(user_id=anonymous_user.id, recipe_id=recipe.id)
 
         # # # add the  ingrédients
         # for ingredient in ingredients_data:
