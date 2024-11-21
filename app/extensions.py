@@ -17,8 +17,8 @@ class Base(DeclarativeBase):
 def create_celery():    
     celery = Celery(
         __name__,
-        broker=os.environ.get("REDIS_URL", "redis://redis:6379/0"),
-        backend=os.environ.get("REDIS_URL", "redis://redis:6379/0"),
+        broker="rediss://:p642ddb3ec97ce928365e89e184f912f75ba388a6f46660fd1a76f30c147e6318@ec2-52-2-51-43.compute-1.amazonaws.com:23299",
+        backend="rediss://:p642ddb3ec97ce928365e89e184f912f75ba388a6f46660fd1a76f30c147e6318@ec2-52-2-51-43.compute-1.amazonaws.com:23299",
         broker_use_ssl={
             'ssl_cert_reqs': ssl.CERT_NONE
         },
