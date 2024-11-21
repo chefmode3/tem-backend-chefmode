@@ -16,7 +16,7 @@ from app.routes.usecase_route import recipe_ns
 
 def create_app(script_info=None):
     app = Flask(__name__)
-    if os.environ.get("DDEBUG"):
+    if os.environ.get("DEBUG"):
         app_settings = os.getenv('DEV_APP_SETTINGS')
     else:
         app_settings = os.getenv('APP_SETTINGS')

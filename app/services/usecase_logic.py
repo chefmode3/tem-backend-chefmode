@@ -26,7 +26,7 @@ class RecipeService:
         """
         query = Recipe.query.options(
             db.joinedload(Recipe.users_association)
-        )
+        ).order_by(Recipe.id.desc())
         pagination = query.paginate(page=page, per_page=page_size, error_out=False)
 
         return {
@@ -152,3 +152,13 @@ class RecipeService:
             return nutrients
         except Exception as e:
             raise RuntimeError(f"Unexpected error: {str(e)}")
+
+    @staticmethod
+    def get_recipe_by_origin(origin):
+        """
+        get the origin to avoid duplication in the database
+        """
+        origin_recipe = Recipe.query.filter_by(origin=origin).first()
+
+        if origin_recipe:
+            return origin_recipe
