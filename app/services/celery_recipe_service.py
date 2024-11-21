@@ -1,5 +1,5 @@
 from app.extensions import db
-from app.models import Nutrition, Recipe, Ingredient, Process, UserRecipe, AnonymousUserRecipe
+from app.models import Nutrition, Recipe, Ingredient, Process, UserRecipe, AnonymousUserRecipe, AnonymousUser
 from app.services import UserService
 
 
@@ -137,7 +137,8 @@ class RecipeCelService:
         if user:
             RecipeCelService.get_or_create_user_recipe(user_id=user['id'], recipe_id=recipe.id)
         else:
-            RecipeCelService.create_anonyme_user_recipe(user_id=1, recipe_id=recipe.id)
+            user_id, is_exist = RecipeCelService.get_or_create_anonyme_user()
+            RecipeCelService.create_anonyme_user_recipe(user_id=user_id, recipe_id=recipe.id)
 
         # # # add the  ingrédients
         # for ingredient in ingredients_data:
@@ -148,6 +149,17 @@ class RecipeCelService:
         #     RecipeCelService.create_process(process, recipe)
         return recipe
 
+    @staticmethod
+    def get_or_create_anonyme_user():
+        user_id = "user1234"
+        existing_user = AnonymousUser.query.filter_by(
+            identifier=user_id,
+        ).first()
+
+        if existing_user:
+            return existing_user, False
+        return RecipeCelService.create_user_anonyme(user_id), True
+
     @classmethod
     def create_anonyme_user_recipe(cls, user_id, recipe_id):
         user_recipe = AnonymousUserRecipe(
@@ -157,5 +169,15 @@ class RecipeCelService:
         db.session.add(user_recipe)
         db.session.commit()
         return user_recipe
-        pass
+
+
+    @classmethod
+    def create_user_anonyme(cls, user_id):
+        user_anonyme = AnonymousUser(
+            identifier=user_id
+        )
+        db.session.add(user_anonyme)
+        db.session.commit()
+        return user_anonyme
+
 
