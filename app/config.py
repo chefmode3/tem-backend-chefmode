@@ -51,7 +51,7 @@ class Config:
 # defining dev config
 class DevelopmentConfig(Config):
     """Development configuration"""
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
     FLASK_ADMIN_SWATCH = 'cerulean'
     DEBUG_TB_ENABLED = True
     DEBUG = True  # Activate debug mode in development environment
@@ -70,6 +70,6 @@ class TestingConfig(Config):
 # defining production config
 class ProductionConfig(Config):
     """Production configuration"""
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
     DEBUG = False  # Deactivate debug mode in production environment
 

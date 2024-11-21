@@ -1,7 +1,7 @@
 FLASK_APP='run.py'
 FLASK_ENV='development'
 SECRET_KEY='your-super-secret-key'
-DATABASE_URL='postgresql://u8rpal5pe0t0bk:pc00aa4ceb70b28012f10ccf250b8d44c3583cbec5a618bd87cea9cdf18d8a801@cdeuajkr4sf66s.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/dcpoqnjodmbf3n'
+SQLALCHEMY_DATABASE_URI='postgresql://u8rpal5pe0t0bk:pc00aa4ceb70b28012f10ccf250b8d44c3583cbec5a618bd87cea9cdf18d8a801@cdeuajkr4sf66s.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/dcpoqnjodmbf3n'
 DATABASE_URL_DEV='postgresql://u8rpal5pe0t0bk:pc00aa4ceb70b28012f10ccf250b8d44c3583cbec5a618bd87cea9cdf18d8a801@cdeuajkr4sf66s.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/dcpoqnjodmbf3n'
 DATABASE_TEST_URL='sqlite:///test.db'
 DEBUG=True
