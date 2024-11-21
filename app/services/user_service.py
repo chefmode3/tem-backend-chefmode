@@ -17,9 +17,17 @@ class UserService:
     @staticmethod
     def signup(email, password):
         """Registers a new user."""
-        if User.query.filter_by(email=email).first():
-            abort(400, description="Email already exists.")
+        user = User.query.filter_by(email=email).first()
+        if user and user.activate:
+            abort(400, description="Email already exists."), False
+        elif user and not user.activate:
+            return {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+            "activate": user.activate,
 
+        }, False
         user = User(email=email, name=email.split('@')[0])
         user.password = generate_password_hash(password)
 
@@ -35,7 +43,7 @@ class UserService:
             "google_token": "string",
             "google_id": "string",
             "access_token": access_token
-        }
+        }, True
 
     @staticmethod
     def login(email, password):

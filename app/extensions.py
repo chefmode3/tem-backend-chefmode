@@ -14,19 +14,21 @@ class Base(DeclarativeBase):
     pass
 
 
-def create_celery():    
-    celery = Celery(
-        __name__,
-        broker="rediss://:p642ddb3ec97ce928365e89e184f912f75ba388a6f46660fd1a76f30c147e6318@ec2-52-2-51-43.compute-1.amazonaws.com:23299",
-        backend="rediss://:p642ddb3ec97ce928365e89e184f912f75ba388a6f46660fd1a76f30c147e6318@ec2-52-2-51-43.compute-1.amazonaws.com:23299",
-        broker_use_ssl={
-            'ssl_cert_reqs': ssl.CERT_NONE
-        },
-        redis_backend_use_ssl={
-            'ssl_cert_reqs': ssl.CERT_NONE
-        }
-    )
+def create_celery():
+    celery = Celery(__name__)
 
+    # Updated configuration using lowercase keys
+    celery.conf.update(
+        broker_url=os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0'),
+        result_backend=os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0'),
+        accept_content=['json'],  # Only allow JSON content
+        task_serializer='json',  # Serialize tasks using JSON
+        result_serializer='json',  # Serialize results using JSON
+        redis_max_connections=20,  # Limit Redis connections (optional)
+        broker_connection_retry_on_startup=True
+    )
+    print(celery.conf.redis_backend_use_ssl)
+    print(celery.conf.result_backend)
 
     return celery
 

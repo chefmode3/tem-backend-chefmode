@@ -49,7 +49,9 @@ class SignupResource(Resource):
         try:
             # Validate and deserialize input
             data = signup_schema.load(request.get_json())
-            user_data = UserService.signup(data['email'], data['password'])
+            user_data, is_activate = UserService.signup(data['email'], data['password'])
+            if is_activate:
+                return user_response_schema.dump(user_data), 200
             email = user_data.get("email")
             name = user_data.get("name")
             subject = "Email Activation"

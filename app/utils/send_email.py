@@ -18,13 +18,13 @@ def verify_reset_token(token, max_age=3600):  # 30 minutes
     except Exception as e:
         return {"valid": False, "error": str(e)}
 
-def activation_or_reset_email(email: str, subject: str,  template: str='password_reset_email.html',url_frontend: str="http://127.0.0.1:5000/auth/reset_password/"):
+def activation_or_reset_email(email: str, name:str, subject: str,  template: str='password_reset_email.html',url_frontend: str="http://127.0.0.1:5000/auth/reset_password/"):
     reset_token = generate_reset_token(email)
 
     user_token = UserService.request_password_reset(email, reset_token)
     reset_url = f"{url_frontend}?email={email}&token={user_token.reset_token}"
-    user = UserService.get_current_user()
-    name = user.get('name')
+
+    name = name
     to = os.getenv('DEFAULT_FROM_EMAIL')
     # Render the HTML template with context
     body = render_template(template, name=name, reset_url=reset_url)
