@@ -14,5 +14,5 @@ MAIL_PORT = 8025
 MAIL_BACKEND = 'console'
 MAIL_USE_SSL = False
 MAIL_USE_TLS = False
-CELERY_BROKER_URL="redis://localhost:6379/0"
-CELERY_RESULT_BACKEND="redis://localhost:6379/0"
+CELERY_BROKER_URL="rediss://:p642ddb3ec97ce928365e89e184f912f75ba388a6f46660fd1a76f30c147e6318@ec2-52-2-51-43.compute-1.amazonaws.com:23299"
+CELERY_RESULT_BACKEND="rediss://:p642ddb3ec97ce928365e89e184f912f75ba388a6f46660fd1a76f30c147e6318@ec2-52-2-51-43.compute-1.amazonaws.com:23299"
