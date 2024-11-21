@@ -137,8 +137,9 @@ class RecipeCelService:
         if user:
             RecipeCelService.get_or_create_user_recipe(user_id=user['id'], recipe_id=recipe.id)
         else:
-            user_id, is_exist = RecipeCelService.get_or_create_anonyme_user()
-            RecipeCelService.create_anonyme_user_recipe(user_id=user_id, recipe_id=recipe.id)
+            anonymous_user, is_exist = RecipeCelService.get_or_create_anonyme_user()
+            RecipeCelService.create_anonyme_user_recipe(user=anonymous_user, recipe=recipe)
+
 
         # # # add the  ingrédients
         # for ingredient in ingredients_data:
@@ -161,10 +162,10 @@ class RecipeCelService:
         return RecipeCelService.create_user_anonyme(user_id), True
 
     @classmethod
-    def create_anonyme_user_recipe(cls, user_id, recipe_id):
+    def create_anonyme_user_recipe(cls, user, recipe):
         user_recipe = AnonymousUserRecipe(
-            anonymous_user_id=user_id,
-            recipe_id=recipe_id
+            anonymous_user_id=user.id,
+            recipe_id=recipe.id
         )
         db.session.add(user_recipe)
         db.session.commit()
