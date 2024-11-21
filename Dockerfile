@@ -40,4 +40,5 @@ WORKDIR /app
 EXPOSE 5001
 
 # run entrypoint.sh
-ENTRYPOINT ["/app/entrypoint.sh"]
+# ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["gunicorn --bind 0.0.0.0:5000 app:app"]
