@@ -46,3 +46,5 @@ class PasswordResetRequestSchema(Schema):
 
 class ResetPasswordSchema(Schema):
     new_password = fields.Str(required=True, description="New password for the user")
+    email = fields.Email(required=True, description="User email for password reset request")
+    token = fields.Str(required=True, description="token identifiction")

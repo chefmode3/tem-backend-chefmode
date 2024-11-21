@@ -10,7 +10,7 @@ access the app on your local
 ## database 
 connect to the db container using the following command
 
-```docker exec -it chef_mode_db bash```
+docker exec -it chef_mode_db bash
 
 ### connet to psql using the following command
 
@@ -32,7 +32,7 @@ Run the following commands
 
 ```python manage.py db init```
 
-```python manage.py db migrate```
+python manage.py db migrate
 
 ```python manage.py db upgrade```
 

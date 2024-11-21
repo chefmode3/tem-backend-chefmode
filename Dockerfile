@@ -1,5 +1,4 @@
-FROM python:3.11.5-bookworm AS builder
-
+FROM python:3.10-slim-buster AS builder
 
 # set working directory
 WORKDIR /app
@@ -12,15 +11,22 @@ ENV PIP_DEFAULT_TIMEOUT=100
 ENV VIRTUAL_ENV="/home/pythonrunner/.venv"
 ENV PATH="/home/pythonrunner/.local/bin:${VIRTUAL_ENV}/bin:${PATH}"
 
-# install environment dependencies
-RUN apt-get update && \
-    apt-get install  -y  \
-    && apt-get -q clean
 
-# install dependencies
+
+
+
+# install environment dependencies
+RUN apt-get update -yqq && apt-get install -yqq --no-install-recommends netcat && apt-get -q clean
+
+CMD ["ulimit", "-u", "4096"]
+
+COPY . .
+
 RUN pip install --upgrade pip
-COPY ./requirements.txt /app/requirements.txt
-RUN pip install -r requirements.txt
+CMD ["pip", "install", "greenlet"]
+
+
+RUN pip install -r requirements.txt --timeout 3600
 
 FROM builder AS dev-container
 USER root
@@ -31,7 +37,7 @@ COPY . /app/
 # set work directory
 WORKDIR /app
 
-EXPOSE  5001
+EXPOSE 5001
 
 # run entrypoint.sh
 ENTRYPOINT ["/app/entrypoint.sh"]
