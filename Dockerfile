@@ -26,7 +26,7 @@ RUN pip install --upgrade pip
 CMD ["pip", "install", "greenlet"]
 
 
-RUN pip install -r requirements.txt --timeout 3600
+RUN pip install -r requirements.txt --no-cache-dir
 
 FROM builder AS dev-container
 USER root

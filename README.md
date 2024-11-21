@@ -10,11 +10,11 @@ access the app on your local
 ## database 
 connect to the db container using the following command
 
-docker exec -it chef_mode_db bash
+`docker exec -it chef_mode_db bash`
 
 ### connet to psql using the following command
 
-`psql -U postgres`
+`psql -U chefmode`
 ### create a new user and password for the db
 
     CREATE USER chefmode WITH PASSWORD chefmodedb
