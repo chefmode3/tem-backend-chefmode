@@ -16,11 +16,11 @@ from app.routes.usecase_route import recipe_ns
 
 def create_app(script_info=None):
     app = Flask(__name__)
-
-    app_settings = os.getenv('APP_SETTINGS')
-
-    # app.config.from_object(app_settings)
-    app.config.from_object(DevelopmentConfig)
+    if os.environ.get("DDEBUG"):
+        app_settings = os.getenv('DEV_APP_SETTINGS')
+    else:
+        app_settings = os.getenv('APP_SETTINGS')
+    app.config.from_object(app_settings)
     api = Api(app, version='1.0', title='API', description='API documentation')
     app.config['MAIL_SERVER'] = 'localhost'
     app.config['MAIL_PORT'] = 8025
