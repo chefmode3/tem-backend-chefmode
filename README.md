@@ -30,7 +30,7 @@ connect to the web container using the following command
 
 Run the following commands
 
-```python manage.py db init```
+python manage.py db init
 
 python manage.py db migrate
 

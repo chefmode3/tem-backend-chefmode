@@ -12,6 +12,8 @@ from app.models.user import User
 from app.extensions import db, login_manager, mail
 
 from app.serializers.user_serializer import UserSchema
+from app.services.utils import generate_reset_token, verify_reset_token
+
 
 class UserService:
 
@@ -46,6 +48,8 @@ class UserService:
         user = User.query.filter_by(email=email).first()
         if not user or not check_password_hash(user.password, password):
             abort(401, description="Invalid credentials.")
+        if not user.activate:
+            abort(401, description="user is not activate or delete")
 
         access_token = create_access_token(identity=email)
         login_user(user)
@@ -97,29 +101,29 @@ class UserService:
         if not user:
             abort(404, description="User not found.")
 
-        reset_token = secrets.token_urlsafe(16)
+        reset_token = generate_reset_token(email)
         user.reset_token = reset_token
         db.session.commit()
         # return User
-
-
         return user
 
     @staticmethod
-    def reset_password(token, new_password):
+    def reset_password(email: str, token: str, new_password: str):
         """Resets the user's password if the token is valid."""
-        user = User.query.filter_by(reset_token=token).first()
+
+        user = User.query.filter_by(reset_token=token, email=email).first()
         if not user:
-            abort(400, description="Invalid or expired reset token.")
+            return {"error": "Invalid or expired reset token."}, 404
 
         if len(new_password) < 8:
-            abort(400, description="Password must be at least 8 characters.")
+            return {"error": "Password must be at least 8 characters."}, 400
 
         user.password = generate_password_hash(new_password)
         user.reset_token = None
         db.session.commit()
 
-        return {"message": "Password has been reset successfully"}
+        return {"message": "Password  reset successfully"}
+
 
     @staticmethod
     def update_user(id, **kwargs):
@@ -181,3 +185,13 @@ class UserService:
             "email": user.email,
             "name": user.name
         }
+
+    @classmethod
+    def activate_user(cls, email):
+        user = UserService.get_user_by_email(email)
+        if not user:
+            return {"error": f"{email} not found"}, 400
+        user.activate = True
+        db.session.add(user)
+        db.session.commit()
+        return {"result": "user activate"}, 200

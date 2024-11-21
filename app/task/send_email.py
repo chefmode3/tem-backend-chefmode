@@ -18,7 +18,6 @@ def send_reset_email(email, body, subject,  recipient, type="html"):
 
         # Envoi du message
         msg.send()
-        return {"status": "Email task sent to queue"}, 200
     except Exception as e:
         current_task.update_state(state="FAILURE", meta={"error": str(e)})
         raise

@@ -5,6 +5,8 @@ from flask_restx import Namespace, Resource
 from flask import request, abort, jsonify, render_template, session
 from flask_jwt_extended import jwt_required, get_jwt
 from marshmallow import ValidationError
+
+from app.services.utils import verify_reset_token, activation_or_reset_email
 from app.task.send_email import send_reset_email
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.user_service import UserService
@@ -13,7 +15,7 @@ from app.serializers.user_serializer import (
     UserLoginSchema,
     UserResponseSchema,
     PasswordResetRequestSchema,
-    ResetPasswordSchema
+    ResetPasswordSchema, UserActivationSchema
 )
 
 
@@ -22,6 +24,8 @@ auth_ns = Namespace('auth', description="user authentication")
 signup_schema = UserSignupSchema()
 signup_model = convert_marshmallow_to_restx_model(auth_ns, signup_schema)
 
+user_activation_schema = UserActivationSchema()
+user_activation_model = convert_marshmallow_to_restx_model(auth_ns, user_activation_schema)
 
 login_schema = UserLoginSchema()
 login_model = convert_marshmallow_to_restx_model(auth_ns, login_schema)
@@ -46,26 +50,41 @@ class SignupResource(Resource):
             # Validate and deserialize input
             data = signup_schema.load(request.get_json())
             user_data = UserService.signup(data['email'], data['password'])
-            if user_data:
-                return user_response_schema.dump(user_data), 201
-            else:
-                abort(400, description="Email already exists.")
+            email = user_data.email
+            name = user_data.name
+            subject = "Email Activation"
+            # email, body, subject, recipient
+            url_frontend = "http://127.0.0.1:5000/auth/reset_password/"
+            to = os.getenv('DEFAULT_FROM_EMAIL')
+            # Render the HTML template with context
+            template = 'welcome_email.html'
+            body = render_template(template, name=name)
+            send_reset_email.delay(email=email, body=body, subject=subject, recipient=to)
+            return activation_or_reset_email(email, subject, template='confirm_email.html',
+                                             url_frontend=url_frontend)
         except ValidationError as err:
             return {"errors": err.messages}, 400
 
 
-@auth_ns.route('/signup/<string:token>')
+@auth_ns.route('/signup/activation')
 class SignupConfirmResource(Resource):
-    @auth_ns.response(201, "User Account successfully activated", model=user_response_model)
+    @auth_ns.expect(user_activation_model)
+    @auth_ns.response(201, "User Account successfully activated", model=user_activation_model)
     @auth_ns.response(400, "Validation Error")
     def post(self, token):
-        email = verification_tokens.get(token)
-        if email:
-            # Mark the user as verified
-            users[email]['verified'] = True
-            return user_response_schema.dump(users[email]), 201
-        else:
-            return {"error": "Invalid or expired verification token."}, 400
+        try:
+            # Validate and deserialize input
+            data = user_activation_schema.load(request.get_json())
+            email = data.get('email')
+            result = verify_reset_token(token, max_age=86400)
+            if not result["valid"]:
+                return {"error": result["error"]}, 400
+            return UserService.activate_user(email)
+        except ValidationError as err:
+            return {"errors": err.messages}, 400
+
+        except Exception as err:
+            return {"errors": err}, 500
 
 
 @auth_ns.route('/login')
@@ -75,6 +94,7 @@ class LoginResource(Resource):
     @auth_ns.response(400, "Validation Error")
     def post(self):
         try:
+
             # Validate and deserialize input
             data = login_schema.load(request.get_json())
             user_data = UserService.login(data['email'], data['password'])
@@ -107,15 +127,13 @@ class PasswordResetRequestResource(Resource):
             data = password_reset_request_schema.load(request.get_json())
             email = data.get("email")
             url_frontend = " http://127.0.0.1:5000/auth/reset_password/"
-            user_token = UserService.request_password_reset(email)
-            reset_url = f"{url_frontend}?email={email}&token={user_token.reset_token}"
-            user = UserService.get_current_user()
+
             subject = "Password Reset Request"
-            name = user.get('name')
-            to = os.getenv('DEFAULT_FROM_EMAIL')
-            # Render the HTML template with context
-            body = render_template('password_reset_email.html', name=name, reset_url=reset_url)
-            response = send_reset_email(email=email, body=body, subject=subject, recipient=to)
+
+            # email, body, subject, recipient
+
+            return activation_or_reset_email(email, subject,  template='password_reset_email.html',
+                                             url_frontend=url_frontend)
             # email, body, subject, recipient
             return response
         except ValidationError as err:
@@ -134,8 +152,18 @@ class ResetPasswordResource(Resource):
     @auth_ns.response(400, "Validation Error")
     def post(self, token):
         try:
-            data = request.get_json()
+
+            data = reset_password_schema.load(request.get_json())
+            email = data.get("email")
             new_password = data.get("new_password")
-            return UserService.reset_password(token, new_password)
+            token = data.get('token')
+            result = verify_reset_token(token)
+            if not result["valid"]:
+                return {"error": result["error"]}, 400
+
+            return UserService.reset_password(email, token, new_password)
+        except ValidationError as err:
+            return {"errors": err.messages}, 400
+
         except Exception as err:
             return {"errors": err}, 500
