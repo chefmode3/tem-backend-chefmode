@@ -1,3 +1,4 @@
+import uuid
 from flask_login import UserMixin
 
 from app.extensions import db
@@ -6,8 +7,8 @@ from datetime import datetime
 
 class UserRecipe(db.Model):
     __tablename__ = 'user_recipe'
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'), primary_key=True)
+    user_id = db.Column(db.String(255), db.ForeignKey('user.id'), primary_key=True)
+    recipe_id = db.Column(db.String(255), db.ForeignKey('recipes.id'), primary_key=True)
     flag = db.Column(db.Boolean, default=False)
     
     user = db.relationship('User', back_populates='recipes_association')
@@ -17,8 +18,8 @@ class UserRecipe(db.Model):
 class AnonymousUserRecipe(db.Model):
     __tablename__ = 'anonymous_user_recipe'
 
-    anonymous_user_id = db.Column(db.Integer, db.ForeignKey('anonymous_user.id'), primary_key=True)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id'), primary_key=True)
+    anonymous_user_id = db.Column(db.String(255), db.ForeignKey('anonymous_user.id'), primary_key=True)
+    recipe_id = db.Column(db.String(255), db.ForeignKey('recipes.id'), primary_key=True)
     flag = db.Column(db.Boolean, default=False)
     anonymous_user = db.relationship('AnonymousUser', back_populates='recipes_association')
     recipe = db.relationship('Recipe', back_populates='anonymous_users_association')
@@ -26,9 +27,8 @@ class AnonymousUserRecipe(db.Model):
 
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(255), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = db.Column(db.String(64), nullable=True)
-    username = db.Column(db.String(64), nullable=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     activate = db.Column(db.Boolean, default=False)
     google_token = db.Column(db.String(255), unique=True, nullable=True)
