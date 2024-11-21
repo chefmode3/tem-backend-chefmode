@@ -14,25 +14,7 @@ class Base(DeclarativeBase):
     pass
 
 
-def create_celery():
-    # celery = Celery(__name__)
-    # celery.conf.broker = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
-    # celery.conf.backend = os.environ.get("CELERY_RESULT_BACKEND", "redis://redis:6379/0")
-    # if os.environ.get("DEBUG"):
-    #     celery.broker_use_ssl = {
-    #         'ssl_cert_reqs': ssl.CERT_NONE
-    #     }  # True
-    #     celery.redis_backend_use_ssl = {
-    #         'ssl_cert_reqs': ssl.CERT_NONE
-    #     }  # True
-    # else:
-    #     celery.broker_use_ssl ={
-    #         'ssl_cert_reqs': ssl.CERT_REQUIRED
-    #     } # True
-    #     celery.redis_backend_use_ssl = {
-    #         'ssl_cert_reqs': ssl.CERT_REQUIRED
-    #     } # True
-    
+def create_celery():    
     celery = Celery(
         __name__,
         broker=os.environ.get("REDIS_URL", "redis://redis:6379/0"),
