@@ -6,9 +6,9 @@ build:
   docker:
     web: Dockerfile
     worker: worker/Dockerfile
-  release:
-    command:
-      - python manage.py migrate
-  run:
-    web: gunicorn --bind 0.0.0.0:5000 app:app
-    worker: celery -A tasks worker --loglevel=info
+release:
+  command:
+    - python manage.py migrate
+run:
+  web: gunicorn --bind 0.0.0.0:5000 app:app
+  worker: celery -A tasks worker --loglevel=info
