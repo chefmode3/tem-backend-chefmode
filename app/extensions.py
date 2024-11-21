@@ -35,8 +35,8 @@ def create_celery():
     
     celery = Celery(
         __name__,
-        broker=os.environ.get("HEROKU_REDIS_NAVY", "redis://redis:6379/0"),
-        backend=os.environ.get("HEROKU_REDIS_NAVY", "redis://redis:6379/0"),
+        broker=os.environ.get("REDIS_URL", "redis://redis:6379/0"),
+        backend=os.environ.get("REDIS_URL", "redis://redis:6379/0"),
         broker_use_ssl={
             'ssl_cert_reqs': ssl.CERT_NONE
         },
