@@ -1,18 +1,13 @@
-import secrets
-import os
-
 from flask_login import login_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_mailman import EmailMessage
 
-from flask import abort, url_for
-from flask_jwt_extended import create_access_token, get_jwt_identity, get_jwt
+from flask import abort
+from flask_jwt_extended import create_access_token
 
 from app.models.user import User
-from app.extensions import db, login_manager, mail
+from app.extensions import db, login_manager
 
 from app.serializers.user_serializer import UserSchema
-from app.services.utils import generate_reset_token, verify_reset_token
 
 
 class UserService:
@@ -95,13 +90,12 @@ class UserService:
         }
 
     @staticmethod
-    def request_password_reset(email) -> User:
+    def request_password_reset(email, reset_token) -> User:
         """Generates a password reset token and sends it via email."""
         user = User.query.filter_by(email=email).first()
         if not user:
             abort(404, description="User not found.")
 
-        reset_token = generate_reset_token(email)
         user.reset_token = reset_token
         db.session.commit()
         # return User

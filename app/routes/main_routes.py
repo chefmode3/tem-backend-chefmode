@@ -2,11 +2,10 @@ import os
 
 from flask_login import login_required
 from flask_restx import Namespace, Resource
-from flask import request, abort, jsonify, render_template, session
-from flask_jwt_extended import jwt_required, get_jwt
+from flask import request, abort, render_template, session
 from marshmallow import ValidationError
 
-from app.services.utils import verify_reset_token, activation_or_reset_email
+from app.utils.send_email import verify_reset_token, activation_or_reset_email
 from app.task.send_email import send_reset_email
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.user_service import UserService
@@ -40,6 +39,7 @@ reset_password_schema = ResetPasswordSchema()
 reset_password_model = convert_marshmallow_to_restx_model(auth_ns, reset_password_schema)
 
 
+
 @auth_ns.route('/signup')
 class SignupResource(Resource):
     @auth_ns.expect(signup_model)
@@ -50,8 +50,8 @@ class SignupResource(Resource):
             # Validate and deserialize input
             data = signup_schema.load(request.get_json())
             user_data = UserService.signup(data['email'], data['password'])
-            email = user_data.email
-            name = user_data.name
+            email = user_data.get("email")
+            name = user_data.get("name")
             subject = "Email Activation"
             # email, body, subject, recipient
             url_frontend = "http://127.0.0.1:5000/auth/reset_password/"

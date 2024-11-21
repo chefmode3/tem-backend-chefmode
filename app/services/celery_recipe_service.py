@@ -180,4 +180,20 @@ class RecipeCelService:
         db.session.commit()
         return user_anonyme
 
+    @staticmethod
+    def get_or_create_anonyme_user_recipe(recipe_data: dict) -> tuple[Recipe, bool]:
+        """
+        check if the recipe already or create it .
+        Return a tuple (recipe, created).
+        """
+        # Recherche basée sur le titre et d'autres critères pertinents
+        existing_recipe = Recipe.query.filter_by(
+            title=recipe_data.get('title'),
+            origin=recipe_data.get('origin'),
+            preparation_time=recipe_data.get('preparation_time'),
+            servings=recipe_data.get('servings')
+        ).first()
 
+        if existing_recipe:
+            return existing_recipe, False
+        return RecipeCelService.create_recipe(recipe_data), True
