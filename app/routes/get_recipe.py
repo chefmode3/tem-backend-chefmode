@@ -66,10 +66,10 @@ class RecipeScrapPost(Resource):
             # content = content.replace("\n", '')
             print(json.dumps(content, indent=4))
             # data = json.loads(result.get('content'))
-            recipe = RecipeCelService.convert_and_store_recipe(content)
+            # recipe = RecipeCelService.convert_and_store_recipe(content)
 
 
-            return RecipeSerializer().dump(recipe), 200
+            return content #RecipeSerializer().dump(recipe), 200
         elif res.state == 'FAILURE':
             return {"status": "FAILURE", "message": str(res.result)}, 500
         else:

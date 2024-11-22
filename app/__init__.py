@@ -21,7 +21,7 @@ def create_app(script_info=None):
     else:
         app_settings = os.getenv('APP_SETTINGS')
     app.config.from_object(app_settings)
-    api = Api(app, version='1.0', title='API', description='API documentation')
+    api = Api(app, version='1.0', prefix='/api/v1', title='API', description='API documentation')
     app.config['MAIL_SERVER'] = 'localhost'
     app.config['MAIL_PORT'] = 8025
     app.config['MAIL_USERNAME'] = None
@@ -32,13 +32,7 @@ def create_app(script_info=None):
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
-    class ContextTask(celery.Task):
-        """Ajoute le contexte Flask aux tâches Celery."""
-        def __call__(self, *args, **kwargs):
-            with app.app_context():
-                return self.run(*args, **kwargs)
 
-    celery.Task = ContextTask
     celery.conf.update(app.config)
     # Enable CORS
     CORS(app)
@@ -47,14 +41,12 @@ def create_app(script_info=None):
     JWTManager(app)
     login_manager.init_app(app)
 
-    url_api = '/api/v1'
-
     # Register blueprints
 
-    api.add_namespace(auth_ns, path="/auth")
-    api.add_namespace(auth_google_ns, path="/auth")
-    api.add_namespace(recipe_ns, path="/recipe")
-    api.add_namespace(recipe_name_space, path="/recipe")
+    api.add_namespace(auth_ns, path=f"/auth")
+    api.add_namespace(auth_google_ns, path=f"/auth")
+    api.add_namespace(recipe_ns, path=f"/recipe")
+    api.add_namespace(recipe_name_space, path=f"/recipe")
 
     cli.register(app)
 

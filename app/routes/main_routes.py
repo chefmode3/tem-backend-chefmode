@@ -50,8 +50,11 @@ class SignupResource(Resource):
             # Validate and deserialize input
             data = signup_schema.load(request.get_json())
             user_data, is_activate = UserService.signup(data['email'], data['password'])
+            # print(user_data)
             if is_activate:
                 return user_response_schema.dump(user_data), 200
+            elif not user_data:
+                return {"error" "user not found"}, 404
             email = user_data.get("email")
             name = user_data.get("name")
             subject = "Email Activation"
@@ -61,8 +64,8 @@ class SignupResource(Resource):
             # Render the HTML template with context
             template = 'welcome_email.html'
             body = render_template(template, name=name)
-            send_reset_email.delay(email=email, body=body, subject=subject, recipient=to)
-            return activation_or_reset_email(email, subject, template='confirm_email.html',
+            send_reset_email.delay(email=email,  body=body, subject=subject, recipient=to)
+            return activation_or_reset_email(email, name=name, subject=subject, template='confirm_email.html',
                                              url_frontend=url_frontend)
         except ValidationError as err:
             return {"errors": err.messages}, 400
@@ -132,12 +135,12 @@ class PasswordResetRequestResource(Resource):
 
             subject = "Password Reset Request"
 
-            # email, body, subject, recipient
+            user = UserService.get_user_by_email(email)
+            name: str = user.get('name')
 
-            return activation_or_reset_email(email, subject,  template='password_reset_email.html',
+            return activation_or_reset_email(email, name=name, subject=subject,  template='password_reset_email.html',
                                              url_frontend=url_frontend)
-            # email, body, subject, recipient
-            return response
+
         except ValidationError as err:
             return {"errors": err.messages}, 400
 
