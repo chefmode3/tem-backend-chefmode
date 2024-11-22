@@ -53,7 +53,8 @@ https://www.liquidweb.com/kb/how-to-setup-a-python-virtual-environment-on-window
 
 ## Install Requirements
     pip install requirements.txt
-
+## install ffmpeg
+sudo apt install ffmpeg
 To get started, install Postgres on your local computer, if you don’t have it already. Since Heroku uses Postgres, it
 will be good for us to develop locally on the same database. If you don’t have Postgres installed, Postgres.app is an
 easy way to get up and running for Mac OS X users. Consult the download page for more info.
