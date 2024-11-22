@@ -2,10 +2,12 @@ import os
 
 from flask import Flask
 from flask_jwt_extended import JWTManager
+
+from app.celery_utils import celery
 from app.extensions import mail, login_manager
 from flask_restx import Api
 from flask_cors import CORS
-from app.extensions import db, migrate, celery
+from app.extensions import db, migrate
 from app.config import DevelopmentConfig
 from app import cli
 from app.routes.get_recipe import recipe_ns as recipe_name_space
@@ -32,8 +34,8 @@ def create_app(script_info=None):
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
-
     celery.conf.update(app.config)
+    # celery.conf.update(app.config)
     # Enable CORS
     CORS(app)
 
@@ -41,7 +43,11 @@ def create_app(script_info=None):
     JWTManager(app)
     login_manager.init_app(app)
 
+
     # Register blueprints
+    @app.shell_context_processor
+    def ctx():
+        return {"app": app, "db": db}
 
     api.add_namespace(auth_ns, path=f"/auth")
     api.add_namespace(auth_google_ns, path=f"/auth")

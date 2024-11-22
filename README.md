@@ -1,4 +1,9 @@
 # CHEFMODE
+
+# To launch celery 
+`   
+    celery -A celery_worker.celery worker --loglevel=info
+`
 # Run with docker compose
 
 clone the code and run the following command
