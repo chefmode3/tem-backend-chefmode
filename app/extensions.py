@@ -8,29 +8,20 @@ from sqlalchemy.orm import DeclarativeBase
 
 from celery import Celery
 from flask_login import LoginManager
+from flask_celeryext import FlaskCeleryExt
+
+from app.celery_utils import make_celery
 
 
 class Base(DeclarativeBase):
     pass
 
+# ext_celery = FlaskCeleryExt(create_celery_app=make_celery)  # new
 
-def create_celery():
-    celery = Celery(__name__)
-    celery.conf.broker = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
-    celery.conf.backend = os.environ.get("CELERY_RESULT_BACKEND", "redis://redis:6379/0")
-    celery.broker_use_ssl = {
-        'ssl_cert_reqs': ssl.CERT_NONE
-    }  # True
-    celery.redis_backend_use_ssl = {
-        'ssl_cert_reqs': ssl.CERT_NONE
-    }
-
-
-    return celery
 
 
 db = SQLAlchemy(model_class=Base)
 migrate = Migrate()
 mail = Mail()
-celery = create_celery()
+# celery = create_celery()
 login_manager = LoginManager()

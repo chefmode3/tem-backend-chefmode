@@ -40,12 +40,13 @@ class Config:
     MAIL_HOST_PASSWORD = os.getenv('MAIL_HOST_PASSWORD')
     MAIL_USE_TLS = os.getenv('MAIL_USE_TLS')
     MAIL_USE_SLL = os.getenv('MAIL_USE_SLL')
-    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
-    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND')
-    CELERY_REDIS_MAX_CONNECTIONS = 10
-    CELERY_TASK_SERIALIZER = 'json'
-    CELERY_RESULT_SERIALIZER = 'json'
-    CELERY_ACCEPT_CONTENT = ['json']
+    CELERY_broker_url = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+    RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+    REDIS_MAX_CONNECTIONS = 10
+    TASK_SERIALIZER = 'json'
+    RESULT_SERIALIZER = 'json'
+    ACCEPT_CONTENT = ['json']
+
 
 
 # defining dev config

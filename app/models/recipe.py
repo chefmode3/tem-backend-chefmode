@@ -1,14 +1,19 @@
+import uuid
+from datetime import datetime
+
+from sqlalchemy import DateTime
+
 from app.extensions import db
-from pygments.lexer import default
 
 
 class Recipe(db.Model):
     __tablename__ = 'recipes'
 
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(255), primary_key=True, default=lambda: str(uuid.uuid4()))
     title = db.Column(db.String(255), nullable=False)
     origin = db.Column(db.String(255), nullable=False)
     servings = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(DateTime, default=datetime.utcnow, nullable=False)
 
     preparation_time = db.Column(db.Integer, nullable=True)
     description = db.Column(db.Text, nullable=True)

@@ -1,9 +1,11 @@
+import uuid
+
 from app.extensions import db
 
 
 class TaskResult(db.Model):
     __tablename__ = 'recipe'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(255), primary_key=True, default=lambda: str(uuid.uuid4()))
     title = db.Column(db.String(255), nullable=False)
     origin = db.Column(db.String(255), nullable=False)
     servings = db.Column(db.Integer, nullable=True)

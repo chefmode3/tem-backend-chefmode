@@ -165,7 +165,8 @@ def scrape_and_analyze_recipe(url):
             {
                 "role": "system",
                 "content": (
-                    "You are a culinary and nutrition expert. Your task is to extract recipe information from websites and calculate "
+                    "You are a culinary and nutrition expert. Your task is to extract recipe information from websites "
+                    "and calculate "
                     "nutritional values based on the provided details. Ensure the response is strictly in JSON format and follows this structure:"
 
                     "{ "

@@ -9,7 +9,7 @@ from flask import request, abort, jsonify
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services import RecipeCelService
 from app.task.fetch_desciption import call_fetch_description
-from app.extensions import celery
+
 
 
 recipe_ns = Namespace('recipe', description="user recipe")
@@ -32,6 +32,7 @@ class RecipeScrap(Resource):
             data = {
                 "video_url": link.get('link'),
             }
+
             task = call_fetch_description.delay(data)
             return {'task_id': task.id}, 200
         except ValidationError as form_ee:
@@ -52,7 +53,7 @@ class RecipeScrapPost(Resource):
             abort(400, description=ve.messages)
 
         try:
-            res = AsyncResult(task_id, app=celery)
+            res = AsyncResult(task_id)
         except Exception as e:
             abort(400, description=f"Invalid task ID: {str(e)}")
 
@@ -62,14 +63,16 @@ class RecipeScrapPost(Resource):
             result: dict = res.result
 
             content = result.get('result')
-            # Supprimer les guillemets et les échappements
-            # content = content.replace("\n", '')
+            find = result.get('find')
+            if find:
+                return content
+
             print(json.dumps(content, indent=4))
             # data = json.loads(result.get('content'))
-            recipe = RecipeCelService.convert_and_store_recipe(content)
+            # recipe = RecipeCelService.convert_and_store_recipe(content)
 
 
-            return RecipeSerializer().dump(recipe), 200
+            return content #RecipeSerializer().dump(recipe), 200
         elif res.state == 'FAILURE':
             return {"status": "FAILURE", "message": str(res.result)}, 500
         else:

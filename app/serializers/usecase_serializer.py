@@ -2,7 +2,7 @@ from marshmallow import Schema, fields, validate
 
 
 class RecipeRequestSchema(Schema):
-    recipe_id = fields.Int(required=True)
+    recipe_id = fields.Str(required=True)
 
 class FlagRecipeResponseSchema(Schema):
     message = fields.Str()
@@ -12,14 +12,14 @@ class FlagStatusResponseSchema(Schema):
 
 
 class NutrientSchema(Schema):
-    id = fields.Int(dump_only=True)
+    id = fields.Str(dump_only=True)
     name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
     quantity = fields.Float(required=True, validate=validate.Range(min=0))
     unit = fields.Str(required=True, validate=validate.Length(max=10))
 
 
 class IngredientSchema(Schema):
-    id = fields.Int(dump_only=True)
+    id = fields.Str(dump_only=True)
     name = fields.Str(required=True, validate=validate.Length(min=1, max=100))
     quantity = fields.Float(required=True, validate=validate.Range(min=0))
     unit = fields.Str(required=True, validate=validate.Length(max=20))
@@ -27,13 +27,13 @@ class IngredientSchema(Schema):
 
 
 class ProcessSchema(Schema):
-    id = fields.Int(dump_only=True)
+    id = fields.Str(dump_only=True)
     step_number = fields.Int(required=True, validate=validate.Range(min=1))
     instructions = fields.Str(required=True, validate=validate.Length(min=1))
 
 
 class RecipeResponseSchema(Schema):
-    id = fields.Int(dump_only=True)
+    id = fields.Str(dump_only=True)
     title = fields.Str(required=True, validate=validate.Length(min=1, max=255))
     origin = fields.Str(required=False, validate=validate.Length(min=1, max=255))
     servings = fields.Int(required=False, validate=validate.Range(min=1))
@@ -55,7 +55,15 @@ class IngredientIDSchema(Schema):
     """
     Schema for validating the ingredient_id parameter.
     """
-    ingredient_id = fields.Int(required=True, validate=lambda x: x > 0, error_messages={
+    ingredient_id = fields.Str(required=True, validate=lambda x: x > 0, error_messages={
         "required": "ingredient_id is required",
         "invalid": "ingredient_id must be a positive integer"
     })
+
+class NutritionItemSchema(Schema):
+    name = fields.String(required=True)
+    value = fields.Float(required=True)
+    unit = fields.String(required=True)
+
+class NutritionSchema(Schema):
+    nutritions = fields.List(fields.Nested(NutritionItemSchema), required=True)

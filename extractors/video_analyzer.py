@@ -11,6 +11,8 @@ from moviepy.video.io.VideoFileClip import VideoFileClip
 from pydub import AudioSegment
 from openai import OpenAI
 
+from utils.common import change_extension_to_image
+
 client = OpenAI(
     api_key="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",
     organization="org-xYVDxzYujg2ErOpXDcsttD83")
@@ -80,12 +82,13 @@ def get_video_frames(video_path):
     # Save the final frame as 'recipe_image.jpg' locally
     video.set(cv2.CAP_PROP_POS_FRAMES, frame_count - frame_count)
     success, frame = video.read()
+    recipe_img = 'recipe_img.jpg' #change_extension_to_image(video_path)
     if success:
-        cv2.imwrite('recipe_image.jpg', frame)
+        cv2.imwrite(recipe_img, frame)
 
     video.release()
     print(f"Number of Frames Captured: {len(base64Frames)}")
-    return base64Frames
+    return recipe_img
 
 def process_video(video_path):
     description = ""
@@ -105,15 +108,18 @@ def process_video(video_path):
         else:
             transcript = "No Transcript available, do not mention this in the final recipe."
 
-        base64Frames = get_video_frames(video_path)
+        recipe_img = get_video_frames(video_path)
 
         PROMPT_MESSAGES = [
                 {
                     "role": "system",
                     "content": (
-                        "You are a culinary and nutrition expert. Your task is to Extract recipe information from video and calculate"
-                         "nutritional values based on the provided details. Ensure the response is strictly in JSON format and  retrieve ONLY this structure: "
-                        "{ "
+                        "You are a culinary and nutrition expert. Your task is to extract recipe information from video transcripts"
+                        
+                        "and calculate "
+                    "nutritional values based on the provided details. Ensure the response is strictly in JSON format and follows this structure:"
+
+                    "{ "
                     "  'recipe_information': { "
                     "    'title': 'string', "
                     "    'servings': integer, "
@@ -126,15 +132,6 @@ def process_video(video_path):
                     "      'name': 'string', "
                     "      'quantity': float, "
                     "      'unit': 'string', "
-                    "      'nutrition': { "
-                    "        'calories': float, "
-                    "        'proteins': float, "
-                    "        'carbohydrates': float, "
-                    "        'fats': float, "
-                    "        'fiber': float, "
-                    "        'sugar': float, "
-                    "        'sodium': float "
-                    "      } "
                     "    } "
                     "  ], "
                     "  'processes': [ "
@@ -143,21 +140,28 @@ def process_video(video_path):
                     "      'instructions': 'string' "
                     "    } "
                     "  ], "
-                    "  'total_nutrition': { "
-                    "    'calories': float, "
-                    "    'proteins': float, "
-                    "    'carbohydrates': float, "
-                    "    'fats': float, "
-                    "    'fiber': float, "
-                    "    'sugar': float, "
-                    "    'sodium': float "
-                    "  } "
-                    "} "
-
-                    "Ensure all numerical values are numbers, not text. Ingredients must include quantity and unit when available. "
-                    "Processes must be sequentially numbered starting from 1. Provide the output exactly as JSON and do not include any explanations, "
-                    "headers, or additional text outside of the JSON structure."
-                )
+                    "  'nutrition': ["
+                    "    {"
+                    "      'name': 'string',"
+                    "      'quantity': float,"
+                    "      'unit': 'string'"
+                    "    }"
+                    "  ]"
+                    "}"
+                         "Guidelines:"
+                        "1. All numerical values must be numbers, not text."
+                        "2. Ingredients must always include a 'quantity' and 'unit' when available."
+                        "3. Processes must be sequentially numbered starting from 1."
+                        "4. Nutritional information must include commonly available nutrients like calories, proteins, carbohydrates, fats, fiber, sugar, and sodium. Include as many as possible based on the data provided."
+                        "5. Ensure the output is **exactly** in JSON format with no additional explanations, comments, or headers."
+                        "6. Always use the exact ingredient amounts and details as found in the input text."
+                        "7. Do not nest objects under the `recipe_information`, `ingredients`, or `processes`. Flatten the structure for clarity."
+                        "8. Provide the output only as a JSON object without any extra descriptive text."
+                        "9. Return only the JSON output as specified above."
+                        "10. No nested objects other than these ones."
+                        "11. Never output a '''markdown identifier before you begin and return the value in object format that can easily convert into the json"
+                        "12. Provide this data in the same order and structure for each recipe without additional comments, descriptions, or variations.  maintain the structure."
+                    )
                 },
                 {"role": "user", "content": f"Here is the transcript of the video {transcript}"}
             ]
@@ -172,4 +176,4 @@ def process_video(video_path):
         result = client.chat.completions.create(**params)
         description = result.choices[0].message.content
 
-    return description
+    return description, recipe_img
