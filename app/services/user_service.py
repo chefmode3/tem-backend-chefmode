@@ -20,7 +20,7 @@ class UserService:
         user = User.query.filter_by(email=email).first()
         if user and user.activate:
             abort(400, description="Email already exists."), False
-        elif not user.activate:
+        elif user and not user.activate:
             return {
             "id": user.id,
             "email": user.email,
@@ -34,16 +34,7 @@ class UserService:
         db.session.add(user)
         db.session.commit()
 
-        access_token = create_access_token(identity=email)
-        return {
-            "id": user.id,
-            "email": user.email,
-            "name": user.name,
-            "activate": user.activate,
-            "google_token": "string",
-            "google_id": "string",
-            "access_token": access_token
-        }, True
+        return {"success": "Your account has been created. Please check your email to verify your address."}, True
 
     @staticmethod
     def login(email, password):
@@ -88,7 +79,7 @@ class UserService:
     @staticmethod
     def get_user_by_id(user_id):
         """Retrieves a user by their ID."""
-        user = User.query.get(id=id)
+        user = User.query.get(id=user_id)
         if not user:
             abort(404, description="User not found.")
         return {
@@ -173,7 +164,7 @@ class UserService:
     @staticmethod
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        return User.query.get(str(user_id))
 
     @staticmethod
     def get_current_user():

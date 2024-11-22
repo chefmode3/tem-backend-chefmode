@@ -43,7 +43,7 @@ reset_password_model = convert_marshmallow_to_restx_model(auth_ns, reset_passwor
 @auth_ns.route('/signup')
 class SignupResource(Resource):
     @auth_ns.expect(signup_model)
-    @auth_ns.response(201, "User successfully created", model=user_response_model)
+    @auth_ns.response(201, "User successfully created")
     @auth_ns.response(400, "Validation Error")
     def post(self):
         try:

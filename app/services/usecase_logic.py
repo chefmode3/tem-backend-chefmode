@@ -26,7 +26,7 @@ class RecipeService:
         """
         query = Recipe.query.options(
             db.joinedload(Recipe.users_association)
-        ).order_by(Recipe.id.desc())
+        ).order_by(Recipe.created_at.desc())
         pagination = query.paginate(page=page, per_page=page_size, error_out=False)
 
         return {
@@ -44,7 +44,7 @@ class RecipeService:
         """
         query = Recipe.query.join(UserRecipe).filter(
             UserRecipe.user_id == user_id
-        ).order_by(Recipe.id.desc())
+        ).order_by(Recipe.created_at.desc())
 
         pagination = query.paginate(page=page, per_page=page_size, error_out=False)
         return {
@@ -58,6 +58,7 @@ class RecipeService:
                     "title": recipe.title,
                     "origin": recipe.origin,
                     "servings": recipe.servings,
+                    "created_at": recipe.created_at,
                     "preparation_time": recipe.preparation_time,
                     "description": recipe.description,
                     "image_url": recipe.image_url,
@@ -125,6 +126,7 @@ class RecipeService:
                         "title": recipe.title,
                         "origin": recipe.origin,
                         "servings": recipe.servings,
+                        "created_at": recipe.created_at,
                         "preparation_time": recipe.preparation_time,
                         "description": recipe.description,
                         "image_url": recipe.image_url,
