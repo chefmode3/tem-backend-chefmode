@@ -59,3 +59,11 @@ class IngredientIDSchema(Schema):
         "required": "ingredient_id is required",
         "invalid": "ingredient_id must be a positive integer"
     })
+
+class NutritionItemSchema(Schema):
+    name = fields.String(required=True)
+    value = fields.Float(required=True)
+    unit = fields.String(required=True)
+
+class NutritionSchema(Schema):
+    nutritions = fields.List(fields.Nested(NutritionItemSchema), required=True)

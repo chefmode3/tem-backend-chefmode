@@ -12,7 +12,8 @@ from app.serializers.usecase_serializer import (
     FlagStatusResponseSchema,
     RecipeQuerySchema,
     NutrientSchema,
-    IngredientIDSchema
+    IngredientIDSchema,
+    NutritionSchema
 )
 from app.services.user_service import UserService
 from app.serializers.recipe_serializer import RecipeSerializer
@@ -33,7 +34,7 @@ flag_status_model = convert_marshmallow_to_restx_model(recipe_ns, flag_status_sc
 
 recipe_query_schema = RecipeQuerySchema()
 
-nutrition_response_model = convert_marshmallow_to_restx_model(recipe_ns, NutrientSchema())
+nutrition_response_model = convert_marshmallow_to_restx_model(recipe_ns, NutritionSchema())
 nutrition_response_schema = IngredientIDSchema()
 
 
@@ -182,21 +183,24 @@ class SearchRecipesResource(Resource):
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
 
 
-@recipe_ns.route('/ingredient/<string:ingredient_id>/nutrition')
+@recipe_ns.route('/ingredient/<string:recipe_id>/nutrition')
 class IngredientNutritionResource(Resource):
     @recipe_ns.response(200, "Nutrition data fetched successfully.", model=nutrition_response_model)
     @recipe_ns.response(404, "Ingredient not found.")
     @recipe_ns.response(500, "Unexpected error.")
-    def get(self, ingredient_id):
+    def get(self, recipe_id):
         """
         Get nutrition data for a specific ingredient.
         """
         try:
-            nutrition_data = RecipeService.get_nutrition_by_ingredient(ingredient_id)
-            if not nutrition_data:
+            nutrition_service = RecipeService.get_nutrition_by_ingredient(recipe_id)
+            print(nutrition_service)
+            if not nutrition_service:
                 return {"message": "No nutrition data found for this ingredient."}, 200
 
-            return RecipeSerializer().dump(nutrition_data), 200
+            nutrition_data = {"nutritions": nutrition_service.nutritions}
+            return NutritionSchema().dump(nutrition_data), 200
+
         except ValueError as ve:
             return {"error": "Ingredient not found", "details": str(ve)}, 404
         except Exception as e:
