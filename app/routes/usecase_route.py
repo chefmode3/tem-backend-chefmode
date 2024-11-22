@@ -37,7 +37,7 @@ nutrition_response_model = convert_marshmallow_to_restx_model(recipe_ns, Nutrien
 nutrition_response_schema = IngredientIDSchema()
 
 
-@recipe_ns.route('/get_recipe/<int:recipe_id>')
+@recipe_ns.route('/get_recipe/<string:recipe_id>')
 class GetRecipeResource(Resource):
     @recipe_ns.response(200, "Recipe fetched successfully", model=recipe_response_model)
     @recipe_ns.response(404, "Recipe not found")
@@ -129,7 +129,7 @@ class FlagRecipeResource(Resource):
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
 
 
-@recipe_ns.route('/get_recipe/<int:recipe_id>/flag')
+@recipe_ns.route('/get_recipe/<string:recipe_id>/flag')
 class IsRecipeFlaggedResource(Resource):
     @login_required
     @recipe_ns.response(200, "Flagged status fetched successfully.")
@@ -182,7 +182,7 @@ class SearchRecipesResource(Resource):
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
 
 
-@recipe_ns.route('/ingredient/<int:ingredient_id>/nutrition')
+@recipe_ns.route('/ingredient/<string:ingredient_id>/nutrition')
 class IngredientNutritionResource(Resource):
     @recipe_ns.response(200, "Nutrition data fetched successfully.", model=nutrition_response_model)
     @recipe_ns.response(404, "Ingredient not found.")

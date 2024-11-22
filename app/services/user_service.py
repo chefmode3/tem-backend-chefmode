@@ -28,7 +28,7 @@ class UserService:
             "activate": user.activate,
 
         }, False
-        user = User(email=email, name=email.split('@')[0])
+        user = User(email=email, name=email.split('@')[0], activate=False)
         user.password = generate_password_hash(password)
 
         db.session.add(user)
@@ -71,12 +71,10 @@ class UserService:
     @staticmethod
     def get_user_by_email(user_email):
         """Retrieves a user by their ID."""
-        print('----------------------------')
         user = User.query.filter_by(email=user_email).first()
-        print('user', user.name)
         if not user:
             return None
-        return UserSchema().dump(user)
+        return user
 
     @staticmethod
     def get_user_by_id(user_id):
@@ -103,10 +101,16 @@ class UserService:
         return user
 
     @staticmethod
-    def reset_password(email: str, token: str, new_password: str):
+    def reset_password(token: str, new_password: str):
+        from app.utils.send_email import verify_reset_token
         """Resets the user's password if the token is valid."""
 
-        user = User.query.filter_by(reset_token=token, email=email).first()
+        result = verify_reset_token(token)
+        if not result["valid"]:
+            return {"error": result["error"]}, 400
+
+        email = result["email"]
+        user = User.query.filter_by(email=email).first()
         if not user:
             return {"error": "Invalid or expired reset token."}, 404
 
@@ -184,10 +188,10 @@ class UserService:
     @classmethod
     def activate_user(cls, email):
         user = UserService.get_user_by_email(email)
-        print('-----------------', user)
         if not user:
             return {"error": f"{email} not found"}, 400
         user.activate = True
+
         db.session.add(user)
         db.session.commit()
         return {"result": "user activate"}, 200
