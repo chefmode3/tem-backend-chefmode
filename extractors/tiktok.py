@@ -5,11 +5,8 @@ import extractors.pyktok2 as pyk
 def download_tiktok(video_url, browser='chrome'):
     try:
         print(f"Downloading video from: {video_url}")
-        pyk.save_tiktok(
-            video_url,
-            save_video=True,   # Download only the video (no metadata)
-            metadata_fn=None,  # Skip metadata storage
-        )
+        video_info = pyk.get_tiktok(video_url)
+        direct_link = video_info["video_url"]
         print("Video downloaded successfully!")
     except Exception as e:
         print(f"An error occurred: {e}")
