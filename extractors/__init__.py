@@ -63,17 +63,17 @@ def fetch_description(request_data):
 
     if platform in download_functions:
         # Download the video
-        download_functions[platform](video_url)
+        video_url_with_audio = download_functions[platform](video_url)
 
         # Wait for the download to complete
         time.sleep(SLEEP_TIME)
 
         # Process the video
-        recipe = retry_process_video(output_filepath)
+        recipe, image_url = retry_process_video(video_url_with_audio)
 
         # Remove the downloaded video after processing
-        if os.path.exists(output_filepath):
-            os.remove(output_filepath)
+        if os.path.exists(video_url_with_audio):
+            os.remove(video_url_with_audio)
 
     elif platform == "website":
         recipe, got_image, image_url = scrape_and_analyze_recipe(video_url)
