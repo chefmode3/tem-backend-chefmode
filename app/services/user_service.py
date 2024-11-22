@@ -71,7 +71,9 @@ class UserService:
     @staticmethod
     def get_user_by_email(user_email):
         """Retrieves a user by their ID."""
+        print('----------------------------')
         user = User.query.filter_by(email=user_email).first()
+        print('user', user.name)
         if not user:
             return None
         return UserSchema().dump(user)
@@ -182,6 +184,7 @@ class UserService:
     @classmethod
     def activate_user(cls, email):
         user = UserService.get_user_by_email(email)
+        print('-----------------', user)
         if not user:
             return {"error": f"{email} not found"}, 400
         user.activate = True
