@@ -140,7 +140,7 @@ class RecipeService:
             raise RuntimeError(f"Database error: {str(e)}")
 
     @staticmethod
-    def get_nutrition_by_ingredient(recipe_id):
+    def get_nutrition_by_recipe_id(recipe_id):
         """
         Fetch nutrition data for a specific ingredient.
         :param recipe_id: ID of the ingredient
@@ -151,7 +151,22 @@ class RecipeService:
             if not recipe or not recipe.nutritions:
                 return None
 
-            return recipe
+            nutritions_per_serving = []
+            for nutrition in recipe.nutritions:
+                nutrition_name = nutrition.get("name")
+                total_quantity = nutrition.get("quantity")
+                unit = nutrition.get("unit")
+
+                unit_quantity = total_quantity / recipe.servings
+
+                nutritions_per_serving.append({
+                    "name": nutrition_name,
+                    "total_quantity": total_quantity,
+                    "unit_quantity": round(unit_quantity, 2),
+                    "unit": unit
+                })
+            return nutritions_per_serving
+
         except Exception as e:
             raise RuntimeError(f"Unexpected error: {str(e)}")
 

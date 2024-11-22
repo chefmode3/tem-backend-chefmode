@@ -11,8 +11,6 @@ from app.serializers.usecase_serializer import (
     RecipeRequestSchema,
     FlagStatusResponseSchema,
     RecipeQuerySchema,
-    NutrientSchema,
-    IngredientIDSchema,
     NutritionSchema
 )
 from app.services.user_service import UserService
@@ -30,12 +28,8 @@ flag_recipe_schema = RecipeRequestSchema()
 flag_recipe_model = convert_marshmallow_to_restx_model(recipe_ns, flag_recipe_schema)
 
 flag_status_schema = FlagStatusResponseSchema()
-flag_status_model = convert_marshmallow_to_restx_model(recipe_ns, flag_status_schema)
-
-recipe_query_schema = RecipeQuerySchema()
 
 nutrition_response_model = convert_marshmallow_to_restx_model(recipe_ns, NutritionSchema())
-nutrition_response_schema = IngredientIDSchema()
 
 
 @recipe_ns.route('/get_recipe/<string:recipe_id>')
@@ -193,13 +187,14 @@ class IngredientNutritionResource(Resource):
         Get nutrition data for a specific ingredient.
         """
         try:
-            nutrition_service = RecipeService.get_nutrition_by_ingredient(recipe_id)
-            print(nutrition_service)
+            nutrition_service = RecipeService.get_nutrition_by_recipe_id(recipe_id)
+
             if not nutrition_service:
                 return {"message": "No nutrition data found for this ingredient."}, 200
 
-            nutrition_data = {"nutritions": nutrition_service.nutritions}
-            return NutritionSchema().dump(nutrition_data), 200
+            nutrition_data = {"nutritions": nutrition_service}
+
+            return NutritionSchema(many=True).dump(nutrition_data), 200
 
         except ValueError as ve:
             return {"error": "Ingredient not found", "details": str(ve)}, 404
