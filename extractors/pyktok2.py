@@ -261,9 +261,10 @@ def save_tiktok(video_url,
                     headers['referer'] = 'https://www.tiktok.com/'
                     # include cookies with the video request
                     tt_video = requests.get(tt_video_url, allow_redirects=True, headers=headers, cookies=cookies)
-                    with open("../../downloaded_video.mp4", 'wb') as fn:
-                        fn.write(tt_video.content)
+                    # with open("../../downloaded_video.mp4", 'wb') as fn:
+                    #     fn.write(tt_video.content)
                     slidecount += 1
+                    return tt_video
             else:
                 regex_url = re.findall(url_regex, video_url)[0]
                 video_fn = regex_url.replace('/', '_') + '.mp4'
@@ -271,8 +272,9 @@ def save_tiktok(video_url,
                 headers['referer'] = 'https://www.tiktok.com/'
                 # include cookies with the video request
                 tt_video = requests.get(tt_video_url, allow_redirects=True, headers=headers, cookies=cookies)
-            with open("../../downloaded_video.mp4", 'wb') as fn:
-                fn.write(tt_video.content)
+            return tt_video
+            # with open("../../downloaded_video.mp4", 'wb') as fn:
+            #     fn.write(tt_video.content)
 
         if metadata_fn != '':
             data_slot = tt_json['ItemModule'][video_id]
@@ -300,9 +302,10 @@ def save_tiktok(video_url,
             headers['referer'] = 'https://www.tiktok.com/'
             # include cookies with the video request
             tt_video = requests.get(tt_video_url, allow_redirects=True, headers=headers, cookies=cookies)
-            with open("../../downloaded_video.mp4", 'wb') as fn:
-                fn.write(tt_video.content)
-            print("Saved video\n", video_url, "\nto\n", os.getcwd())
+            # with open("../../downloaded_video.mp4", 'wb') as fn:
+            #     fn.write(tt_video.content)
+            # print("Saved video\n", video_url, "\nto\n", os.getcwd())
+            return tt_video
 
         if metadata_fn != '':
             data_slot = tt_json["__DEFAULT_SCOPE__"]['webapp.video-detail']['itemInfo']['itemStruct']
@@ -319,8 +322,8 @@ def save_tiktok(video_url,
             combined_data.to_csv(metadata_fn,index=False)
             print("Saved metadata for video\n", video_url, "\nto\n", os.getcwd())
 
-        if return_fns == True:
-            return {'video_fn':video_fn,'metadata_fn':metadata_fn}
+        # if return_fns == True:
+        return tt_video #{'video_fn':video_fn,'metadata_fn':metadata_fn}
 
 # the function below is based on this one: https://github.com/davidteather/TikTok-Api/blob/main/examples/user_example.py
 

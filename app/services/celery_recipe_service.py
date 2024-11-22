@@ -125,7 +125,7 @@ class RecipeCelService:
         user = UserService.get_current_user()
 
         recipe_info = recipe_data.get('recipe_information')
-        recipe_info['origin'] = recipe_json['origin']
+        recipe_info['origin'] = recipe_json.get('origin')
 
         recipe_info['ingredients'] = recipe_data.get('ingredients')
         recipe_info['processes'] = recipe_data.get('processes')
