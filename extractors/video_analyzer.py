@@ -82,7 +82,7 @@ def get_video_frames(video_path):
     # Save the final frame as 'recipe_image.jpg' locally
     video.set(cv2.CAP_PROP_POS_FRAMES, frame_count - frame_count)
     success, frame = video.read()
-    recipe_img = change_extension_to_image(video_path)
+    recipe_img = 'recipe_img.jpg' #change_extension_to_image(video_path)
     if success:
         cv2.imwrite(recipe_img, frame)
 
