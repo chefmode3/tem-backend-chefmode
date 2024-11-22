@@ -28,22 +28,13 @@ class UserService:
             "activate": user.activate,
 
         }, False
-        user = User(email=email, name=email.split('@')[0])
+        user = User(email=email, name=email.split('@')[0], activate=False)
         user.password = generate_password_hash(password)
 
         db.session.add(user)
         db.session.commit()
 
-        access_token = create_access_token(identity=email)
-        return {
-            "id": user.id,
-            "email": user.email,
-            "name": user.name,
-            "activate": user.activate,
-            "google_token": "string",
-            "google_id": "string",
-            "access_token": access_token
-        }, True
+        return {"success": "Your account has been created. Please check your email to verify your address."}, True
 
     @staticmethod
     def login(email, password):
@@ -83,12 +74,12 @@ class UserService:
         user = User.query.filter_by(email=user_email).first()
         if not user:
             return None
-        return UserSchema().dump(user)
+        return user
 
     @staticmethod
     def get_user_by_id(user_id):
         """Retrieves a user by their ID."""
-        user = User.query.get(id=id)
+        user = User.query.get(id=user_id)
         if not user:
             abort(404, description="User not found.")
         return {
@@ -110,10 +101,16 @@ class UserService:
         return user
 
     @staticmethod
-    def reset_password(email: str, token: str, new_password: str):
+    def reset_password(token: str, new_password: str):
+        from app.utils.send_email import verify_reset_token
         """Resets the user's password if the token is valid."""
 
-        user = User.query.filter_by(reset_token=token, email=email).first()
+        result = verify_reset_token(token)
+        if not result["valid"]:
+            return {"error": result["error"]}, 400
+
+        email = result["email"]
+        user = User.query.filter_by(email=email).first()
         if not user:
             return {"error": "Invalid or expired reset token."}, 404
 
@@ -173,7 +170,7 @@ class UserService:
     @staticmethod
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        return User.query.get(str(user_id))
 
     @staticmethod
     def get_current_user():
@@ -194,6 +191,7 @@ class UserService:
         if not user:
             return {"error": f"{email} not found"}, 400
         user.activate = True
+
         db.session.add(user)
         db.session.commit()
         return {"result": "user activate"}, 200

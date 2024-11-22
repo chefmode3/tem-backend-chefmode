@@ -27,8 +27,8 @@ def create_celery():
         redis_max_connections=20,  # Limit Redis connections (optional)
         broker_connection_retry_on_startup=True
     )
-    print(celery.conf.redis_backend_use_ssl)
-    print(celery.conf.result_backend)
+    # print(celery.conf.redis_backend_use_ssl)
+    # print(celery.conf.result_backend)
 
     return celery
 

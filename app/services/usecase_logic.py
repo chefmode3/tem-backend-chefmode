@@ -26,7 +26,7 @@ class RecipeService:
         """
         query = Recipe.query.options(
             db.joinedload(Recipe.users_association)
-        )
+        ).order_by(Recipe.created_at.desc())
         pagination = query.paginate(page=page, per_page=page_size, error_out=False)
 
         return {
@@ -44,7 +44,7 @@ class RecipeService:
         """
         query = Recipe.query.join(UserRecipe).filter(
             UserRecipe.user_id == user_id
-        ).order_by(Recipe.id.desc())
+        ).order_by(Recipe.created_at.desc())
 
         pagination = query.paginate(page=page, per_page=page_size, error_out=False)
         return {
@@ -58,6 +58,7 @@ class RecipeService:
                     "title": recipe.title,
                     "origin": recipe.origin,
                     "servings": recipe.servings,
+                    "created_at": recipe.created_at,
                     "preparation_time": recipe.preparation_time,
                     "description": recipe.description,
                     "image_url": recipe.image_url,
@@ -125,6 +126,7 @@ class RecipeService:
                         "title": recipe.title,
                         "origin": recipe.origin,
                         "servings": recipe.servings,
+                        "created_at": recipe.created_at,
                         "preparation_time": recipe.preparation_time,
                         "description": recipe.description,
                         "image_url": recipe.image_url,
@@ -138,17 +140,27 @@ class RecipeService:
             raise RuntimeError(f"Database error: {str(e)}")
 
     @staticmethod
-    def get_nutrition_by_ingredient(ingredient_id):
+    def get_nutrition_by_ingredient(recipe_id):
         """
         Fetch nutrition data for a specific ingredient.
-        :param ingredient_id: ID of the ingredient
+        :param recipe_id: ID of the ingredient
         :return: List of nutrients associated with the ingredient
         """
         try:
-            nutrients = Nutrition.query.filter_by(ingredient_id=ingredient_id).all()
-            if not nutrients:
+            recipe = Recipe.query.filter_by(id=recipe_id).first()
+            if not recipe or not recipe.nutritions:
                 return None
 
-            return nutrients
+            return recipe
         except Exception as e:
             raise RuntimeError(f"Unexpected error: {str(e)}")
+
+    @staticmethod
+    def get_recipe_by_origin(origin):
+        """
+        get the origin to avoid duplication in the database
+        """
+        origin_recipe = Recipe.query.filter_by(origin=origin).first()
+
+        if origin_recipe:
+            return origin_recipe
