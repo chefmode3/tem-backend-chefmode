@@ -1,3 +1,5 @@
+import logging
+
 from flask_restx import Namespace, Resource
 from flask import request
 from flask_login import login_required
@@ -10,12 +12,15 @@ from app.serializers.usecase_serializer import (
     RecipeResponseSchema,
     RecipeRequestSchema,
     FlagStatusResponseSchema,
+    RecipeQuerySchema,
+    NutrientSchema,
+    IngredientIDSchema,
     NutritionSchema
 )
 from app.services.user_service import UserService
 from app.serializers.recipe_serializer import RecipeSerializer
 
-
+logger = logging.getLogger(__name__)
 recipe_ns = Namespace('recipe', description="user recipe")
 
 # Schemas and models
@@ -27,27 +32,24 @@ flag_recipe_schema = RecipeRequestSchema()
 flag_recipe_model = convert_marshmallow_to_restx_model(recipe_ns, flag_recipe_schema)
 
 flag_status_schema = FlagStatusResponseSchema()
+flag_status_model = convert_marshmallow_to_restx_model(recipe_ns, flag_status_schema)
+
+recipe_query_schema = RecipeQuerySchema()
 
 nutrition_response_model = convert_marshmallow_to_restx_model(recipe_ns, NutritionSchema())
+nutrition_response_schema = IngredientIDSchema()
 
 
-@recipe_ns.route('/get_recipe_by_id')
+@recipe_ns.route('/get_recipe/<string:recipe_id>')
 class GetRecipeResource(Resource):
-    @recipe_ns.doc(params={
-        'recipe_id': {'description': 'The ID of the recipe to fetch', 'required': True, 'type': 'string'},
-        'serving': {'description': 'The serving size to adjust the recipe (optional)', 'required': False,
-                    'type': 'integer'}
-    })
     @recipe_ns.response(200, "Recipe fetched successfully", model=recipe_response_model)
     @recipe_ns.response(404, "Recipe not found")
-    def get(self):
+    def get(self, recipe_id):
         """
         Fetch a single recipe by ID with its details.
         """
         try:
-            serving = request.args.get('serving', type=int)
-            recipe_id = request.args.get('recipe_id', type=str)
-            recipe = RecipeService.get_recipe_by_id(recipe_id, serving)
+            recipe = RecipeService.get_recipe_by_id(recipe_id)
             return RecipeSerializer().dump(recipe), 200
         except Exception as e:
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
@@ -106,7 +108,8 @@ class GetMyRecipesResource(Resource):
                 "page_size": data["page_size"],
             }, 200
         except Exception as e:
-            return {"error": "An unexpected error occurred", "details": str(e)}, 500
+            logger.error(f'An unexpected error occurred", "details": {str(e)}')
+            return {"error": "An unexpected error occurred"}, 400
 
 
 @recipe_ns.route('/flag_recipe')
@@ -133,7 +136,6 @@ class FlagRecipeResource(Resource):
 @recipe_ns.route('/get_recipe/<string:recipe_id>/flag')
 class IsRecipeFlaggedResource(Resource):
     @login_required
-    @recipe_ns.doc(params={'recipe_id': {'description': 'The ID of the recipe to fetch', 'required': True, 'type': 'string'}})
     @recipe_ns.response(200, "Flagged status fetched successfully.")
     def get(self, recipe_id):
         """
@@ -184,29 +186,23 @@ class SearchRecipesResource(Resource):
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
 
 
-@recipe_ns.route('/nutrition_by_recipe_id')
+@recipe_ns.route('/ingredient/<string:recipe_id>/nutrition')
 class IngredientNutritionResource(Resource):
-    @recipe_ns.doc(params={
-        'recipe_id': {'description': 'The ID of the recipe to fetch', 'required': True, 'type': 'string'},
-        'serving': {'description': 'The serving size to adjust the recipe (optional)', 'required': False,
-                    'type': 'integer'}
-    })
     @recipe_ns.response(200, "Nutrition data fetched successfully.", model=nutrition_response_model)
     @recipe_ns.response(404, "Ingredient not found.")
     @recipe_ns.response(500, "Unexpected error.")
-    def get(self):
+    def get(self, recipe_id):
         """
         Get nutrition data for a specific ingredient.
         """
         try:
-            serving = request.args.get('serving', type=int)
-            recipe_id = request.args.get('recipe_id', type=str)
-            nutrition_service = RecipeService.get_nutrition_by_recipe_id(recipe_id, serving)
-
+            nutrition_service = RecipeService.get_nutrition_by_ingredient(recipe_id)
+            print(nutrition_service)
             if not nutrition_service:
                 return {"message": "No nutrition data found for this ingredient."}, 200
 
-            return NutritionSchema(many=True).dump(nutrition_service), 200
+            nutrition_data = {"nutritions": nutrition_service.nutritions}
+            return NutritionSchema().dump(nutrition_data), 200
 
         except ValueError as ve:
             return {"error": "Ingredient not found", "details": str(ve)}, 404

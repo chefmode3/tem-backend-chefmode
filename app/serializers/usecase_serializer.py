@@ -4,8 +4,10 @@ from marshmallow import Schema, fields, validate
 class RecipeRequestSchema(Schema):
     recipe_id = fields.Str(required=True)
 
+
 class FlagRecipeResponseSchema(Schema):
     message = fields.Str()
+
 
 class FlagStatusResponseSchema(Schema):
     flagged = fields.Bool()
@@ -59,6 +61,13 @@ class IngredientIDSchema(Schema):
         "required": "ingredient_id is required",
         "invalid": "ingredient_id must be a positive integer"
     })
+
+
+class NutritionItemSchema(Schema):
+    name = fields.String(required=True)
+    value = fields.Float(required=True)
+    unit = fields.String(required=True)
+
 
 class NutritionSchema(Schema):
     name = fields.Str(required=False)
