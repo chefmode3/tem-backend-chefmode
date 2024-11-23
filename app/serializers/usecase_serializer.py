@@ -61,5 +61,10 @@ class IngredientIDSchema(Schema):
     })
 
 class NutritionSchema(Schema):
+    name = fields.Str(required=False)
+    total_quantity = fields.Float(required=False)
+    unit_serving = fields.Float(required=False)
+    unit = fields.Str(required=False)
+
     class Meta:
-        fields = ("name", "total_quantity", "unit_quantity", "unit")
+        fields = ("name", "total_quantity", "unit_serving", "unit")
