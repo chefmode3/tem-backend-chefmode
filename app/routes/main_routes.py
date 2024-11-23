@@ -3,7 +3,6 @@ import os
 from flask_login import login_required
 from flask_restx import Namespace, Resource
 from flask import request, abort, render_template, session
-from httplib2.auth import token68
 from marshmallow import ValidationError
 
 from app.utils.send_email import verify_reset_token, activation_or_reset_email
@@ -15,7 +14,8 @@ from app.serializers.user_serializer import (
     UserLoginSchema,
     UserResponseSchema,
     PasswordResetRequestSchema,
-    ResetPasswordSchema, UserActivationSchema
+    ResetPasswordSchema,
+    UserActivationSchema
 )
 
 
@@ -38,7 +38,6 @@ password_reset_request_model = convert_marshmallow_to_restx_model(auth_ns, passw
 
 reset_password_schema = ResetPasswordSchema()
 reset_password_model = convert_marshmallow_to_restx_model(auth_ns, reset_password_schema)
-
 
 
 @auth_ns.route('/signup')
@@ -148,7 +147,6 @@ class PasswordResetRequestResource(Resource):
 
         except Exception as err:
             return {"errors": err}, 500
-
 
 
 @auth_ns.route('/reset_password')

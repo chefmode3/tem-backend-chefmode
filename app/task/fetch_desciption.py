@@ -1,12 +1,10 @@
 from celery import shared_task
 
 from celery.utils.log import get_task_logger
-
-from app.serializers.recipe_serializer import RecipeSerializer
-# from app.services import RecipeCelService
 from celery.exceptions import MaxRetriesExceededError
 
 from extractors import fetch_description
+from app.serializers.recipe_serializer import RecipeSerializer
 from app.services.usecase_logic import RecipeService
 
 logger = get_task_logger(__name__)

@@ -1,5 +1,3 @@
-
-
 def with_app_context(task_function):
     def wrapper(*args, **kwargs):
         from app import create_app

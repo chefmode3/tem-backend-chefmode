@@ -3,6 +3,7 @@ from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, auto_field
 
 from app.models import Recipe
 
+
 class TaskIdSchema(Schema):
     task_id = fields.String(required=True)
 
@@ -18,9 +19,9 @@ class RecipeSerializer(SQLAlchemyAutoSchema):
         load_instance = True
         exclude = ('nutritions',)
 
+
 class RecipeSchemaSerializer(SQLAlchemyAutoSchema):
     class Meta:
         model = Recipe
         include_relationships = True
         load_instance = True
-

@@ -1,18 +1,20 @@
+import logging
+
 import requests
 from bs4 import BeautifulSoup
 from openai import OpenAI
 from PIL import Image
 from io import BytesIO
-import re
 import os
 import random
 import time
 import tiktoken  # Import tiktoken
 
+logger = logging.getLogger(__name__)
+
 # Initialize OpenAI client
-client = OpenAI(
-    api_key="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",
-    organization="org-xYVDxzYujg2ErOpXDcsttD83")
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), organization=os.environ.get('OPENAI_ORGANIZATION'))
+
 
 def extract_main_image(soup):
     """
@@ -23,7 +25,7 @@ def extract_main_image(soup):
         return image['content']
     image_tags = soup.find_all('img', src=True)  # Fallback for cases where no og:image
     if image_tags:
-        print(image_tags)
+        logger.info(image_tags)
         return image_tags[0]['src']
     return None
 
@@ -34,13 +36,16 @@ def get_website_content(url):
     """
     headers_list = [
         {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                          " (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
         },
         {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36"
         },
         {
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36"
         },
     ]
     for _ in range(5):  # Retry up to 5 times
@@ -86,9 +91,9 @@ def save_image_locally(image, filename='recipe_image.jpg'):
     """Save the image object to the local environment."""
     try:
         image.save(filename)  # Save the image as a JPEG
-        print(f"Image saved successfully as {filename}.")
+        logger.info(f"Image saved successfully as {filename}.")
     except Exception as e:
-        print(f"Error saving the image: {e}")
+        logger.error(f"Error saving the image: {e}")
 
 
 def scrape_and_analyze_recipe(url):
@@ -96,13 +101,13 @@ def scrape_and_analyze_recipe(url):
     start = time.time()
     response = get_website_content(url)
     end = time.time()
-    print(f"get_website_content took {end - start} seconds")
+    logger.info(f"get_website_content took {end - start} seconds")
 
     # Parse the HTML content
     start = time.time()
     soup = BeautifulSoup(response.text, 'html.parser')
     end = time.time()
-    print(f"parsing html took {end - start} seconds")
+    logger.info(f"parsing html took {end - start} seconds")
 
     # Extract title and body content from HTML
     title = soup.title.string if soup.title else "No title found"
@@ -114,7 +119,6 @@ def scrape_and_analyze_recipe(url):
 
     # Extraire toutes les balises <img> à l'intérieur du corps
 
-
     # Extraire le texte de différentes balises à l'intérieur du corps
     text_elements = body.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
     body_content = " ".join(
@@ -123,7 +127,7 @@ def scrape_and_analyze_recipe(url):
     )
 
     end = time.time()
-    print(f"Extract all text content took {end - start} seconds")
+    logger.info(f"Extract all text content took {end - start} seconds")
     # print(body_content)
 
     start = time.time()
@@ -131,13 +135,13 @@ def scrape_and_analyze_recipe(url):
     token_count, tokens = tokenize_text(body_content)
     # print(f"Token Count: {token_count}")
     end = time.time()
-    print(f"Tokenize text content took {end - start} seconds")
+    logger.info(f"Tokenize text content took {end - start} seconds")
 
     start = time.time()
     # Extract main image
     main_image_url = extract_main_image(soup)
     end = time.time()
-    print(f"Main Image extraction took {end - start} seconds")
+    logger.info(f"Main Image extraction took {end - start} seconds")
 
     got_image = False
 
@@ -155,7 +159,7 @@ def scrape_and_analyze_recipe(url):
         # else:
         # images = body.find_all('img')
         # main_image_url = [img.get('src') for img in images if img.get('src')][0]
-        print("No main image found.")
+        logger.info("No main image found.")
 
     start = time.time()
     # Use OpenAI to analyze the recipe content
@@ -167,7 +171,8 @@ def scrape_and_analyze_recipe(url):
                 "content": (
                     "You are a culinary and nutrition expert. Your task is to extract recipe information from websites "
                     "and calculate "
-                    "nutritional values based on the provided details. Ensure the response is strictly in JSON format and follows this structure:"
+                    "nutritional values based on the provided details. Ensure the response is strictly in JSON format"
+                    " and follows this structure:"
 
                     "{ "
                     "  'recipe_information': { "
@@ -202,10 +207,14 @@ def scrape_and_analyze_recipe(url):
                     "1. All numerical values must be numbers, not text."
                     "2. Ingredients must always include a 'quantity' and 'unit' when available."
                     "3. Processes must be sequentially numbered starting from 1."
-                    "4. Nutritional information must include commonly available nutrients like calories, proteins, carbohydrates, fats, fiber, sugar, and sodium. Include as many as possible based on the data provided."
-                    "5. Ensure the output is **exactly** in JSON format with no additional explanations, comments, or headers."
+                    "4. Nutritional information must include commonly available nutrients like calories, proteins, "
+                    "carbohydrates, fats, fiber, sugar, and sodium. Include as many as possible based on the "
+                    "data provided."
+                    "5. Ensure the output is **exactly** in JSON format with no additional explanations, "
+                    "comments, or headers."
                     "6. Always use the exact ingredient amounts and details as found in the input text."
-                    "7. Do not nest objects under the `recipe_information`, `ingredients`, or `processes`. Flatten the structure for clarity."
+                    "7. Do not nest objects under the `recipe_information`, `ingredients`, or `processes`. "
+                    "Flatten the structure for clarity."
                     "8. Provide the output only as a JSON object without any extra descriptive text."
                     "Return only the JSON output as specified above."
                 )
@@ -217,9 +226,8 @@ def scrape_and_analyze_recipe(url):
     )
 
     end = time.time()
-    print(f"OpenAI took {end - start} seconds")
+    logger.info(f"OpenAI took {end - start} seconds")
 
     recipe_info = ai_response.choices[0].message.content
 
     return recipe_info, got_image, main_image_url
-

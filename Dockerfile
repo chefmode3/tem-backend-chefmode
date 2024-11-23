@@ -14,7 +14,8 @@ ENV PATH="/home/pythonrunner/.local/bin:${VIRTUAL_ENV}/bin:${PATH}"
 
 # install environment dependencies
 RUN apt-get update && \
-    apt-get install  -y  \
+    apt-get install  -y  &&\
+    apt-get install -y ffmpeg \
     && apt-get -q clean
 
 # install dependencies

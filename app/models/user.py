@@ -39,7 +39,6 @@ class User(db.Model, UserMixin):
     # Relationships
     recipes_association = db.relationship('UserRecipe', back_populates='user')
 
-
     def __repr__(self):
         return f'<User {self.name}>'
 
@@ -50,4 +49,3 @@ class User(db.Model, UserMixin):
         self.activate = activate
         self.google_id = google_id
         self.google_token = google_token
-        
