@@ -1,4 +1,5 @@
 import json
+import logging
 
 from celery.result import AsyncResult
 from marshmallow import ValidationError
@@ -9,6 +10,7 @@ from flask import request, abort, jsonify
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.task.fetch_desciption import call_fetch_description
 
+logger = logging.getLogger(__name__)
 
 recipe_ns = Namespace('recipe', description="user recipe")
 link_recipe_schema = LinkRecipeSchema()
@@ -62,7 +64,7 @@ class RecipeScrapPost(Resource):
             if find:
                 return content
 
-            print(json.dumps(content, indent=4))
+            logger.info(json.dumps(content, indent=4))
             # data = json.loads(result.get('content'))
             # recipe = RecipeCelService.convert_and_store_recipe(content)
 

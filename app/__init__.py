@@ -47,6 +47,8 @@ def create_app(script_info=None):
     api.add_namespace(recipe_ns, path="/recipe")
     api.add_namespace(recipe_name_space, path="/recipe")
 
+
+    # cli
     cli.register(app)
 
     return app

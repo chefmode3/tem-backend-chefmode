@@ -43,14 +43,11 @@ class CallbackResource(Resource):
         
         try:
             data = request.json
-            print(request.url)
             try:
                 validated_data = GoogleCallBackSchema().load(data)
             except ValidationError as err:
-                print(err.messages)
                 abort(400, description=err.messages)
             authorization_code = validated_data.get('code')
-            # print(authorization_code)
             if not authorization_code:
                 auth_google_ns.abort(400, f"Authorization {authorization_code} code is required")
 
@@ -91,5 +88,4 @@ class CallbackResource(Resource):
         except MissingCodeError as google_err:
             return {'error': f'{google_err}'}, 400
         except ValueError as e:
-            print(e)
             return {'error': f'Failed to create user {e}'}, 401

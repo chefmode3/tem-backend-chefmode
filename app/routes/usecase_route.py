@@ -1,8 +1,9 @@
+import logging
+
 from flask_restx import Namespace, Resource
 from flask import request
 from flask_login import login_required
 from marshmallow import ValidationError
-
 
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.usecase_logic import RecipeService
@@ -17,7 +18,7 @@ from app.serializers.usecase_serializer import (
 from app.services.user_service import UserService
 from app.serializers.recipe_serializer import RecipeSerializer
 
-
+logger = logging.getLogger(__name__)
 recipe_ns = Namespace('recipe', description="user recipe")
 
 # Schemas and models
@@ -105,7 +106,8 @@ class GetMyRecipesResource(Resource):
                 "page_size": data["page_size"],
             }, 200
         except Exception as e:
-            return {"error": "An unexpected error occurred", "details": str(e)}, 500
+            logger.error(f'An unexpected error occurred", "details": {str(e)}')
+            return {"error": "An unexpected error occurred"}, 400
 
 
 @recipe_ns.route('/flag_recipe')
@@ -193,13 +195,11 @@ class IngredientNutritionResource(Resource):
         """
         try:
             nutrition_service = RecipeService.get_nutrition_by_ingredient(recipe_id)
-            print(nutrition_service)
             if not nutrition_service:
                 return {"message": "No nutrition data found for this ingredient."}, 200
 
             nutrition_data = {"nutritions": nutrition_service.nutritions}
             return NutritionSchema().dump(nutrition_data), 200
-
         except ValueError as ve:
             return {"error": "Ingredient not found", "details": str(ve)}, 404
         except Exception as e:
