@@ -1,8 +1,7 @@
-from flask_login import login_user, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
-
 from flask import abort
 from flask_jwt_extended import create_access_token
+from flask_login import login_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from app.models.user import User
 from app.extensions import db, login_manager
@@ -122,7 +121,6 @@ class UserService:
         db.session.commit()
 
         return {"message": "Password  reset successfully"}
-
 
     @staticmethod
     def update_user(id, **kwargs):

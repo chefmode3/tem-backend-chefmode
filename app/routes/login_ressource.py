@@ -1,16 +1,8 @@
-from flask import session
-import json
-import requests
+
 from flask import session,  redirect, request, abort
 from flask_restx import Resource, Namespace
-from google.oauth2 import id_token
-from flask_jwt_extended import create_access_token
-import google.auth.transport.requests
-from google.auth.exceptions import GoogleAuthError
 from oauthlib.oauth2.rfc6749.errors import MissingCodeError
 from marshmallow import ValidationError
-from app.extensions import db
-from app.config import flow, GOOGLE_CLIENT_ID
 from app.config import flow
 
 from app.serializers.user_serializer import GoogleCallBackSchema, UserRegisterSchema
@@ -51,14 +43,11 @@ class CallbackResource(Resource):
         
         try:
             data = request.json
-            print(request.url)
             try:
                 validated_data = GoogleCallBackSchema().load(data)
             except ValidationError as err:
-                print(err.messages)
                 abort(400, description=err.messages)
             authorization_code = validated_data.get('code')
-            # print(authorization_code)
             if not authorization_code:
                 auth_google_ns.abort(400, f"Authorization {authorization_code} code is required")
 
@@ -99,5 +88,4 @@ class CallbackResource(Resource):
         except MissingCodeError as google_err:
             return {'error': f'{google_err}'}, 400
         except ValueError as e:
-            print(e)
             return {'error': f'Failed to create user {e}'}, 401

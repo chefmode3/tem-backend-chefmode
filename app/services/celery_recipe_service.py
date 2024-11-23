@@ -1,10 +1,17 @@
 from app.extensions import db
-from app.models import Nutrition, Recipe, Ingredient, Process, UserRecipe, AnonymousUserRecipe, AnonymousUser
+from app.models import (
+    Nutrition,
+    Recipe,
+    Ingredient,
+    Process,
+    UserRecipe,
+    AnonymousUserRecipe,
+    AnonymousUser
+)
 from app.services import UserService
 
 
 class RecipeCelService:
-
 
     # store each in nutrition
     @staticmethod
@@ -35,7 +42,6 @@ class RecipeCelService:
 
         if existing_user_recipe:
             return existing_user_recipe, False
-
 
         return RecipeCelService.create_user_recipe(user_id, recipe_id), True
 
@@ -116,12 +122,11 @@ class RecipeCelService:
         db.session.commit()
         return process
 
-    # main methode for json traitement and call other methode
+    # main methode for json treatment and call other methode
     @staticmethod
     def convert_and_store_recipe(recipe_json: dict):
         # Extraire data from JSON
         recipe_data = recipe_json.get('content')
-        print(recipe_data.get('origin'))
         user = UserService.get_current_user()
 
         recipe_info = recipe_data.get('recipe_information')
@@ -139,7 +144,6 @@ class RecipeCelService:
         else:
             anonymous_user, is_exist = RecipeCelService.get_or_create_anonyme_user()
             RecipeCelService.create_anonyme_user_recipe(user=anonymous_user, recipe=recipe)
-
 
         # # # add the  ingrédients
         # for ingredient in ingredients_data:
@@ -170,7 +174,6 @@ class RecipeCelService:
         db.session.add(user_recipe)
         db.session.commit()
         return user_recipe
-
 
     @classmethod
     def create_user_anonyme(cls, user_id):

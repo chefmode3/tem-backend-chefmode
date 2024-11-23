@@ -2,6 +2,7 @@ import uuid
 
 from app.extensions import db
 
+
 class Ingredient(db.Model):
     __tablename__ = 'ingredients'
 

@@ -1,13 +1,12 @@
 import http.client
 import json
-import tempfile
-import urllib.request
+import logging
 import re
-
-import ffmpeg
 import requests
 
 from utils.common import save_video_to_file
+
+logger = logging.getLogger(__name__)
 
 
 def extract_video_id(youtube_url):
@@ -16,7 +15,7 @@ def extract_video_id(youtube_url):
     if match:
         return match.group(2)
     else:
-        print("Error: Unable to extract video ID.")
+        logger.info("Error: Unable to extract video ID.")
         return None
 
 
@@ -43,23 +42,20 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
         video_streams = response['videos']['items']
         video_url_with_audio = video_streams[0].get('url')
         if not video_url_with_audio:
-            print("Error: No valid video URL found.")
+            logger.info("Error: No valid video URL found.")
             return None
-        print("Downloading video into memory...")
+        logger.info("Downloading video into memory...")
         video_response = requests.get(video_url_with_audio, stream=True)
         if video_response.status_code != 200:
-            print("Failed to download the video.")
+            logger.info("Failed to download the video.")
             return None
         video_buffer = video_response.content
         # print(video_buffer)
         return save_video_to_file(video_buffer)
 
     except (KeyError, IndexError):
-        print("Error: Unable to fetch video details.")
+        logger.error("Error: Unable to fetch video details.")
         return None
-
-
-
 
 # Download the video
     # try:

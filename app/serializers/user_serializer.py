@@ -4,14 +4,17 @@ from marshmallow import Schema, fields, validate
 class GoogleCallBackSchema(Schema):
     code = fields.Str(required=True)
 
+
 class UserSignupSchema(Schema):
 
     email = fields.Email(required=True)
     password = fields.Str(required=True, validate=validate.Length(min=8))
 
+
 class UserLoginSchema(Schema):
     email = fields.Email(required=True)
     password = fields.Str(required=True)
+
 
 class UserSchema(Schema):
     id = fields.Str(required=True)

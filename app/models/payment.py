@@ -1,7 +1,8 @@
 import uuid
 
-from app.extensions import db
 from datetime import datetime
+
+from app.extensions import db
 
 from sqlalchemy_fsm import FSMField, transition
 

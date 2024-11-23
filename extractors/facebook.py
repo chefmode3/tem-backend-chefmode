@@ -1,10 +1,13 @@
+import logging
+
 import requests
-import urllib.request
 
 from utils.common import save_video_to_file
 
+logger = logging.getLogger(__name__)
 
-def download_facebook_video(url, output_filename="downloaded_video.mp4"):
+
+def download_facebook_video(url):
     # API endpoint and headers
     api_url = "https://auto-download-all-in-one.p.rapidapi.com/v1/social/autolink"
     headers = {
@@ -25,24 +28,18 @@ def download_facebook_video(url, output_filename="downloaded_video.mp4"):
     # Step 4: Extract the first video URL from "medias"
     try:
         video_url = data['medias'][0]['url']
-        print(f"Downloading video from: {video_url}")
-
+        logger.info(f"Downloading video from: {video_url}")
     except (KeyError, IndexError):
-        print("Error: Could not extract video URL from the response.")
+        logger.info("Error: Could not extract video URL from the response.")
         return
 
     # Step 5: Download the MP4 video
     try:
         video_response = requests.get(video_url, stream=True)
         if video_response.status_code != 200:
-            print("Failed to download the video.")
+            logger.info("Failed to download the video.")
             return None
         video_buffer = video_response.content
         return save_video_to_file(video_buffer)
     except Exception as e:
-        print(f"Error downloading video: {e}")
-
-
-# # Example usage:
-# url = "https://www.facebook.com/share/v/jYJtoPQt17FzDvGj/"
-# download_facebook_video(url)
+        logger.info(f"Error downloading video: {e}")
