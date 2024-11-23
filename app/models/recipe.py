@@ -1,6 +1,6 @@
 import uuid
-from datetime import datetime
 
+from datetime import datetime
 from sqlalchemy import DateTime
 
 from app.extensions import db
@@ -25,6 +25,4 @@ class Recipe(db.Model):
 
     # Relationships
     users_association = db.relationship('UserRecipe', back_populates='recipe')
-
     anonymous_users_association = db.relationship('AnonymousUserRecipe', back_populates='recipe')
-

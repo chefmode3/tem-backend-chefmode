@@ -11,7 +11,6 @@ from app.serializers.usecase_serializer import (
     RecipeRequestSchema,
     FlagStatusResponseSchema,
     RecipeQuerySchema,
-    NutrientSchema,
     IngredientIDSchema,
     NutritionSchema
 )

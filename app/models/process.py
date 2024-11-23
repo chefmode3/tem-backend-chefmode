@@ -2,6 +2,7 @@ import uuid
 
 from app.extensions import db
 
+
 class Process(db.Model):
     __tablename__ = 'processes'
 

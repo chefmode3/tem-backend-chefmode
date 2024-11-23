@@ -6,9 +6,11 @@ from itsdangerous import URLSafeTimedSerializer
 from app.services import UserService
 from app.task.send_email import send_reset_email
 
+
 def generate_reset_token(email):
     serializer = URLSafeTimedSerializer("your_secret_key")
     return serializer.dumps(email, salt="password-reset-salt")
+
 
 def verify_reset_token(token, max_age=3600):  # 30 minutes
     serializer = URLSafeTimedSerializer("your_secret_key")
@@ -18,7 +20,14 @@ def verify_reset_token(token, max_age=3600):  # 30 minutes
     except Exception as e:
         return {"valid": False, "error": str(e)}
 
-def activation_or_reset_email(email: str, name:str, subject: str,  template: str='password_reset_email.html',url_frontend: str="http://127.0.0.1:5000/auth/reset_password/"):
+
+def activation_or_reset_email(
+        email: str,
+        name:str,
+        subject: str,
+        template: str='password_reset_email.html',
+        url_frontend: str="http://127.0.0.1:5000/auth/reset_password/"
+):
     reset_token = generate_reset_token(email)
 
     user_token = UserService.request_password_reset(email, reset_token)

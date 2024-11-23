@@ -3,8 +3,8 @@ from flask import abort
 
 from app.extensions import db
 from app.models.recipe import Recipe
-from app.models.nutrition import Nutrition
 from app.models.user import UserRecipe
+
 
 class RecipeService:
 
@@ -89,7 +89,6 @@ class RecipeService:
         except SQLAlchemyError as e:
             db.session.rollback()
             abort(500, description=f"Database error: {str(e)}")
-
 
     @staticmethod
     def is_recipe_flagged_by_user(recipe_id, user_id):
