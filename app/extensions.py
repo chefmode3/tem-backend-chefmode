@@ -19,7 +19,7 @@ mail = Mail()
 login_manager = LoginManager()
 
 
-def make_celery():
+def make_celery(app):
     celery = Celery(__name__)
 
     # Updated configuration using lowercase keys
@@ -33,4 +33,12 @@ def make_celery():
         broker_connection_retry_on_startup=True
     )
 
+    # Initialize Celery
+    celery.conf.update(app.config)
+    class ContextTask(celery.Task):
+        def __call__(self, *args, **kwargs):
+            with app.app_context():  # Push the application context
+                return self.run(*args, **kwargs)
+
+    celery.Task = ContextTask
     return celery

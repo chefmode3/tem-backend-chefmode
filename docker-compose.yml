@@ -22,7 +22,7 @@ services:
     build: .
     volumes:
       - .:/app
-    command: celery -A app.extensions.celery worker --loglevel=info
+    command: celery -A manage.celery worker --loglevel=info
     depends_on:
       - redis
       - web

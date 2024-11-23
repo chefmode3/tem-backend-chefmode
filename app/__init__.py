@@ -7,7 +7,7 @@ from flask_jwt_extended import JWTManager
 
 from app import cli
 from app.extensions import mail, login_manager
-from app.extensions import db, migrate, make_celery
+from app.extensions import db, migrate
 from app.config import DevelopmentConfig
 from app.routes.get_recipe import recipe_ns as recipe_name_space
 from app.routes.main_routes import auth_ns
@@ -24,10 +24,6 @@ def create_app(script_info=None):
     # Initialize db
     db.init_app(app)
     migrate.init_app(app, db)
-
-    # Initialize Celery
-    celery = make_celery()
-    celery.conf.update(app.config)
 
     # Enable CORS
     CORS(app)
