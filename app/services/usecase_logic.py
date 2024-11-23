@@ -30,8 +30,6 @@ class RecipeService:
         recipe.ingredients = ingredient_pre_serving
         return recipe
 
-
-
     @staticmethod
     def get_all_recipes(page, page_size):
         """
