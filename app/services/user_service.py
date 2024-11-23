@@ -1,15 +1,14 @@
-import secrets
-import os
-
+from flask_login import login_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_mail import Message
-from flask import jsonify, abort, url_for
-from flask_jwt_extended import create_access_token, get_jwt_identity, get_jwt
+
+from flask import abort
+from flask_jwt_extended import create_access_token
 
 from app.models.user import User
-from app.extensions import db
-from app.extensions import mail
+from app.extensions import db, login_manager
+
 from app.serializers.user_serializer import UserSchema
+
 
 class UserService:
 
@@ -18,25 +17,24 @@ class UserService:
     @staticmethod
     def signup(email, password):
         """Registers a new user."""
-        if User.query.filter_by(email=email).first():
-            abort(400, description="Email already exists.")
+        user = User.query.filter_by(email=email).first()
+        if user and user.activate:
+            abort(400, description="Email already exists."), False
+        elif user and not user.activate:
+            return {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+            "activate": user.activate,
 
-        user = User(email=email, name=email.split('@')[0])
+        }, False
+        user = User(email=email, name=email.split('@')[0], activate=False)
         user.password = generate_password_hash(password)
 
         db.session.add(user)
         db.session.commit()
 
-        access_token = create_access_token(identity=email)
-        return {
-            "id": user.id,
-            "email": user.email,
-            "username": user.username,
-            "activate": user.activate,
-            "google_token": "string",
-            "google_id": "string",
-            "access_token": access_token
-        }
+        return {"success": "Your account has been created. Please check your email to verify your address."}, True
 
     @staticmethod
     def login(email, password):
@@ -44,19 +42,17 @@ class UserService:
         user = User.query.filter_by(email=email).first()
         if not user or not check_password_hash(user.password, password):
             abort(401, description="Invalid credentials.")
+        if not user.activate:
+            abort(401, description="user is not activate or delete")
 
         access_token = create_access_token(identity=email)
+        login_user(user)
         return {
             "id": user.id,
             "email": user.email,
-            "username": user.username,
+            "name": user.name,
             "access_token": access_token
         }
-
-    def logout(self, jti):
-        """Logs out a user by revoking their token."""
-        self.revoked_tokens.add(jti)
-        return {"message": "Successfully logged out"}
 
     @staticmethod
     def create_user(name, email, password=None, google_id=None, google_token=None, activate=False):
@@ -78,56 +74,55 @@ class UserService:
         user = User.query.filter_by(email=user_email).first()
         if not user:
             return None
-        return UserSchema().dump(user)
+        return user
 
     @staticmethod
     def get_user_by_id(user_id):
         """Retrieves a user by their ID."""
-        user = User.query.get(id=id)
+        user = User.query.get(id=user_id)
         if not user:
             abort(404, description="User not found.")
         return {
             "id": user.id,
             "email": user.email,
-            "username": user.username
+            "name": user.name
         }
 
     @staticmethod
-    def request_password_reset(email):
+    def request_password_reset(email, reset_token) -> User:
         """Generates a password reset token and sends it via email."""
         user = User.query.filter_by(email=email).first()
         if not user:
             abort(404, description="User not found.")
 
-        reset_token = secrets.token_urlsafe(16)
         user.reset_token = reset_token
         db.session.commit()
-
-        # Send email (assuming Mail is configured and initialized in the app)
-        msg = Message("Password Reset Request",
-                      sender=os.getenv('DEFAULT_FROM_EMAIL'),
-                      recipients=[email])
-        msg.body = (f"Click the link to reset your password: "
-                    f"{url_for('auth_reset_password_resource', token=reset_token, _external=True)}")
-        mail.send(msg)
-
-        return {"message": "Password reset email sent"}
+        # return User
+        return user
 
     @staticmethod
-    def reset_password(token, new_password):
+    def reset_password(token: str, new_password: str):
+        from app.utils.send_email import verify_reset_token
         """Resets the user's password if the token is valid."""
-        user = User.query.filter_by(reset_token=token).first()
+
+        result = verify_reset_token(token)
+        if not result["valid"]:
+            return {"error": result["error"]}, 400
+
+        email = result["email"]
+        user = User.query.filter_by(email=email).first()
         if not user:
-            abort(400, description="Invalid or expired reset token.")
+            return {"error": "Invalid or expired reset token."}, 404
 
         if len(new_password) < 8:
-            abort(400, description="Password must be at least 8 characters.")
+            return {"error": "Password must be at least 8 characters."}, 400
 
         user.password = generate_password_hash(new_password)
         user.reset_token = None
         db.session.commit()
 
-        return {"message": "Password has been reset successfully"}
+        return {"message": "Password  reset successfully"}
+
 
     @staticmethod
     def update_user(id, **kwargs):
@@ -141,9 +136,9 @@ class UserService:
 
         db.session.commit()
         return {
-            "id": userid,
+            "id": id,
             "email": user.email,
-            "username": user.username,
+            "name": user.name,
 
         }
 
@@ -173,15 +168,30 @@ class UserService:
         return {"message": "Password updated successfully"}
 
     @staticmethod
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(str(user_id))
+
+    @staticmethod
     def get_current_user():
         """Returns information about the currently authenticated user."""
-        user_email = get_jwt_identity()
-        user = User.query.filter_by(email=user_email).first()
-        if not user:
-            abort(404, description="User not found.")
+        user = current_user
+        if not user.is_authenticated:
+            return None
 
         return {
-            "id": userid,
+            "id": user.id,
             "email": user.email,
-            "username": user.username
+            "name": user.name
         }
+
+    @classmethod
+    def activate_user(cls, email):
+        user = UserService.get_user_by_email(email)
+        if not user:
+            return {"error": f"{email} not found"}, 400
+        user.activate = True
+
+        db.session.add(user)
+        db.session.commit()
+        return {"result": "user activate"}, 200

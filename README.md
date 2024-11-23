@@ -1,4 +1,9 @@
 # CHEFMODE
+
+# To launch celery 
+`   
+    celery -A celery_worker.celery worker --loglevel=info
+`
 # Run with docker compose
 
 clone the code and run the following command
@@ -10,11 +15,11 @@ access the app on your local
 ## database 
 connect to the db container using the following command
 
-```docker exec -it chef_mode_db bash```
+`docker exec -it chef_mode_db bash`
 
 ### connet to psql using the following command
 
-`psql -U postgres`
+`psql -U chefmode`
 ### create a new user and password for the db
 
     CREATE USER chefmode WITH PASSWORD chefmodedb
@@ -30,9 +35,9 @@ connect to the web container using the following command
 
 Run the following commands
 
-```python manage.py db init```
+python manage.py db init
 
-```python manage.py db migrate```
+python manage.py db migrate
 
 ```python manage.py db upgrade```
 
@@ -53,7 +58,8 @@ https://www.liquidweb.com/kb/how-to-setup-a-python-virtual-environment-on-window
 
 ## Install Requirements
     pip install requirements.txt
-
+## install ffmpeg
+sudo apt install ffmpeg
 To get started, install Postgres on your local computer, if you don’t have it already. Since Heroku uses Postgres, it
 will be good for us to develop locally on the same database. If you don’t have Postgres installed, Postgres.app is an
 easy way to get up and running for Mac OS X users. Consult the download page for more info.

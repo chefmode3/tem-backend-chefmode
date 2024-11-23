@@ -1,16 +1,14 @@
 import os
 from os.path import join, dirname
 from dotenv import load_dotenv
+import logging
 import ssl
-
-from app.extensions import mail
-from app.config import Config
 from extractors import fetch_description
-
 
 
 from flask import Flask, request
 from flask_cors import CORS
+
 from celery import Celery
 
 
@@ -20,18 +18,12 @@ def create_app():
     print(dotenv_path)
     print(os.getenv("TIME_ZONE"))
     app = Flask(__name__)
-
-    app.config.from_object(Config)
-
-    # Initialiser Flask-Mail
-    mail.init_app(app)
-
     cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
     celery = Celery(
         __name__,
-        broker=os.environ.get('REDIS_BROKER', ""),
-        backend=os.environ.get('REDIS_BACKEND', ''),
+        broker="rediss://:p001004ca65035c7d381457ecf466defc3710bc746fcca3d97b41b0184759034c@ec2-98-84-198-124.compute-1.amazonaws.com:13919/0",
+        backend="rediss://:p001004ca65035c7d381457ecf466defc3710bc746fcca3d97b41b0184759034c@ec2-98-84-198-124.compute-1.amazonaws.com:13919/0",
         broker_use_ssl={
             'ssl_cert_reqs': ssl.CERT_NONE
         },
@@ -69,4 +61,5 @@ def fetch_results():
     elif res.state == 'SUCCESS':
         return res.result
     elif res.state == 'FAILURE':
-        return {"status": "FAILURE", "message": str(res.result)}
+        print("Failure Message:", res.result)
+        return {"status": "FAILURE"}

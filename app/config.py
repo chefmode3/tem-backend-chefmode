@@ -31,19 +31,28 @@ class Config:
 
     # SMTP setup to reset password
 
-    EMAIL_HOST = os.getenv('EMAIL_HOST')
-    EMAIL_PORT = os.getenv('EMAIL_PORT')
+    MAIL_HOST = os.getenv('MAIL_HOST')
+    MAIL_PORT = os.getenv('MAIL_PORT')
+    MAIL_SERVER = os.getenv('MAIL_SERVER')
+    MAIL_BACKEND = os.getenv('MAIL_BACKEND')
     DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
-    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS')
-    EMAIL_USE_SLL = os.getenv('EMAIL_USE_SLL')
+    MAIL_HOST_USER = os.getenv('MAIL_HOST_USER')
+    MAIL_HOST_PASSWORD = os.getenv('MAIL_HOST_PASSWORD')
+    MAIL_USE_TLS = os.getenv('MAIL_USE_TLS')
+    MAIL_USE_SLL = os.getenv('MAIL_USE_SLL')
+    CELERY_broker_url = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+    RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
+    REDIS_MAX_CONNECTIONS = 10
+    TASK_SERIALIZER = 'json'
+    RESULT_SERIALIZER = 'json'
+    ACCEPT_CONTENT = ['json']
+
 
 
 # defining dev config
 class DevelopmentConfig(Config):
     """Development configuration"""
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL_DEV')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
     FLASK_ADMIN_SWATCH = 'cerulean'
     DEBUG_TB_ENABLED = True
     DEBUG = True  # Activate debug mode in development environment
@@ -62,5 +71,6 @@ class TestingConfig(Config):
 # defining production config
 class ProductionConfig(Config):
     """Production configuration"""
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
     DEBUG = False  # Deactivate debug mode in production environment
+

@@ -5,7 +5,7 @@ __pycache__/
 
 # C extensions
 *.so
-
+.flaskenv
 # Distribution / packaging
 .Python
 build/
@@ -50,7 +50,6 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
-migrations/
 # Translations
 *.mo
 *.pot
@@ -122,13 +121,13 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+.env
 
 # Spyder app settings
 .spyderproject
@@ -165,3 +164,5 @@ cython_debug/
 
 .DS_Store/
 .flaskenv
+.idea
+.vercel

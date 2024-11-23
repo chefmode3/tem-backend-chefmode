@@ -12,7 +12,7 @@ from marshmallow import ValidationError
 from app.extensions import db
 from app.config import flow, GOOGLE_CLIENT_ID
 from app.config import flow
-from app.services.user_service import UserService
+
 from app.serializers.user_serializer import GoogleCallBackSchema, UserRegisterSchema
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 

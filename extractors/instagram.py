@@ -3,6 +3,10 @@ import json
 import urllib.request
 import re
 
+import requests
+
+from utils.common import save_video_to_file
+
 
 def download_instagram_video(instagram_url, output_filename="downloaded_video.mp4"):
     # Step 1: Extract the shortcode from the provided Instagram URL
@@ -39,8 +43,12 @@ def download_instagram_video(instagram_url, output_filename="downloaded_video.mp
 
     # Step 5: Download the MP4 video
     try:
-        urllib.request.urlretrieve(video_url, output_filename)
-        print(f"Video downloaded successfully as {output_filename}")
+        video_response = requests.get(video_url, stream=True)
+        if video_response.status_code != 200:
+            print("Failed to download the video.")
+            return None
+        video_buffer = video_response.content
+        return save_video_to_file(video_buffer)
     except Exception as e:
         print(f"Error downloading video: {e}")
 

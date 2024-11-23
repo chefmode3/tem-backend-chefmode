@@ -10,8 +10,9 @@ import time
 import tiktoken  # Import tiktoken
 
 # Initialize OpenAI client
-client = OpenAI(api_key="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")
-
+client = OpenAI(
+    api_key="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",
+    organization="org-xYVDxzYujg2ErOpXDcsttD83")
 
 def extract_main_image(soup):
     """
@@ -22,6 +23,7 @@ def extract_main_image(soup):
         return image['content']
     image_tags = soup.find_all('img', src=True)  # Fallback for cases where no og:image
     if image_tags:
+        print(image_tags)
         return image_tags[0]['src']
     return None
 
@@ -106,14 +108,22 @@ def scrape_and_analyze_recipe(url):
     title = soup.title.string if soup.title else "No title found"
 
     start = time.time()
-    # Extract all text content from various relevant tags
+
+    # Extraire le contenu du corps de la page
+    body = soup.find('body')
+
+    # Extraire toutes les balises <img> à l'intérieur du corps
+
+
+    # Extraire le texte de différentes balises à l'intérieur du corps
+    text_elements = body.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
     body_content = " ".join(
         element.get_text(separator=" ", strip=True)
-        for element in soup.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
+        for element in text_elements
     )
+
     end = time.time()
     print(f"Extract all text content took {end - start} seconds")
-
     # print(body_content)
 
     start = time.time()
@@ -133,16 +143,18 @@ def scrape_and_analyze_recipe(url):
 
     # Display the main image if found
     if not main_image_url:
-    #     if not re.match(r'^https?:', main_image_url):
-    #         main_image_url = requests.compat.urljoin(url, main_image_url)
-    #     image = get_image_with_retry(main_image_url)
-    #     if image:
-    #         save_image_locally(image, 'recipe_image.jpg')  # Save the image locally
-    #         got_image = True
-    #     else:
-    #         print("Failed to retrieve the main image after multiple attempts.")
-    #         got_image = False
-    # else:
+        #     if not re.match(r'^https?:', main_image_url):
+        #         main_image_url = requests.compat.urljoin(url, main_image_url)
+        #     image = get_image_with_retry(main_image_url)
+        #     if image:
+        #         save_image_locally(image, 'recipe_image.jpg')  # Save the image locally
+        #         got_image = True
+        #     else:
+        #         print("Failed to retrieve the main image after multiple attempts.")
+        #         got_image = False
+        # else:
+        # images = body.find_all('img')
+        # main_image_url = [img.get('src') for img in images if img.get('src')][0]
         print("No main image found.")
 
     start = time.time()
@@ -153,23 +165,61 @@ def scrape_and_analyze_recipe(url):
             {
                 "role": "system",
                 "content": (
-                    "You get information from recipe websites: recipe title, servings, total time, ingredients, "
-                    "directions. "
-                    "You will output in object format. You will not output any description of the recipe"
-                    "and don't make nested object under total time, directions and ingredients. "
-                    "You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text."
+                    "You are a culinary and nutrition expert. Your task is to extract recipe information from websites "
+                    "and calculate "
+                    "nutritional values based on the provided details. Ensure the response is strictly in JSON format and follows this structure:"
+
+                    "{ "
+                    "  'recipe_information': { "
+                    "    'title': 'string', "
+                    "    'servings': integer, "
+                    "    'preparation_time': integer, "
+                    "    'description': 'string', "
+                    "    'image_url': 'string' "
+                    "  }, "
+                    "  'ingredients': [ "
+                    "    { "
+                    "      'name': 'string', "
+                    "      'quantity': float, "
+                    "      'unit': 'string', "
+                    "    } "
+                    "  ], "
+                    "  'processes': [ "
+                    "    { "
+                    "      'step_number': integer, "
+                    "      'instructions': 'string' "
+                    "    } "
+                    "  ], "
+                    "  'nutrition': ["
+                    "    {"
+                    "      'name': 'string',"
+                    "      'quantity': float,"
+                    "      'unit': 'string'"
+                    "    }"
+                    "  ]"
+                    "}"
+                    "Guidelines:"
+                    "1. All numerical values must be numbers, not text."
+                    "2. Ingredients must always include a 'quantity' and 'unit' when available."
+                    "3. Processes must be sequentially numbered starting from 1."
+                    "4. Nutritional information must include commonly available nutrients like calories, proteins, carbohydrates, fats, fiber, sugar, and sodium. Include as many as possible based on the data provided."
+                    "5. Ensure the output is **exactly** in JSON format with no additional explanations, comments, or headers."
+                    "6. Always use the exact ingredient amounts and details as found in the input text."
+                    "7. Do not nest objects under the `recipe_information`, `ingredients`, or `processes`. Flatten the structure for clarity."
+                    "8. Provide the output only as a JSON object without any extra descriptive text."
+                    "Return only the JSON output as specified above."
                 )
             },
-            {"role": "user", "content": f"Title: {title}\nURL: {url}\n\n"}
+            {
+                "role": "user", "content": f"Title: {title}\nURL: {url}"
+            }
         ]
     )
+
     end = time.time()
     print(f"OpenAI took {end - start} seconds")
 
     recipe_info = ai_response.choices[0].message.content
-
-    # Display the AI response
-    # print(recipe_info)
 
     return recipe_info, got_image, main_image_url
 

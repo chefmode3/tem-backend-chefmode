@@ -5,3 +5,4 @@ from app.models.recipe import Recipe
 from app.models.ingredient import Ingredient
 from app.models.process import Process
 from app.models.payment import Payment
+from app.models.nutrition import Nutrition

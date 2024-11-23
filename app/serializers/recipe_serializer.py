@@ -1,24 +1,26 @@
 from marshmallow import Schema, fields, validate, ValidationError
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, auto_field
-from marshmallow_sqlalchemy.fields import Nested
-from app.models.user import User
-from app.extensions import db
+
+from app.models import Recipe
+
+class TaskIdSchema(Schema):
+    task_id = fields.String(required=True)
 
 
-class RecipeSchema(SQLAlchemyAutoSchema):
-
-        class Meta:
-            model = Recipe
-            load_instance = True
-            exclude = ('recipe_id', 'user_id')
-            include_fk = True
+class LinkRecipeSchema(Schema):
+    link = fields.Str(required=True)
 
 
-class RecipeForm(schema.Schema):
-    name = fields.Str(required=True)
-    description = fields.List(required=True)
-    ingredients = fields.Str(required=True)
-    instructions = fields.Str(required=True)
-    image = fields.Str(required=True)
-    category = fields.Str(required=True)
-    user_id = fields.Int(required=True)
+class RecipeSerializer(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Recipe
+        include_relationships = True
+        load_instance = True
+        exclude = ('nutritions',)
+
+class RecipeSchemaSerializer(SQLAlchemyAutoSchema):
+    class Meta:
+        model = Recipe
+        include_relationships = True
+        load_instance = True
+

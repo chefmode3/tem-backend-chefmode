@@ -1,25 +1,30 @@
-from app.serializers.usecase_serializer import (
-    RecipeResponseSchema,
-    FlagStatusResponseSchema,
-    RecipeRequestSchema,
-    FlagStatusResponseSchema,
-    RecipeQuerySchema
-)
 from flask_restx import Namespace, Resource
-from flask import request, abort
+from flask import request
+from flask_login import login_required
 from marshmallow import ValidationError
-from flask_jwt_extended import jwt_required, get_jwt
+
 
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.usecase_logic import RecipeService
+from app.serializers.usecase_serializer import (
+    RecipeResponseSchema,
+    RecipeRequestSchema,
+    FlagStatusResponseSchema,
+    RecipeQuerySchema,
+    NutrientSchema,
+    IngredientIDSchema,
+    NutritionSchema
+)
+from app.services.user_service import UserService
+from app.serializers.recipe_serializer import RecipeSerializer
 
 
 recipe_ns = Namespace('recipe', description="user recipe")
 
 # Schemas and models
-recipe_response_model = convert_marshmallow_to_restx_model(recipe_ns, RecipeResponseSchema())
-recipe_ns.models[recipe_response_model.name] = recipe_response_model
 recipe_response_schema = RecipeResponseSchema()
+recipe_response_model = convert_marshmallow_to_restx_model(recipe_ns, recipe_response_schema)
+recipe_ns.models[recipe_response_model.name] = recipe_response_model
 
 flag_recipe_schema = RecipeRequestSchema()
 flag_recipe_model = convert_marshmallow_to_restx_model(recipe_ns, flag_recipe_schema)
@@ -29,8 +34,11 @@ flag_status_model = convert_marshmallow_to_restx_model(recipe_ns, flag_status_sc
 
 recipe_query_schema = RecipeQuerySchema()
 
+nutrition_response_model = convert_marshmallow_to_restx_model(recipe_ns, NutritionSchema())
+nutrition_response_schema = IngredientIDSchema()
 
-@recipe_ns.route('/get_recipe/<int:recipe_id>')
+
+@recipe_ns.route('/get_recipe/<string:recipe_id>')
 class GetRecipeResource(Resource):
     @recipe_ns.response(200, "Recipe fetched successfully", model=recipe_response_model)
     @recipe_ns.response(404, "Recipe not found")
@@ -40,24 +48,29 @@ class GetRecipeResource(Resource):
         """
         try:
             recipe = RecipeService.get_recipe_by_id(recipe_id)
-            return recipe_response_schema.dump(recipe), 200
+            return RecipeSerializer().dump(recipe), 200
         except Exception as e:
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
 
 
 @recipe_ns.route('/get_all_recipes')
 class GetAllRecipesResource(Resource):
+    @recipe_ns.doc(params={
+        'page': 'Page number (default: 1)',
+        'page_size': 'Number of results per page (default: 10)'
+    })
     @recipe_ns.response(200, "Recipes fetched successfully", model=recipe_response_model)
     def get(self):
         """
         Fetch all recipes with pagination.
         """
         try:
-            page = request.args.get("page", 1, type=int)
-            page_size = request.args.get("page_size", 10, type=int)
+            page = request.args.get("page", default=1, type=int)
+            page_size = request.args.get("page_size", default=3, type=int)
             data = RecipeService.get_all_recipes(page, page_size)
+
             return {
-                "data": recipe_response_schema.dump(data["data"]),
+                "data": RecipeSerializer(many=True).dump(data["data"]),
                 "total": data["total"],
                 "pages": data["pages"],
                 "current_page": data["current_page"],
@@ -69,19 +82,24 @@ class GetAllRecipesResource(Resource):
 
 @recipe_ns.route('/get_my_recipes')
 class GetMyRecipesResource(Resource):
-    @jwt_required()
+    @login_required
+    @recipe_ns.doc(params={
+        'page': 'Page number (default: 1)',
+        'page_size': 'Number of results per page (default: 10)'
+    })
     @recipe_ns.response(200, "My recipes fetched successfully", model=recipe_response_model)
     def get(self):
         """
         Fetch recipes created by the logged-in user.
         """
         try:
-            user_id = get_jwt_identity()
-            page = request.args.get("page", 1, type=int)
-            page_size = request.args.get("page_size", 10, type=int)
+            user = UserService.get_current_user()
+            user_id = user['id']
+            page = request.args.get("page", default=1, type=int)
+            page_size = request.args.get("page_size", default=3, type=int)
             data = RecipeService.get_my_recipes(user_id, page, page_size)
             return {
-                "data": recipe_response_schema.dump(data["data"]),
+                "data": RecipeSerializer(many=True).dump(data["data"]),
                 "total": data["total"],
                 "pages": data["pages"],
                 "current_page": data["current_page"],
@@ -93,34 +111,36 @@ class GetMyRecipesResource(Resource):
 
 @recipe_ns.route('/flag_recipe')
 class FlagRecipeResource(Resource):
-    @jwt_required()
+    @login_required
     @recipe_ns.expect(flag_recipe_model)
-    @recipe_ns.response(200, "Recipe flagged successfully.")
+    @recipe_ns.response(201, "Recipe flagged successfully.")
     def post(self):
         """
         Mark a recipe as flagged for the current user.
         """
         try:
             data = flag_recipe_schema.load(request.get_json())
-            user_id = get_jwt_identity()
+            user = UserService.get_current_user()
+            user_id = user['id']
             response = RecipeService.flag_recipe(data["recipe_id"], user_id)
-            return response, 200
+            return response, 201
         except ValidationError as err:
             return {"errors": err.messages}, 400
         except Exception as e:
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
 
 
-@recipe_ns.route('/get_recipe/<int:recipe_id>/flag')
+@recipe_ns.route('/get_recipe/<string:recipe_id>/flag')
 class IsRecipeFlaggedResource(Resource):
-    @jwt_required()
-    @recipe_ns.response(200, "Flagged status fetched successfully.", model=flag_status_model)
+    @login_required
+    @recipe_ns.response(200, "Flagged status fetched successfully.")
     def get(self, recipe_id):
         """
         Check if a recipe is flagged by the current user.
         """
         try:
-            user_id = get_jwt_identity()
+            user = UserService.get_current_user()
+            user_id = user['id']
             response = RecipeService.is_recipe_flagged_by_user(recipe_id, user_id)
             return flag_status_schema.dump(response), 200
         except Exception as e:
@@ -143,7 +163,7 @@ class SearchRecipesResource(Resource):
         try:
             search_term = request.args.get("search", default="", type=str)
             page = request.args.get("page", default=1, type=int)
-            page_size = request.args.get("page_size", default=10, type=int)
+            page_size = request.args.get("page_size", default=3, type=int)
 
             if not search_term:
                 return {"message": "Search term is required."}, 400
@@ -151,7 +171,7 @@ class SearchRecipesResource(Resource):
             results = RecipeService.search_recipes(search_term, page, page_size)
 
             return {
-                "data": recipe_response_schema.dump(results["data"], many=True),
+                "data": RecipeSerializer(many=True).dump(results["data"]),
                 "total": results["total"],
                 "pages": results["pages"],
                 "current_page": results["current_page"],
@@ -159,5 +179,29 @@ class SearchRecipesResource(Resource):
             }, 200
         except ValidationError as err:
             return {"errors": err.messages}, 400
+        except Exception as e:
+            return {"error": "An unexpected error occurred", "details": str(e)}, 500
+
+
+@recipe_ns.route('/ingredient/<string:recipe_id>/nutrition')
+class IngredientNutritionResource(Resource):
+    @recipe_ns.response(200, "Nutrition data fetched successfully.", model=nutrition_response_model)
+    @recipe_ns.response(404, "Ingredient not found.")
+    @recipe_ns.response(500, "Unexpected error.")
+    def get(self, recipe_id):
+        """
+        Get nutrition data for a specific ingredient.
+        """
+        try:
+            nutrition_service = RecipeService.get_nutrition_by_ingredient(recipe_id)
+            print(nutrition_service)
+            if not nutrition_service:
+                return {"message": "No nutrition data found for this ingredient."}, 200
+
+            nutrition_data = {"nutritions": nutrition_service.nutritions}
+            return NutritionSchema().dump(nutrition_data), 200
+
+        except ValueError as ve:
+            return {"error": "Ingredient not found", "details": str(ve)}, 404
         except Exception as e:
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
