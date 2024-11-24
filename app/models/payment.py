@@ -6,7 +6,14 @@ from app.extensions import db
 
 from sqlalchemy_fsm import FSMField, transition
 
-from app.services.entities import MembershipStates
+from app.services.entities import MembershipStates, SubscriptionEntity
+
+
+def get_paid_plan(product_id=None):
+    if product_id:
+        subscription_plan = db.query(Subscription).filter(product_id == product_id).first()
+        return subscription_plan
+    return None
 
 
 class Payment(db.Model):
@@ -29,6 +36,7 @@ class Subscription(db.Model):
     plan_name = db.Column(db.String(50), nullable=False, unique=True)
     expires_in_days = db.Column(db.Integer, default=0)
     max_receipts = db.Column(db.Integer, default=5)
+    product_id = db.Column(db.String, nullable=False, unique=True)
 
 
 class SubscriptionMembership(db.Model):
@@ -40,7 +48,10 @@ class SubscriptionMembership(db.Model):
     state = db.Column(FSMField, default=MembershipStates.NEW.value, nullable=False)
     store = db.Column(db.String(50), nullable=True)
 
-    stripe_subscription_id = db.Column(db.String(50), nullable=True)
+    subscription_id = db.Column(db.String(50), nullable=True)
+    product_id = db.Column(db.String(255), nullable=True)
+    customer_id = db.Column(db.String(255), nullable=True)
+    latest_invoice = db.Column(db.Text(), nullable=True)
     purchase_date = db.Column(db.DateTime, nullable=True)
     cancelled_at = db.Column(db.DateTime, nullable=True)
     expired_at = db.Column(db.DateTime, nullable=True)
@@ -50,13 +61,20 @@ class SubscriptionMembership(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
+    def from_dict(self, data: dict):
+        for k, v in data.items():
+            setattr(self, k, v)
+        return self
+
     @transition(
         field='state',
         source="*",
         target=MembershipStates.PAID.value
     )
-    def pay(self, subscription_data):
-        pass
+    def pay(self, subscription_data: SubscriptionEntity):
+        self.from_dict(subscription_data.dict())
+        subscription = get_paid_plan(self.product_id)
+        self.subscription = subscription
 
     @transition(
         field='state',
@@ -64,4 +82,4 @@ class SubscriptionMembership(db.Model):
         target=MembershipStates.CANCELLED.value
      )
     def cancel(self):
-        pass
+        ...
