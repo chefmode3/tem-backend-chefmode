@@ -1,4 +1,5 @@
 import os
+import logging
 
 from flask_login import login_required
 from flask_restx import Namespace, Resource
@@ -25,20 +26,27 @@ signup_schema = UserSignupSchema()
 signup_model = convert_marshmallow_to_restx_model(auth_ns, signup_schema)
 
 user_activation_schema = UserActivationSchema()
-user_activation_model = convert_marshmallow_to_restx_model(auth_ns, user_activation_schema)
+user_activation_model = convert_marshmallow_to_restx_model(
+    auth_ns, user_activation_schema
+)
 
 login_schema = UserLoginSchema()
 login_model = convert_marshmallow_to_restx_model(auth_ns, login_schema)
 
 user_response_schema = UserResponseSchema()
-user_response_model = convert_marshmallow_to_restx_model(auth_ns, user_response_schema)
+user_response_model = convert_marshmallow_to_restx_model(
+    auth_ns, user_response_schema
+)
 
 password_reset_request_schema = PasswordResetRequestSchema()
-password_reset_request_model = convert_marshmallow_to_restx_model(auth_ns, password_reset_request_schema)
+password_reset_request_model = convert_marshmallow_to_restx_model(
+    auth_ns, password_reset_request_schema
+)
 
 reset_password_schema = ResetPasswordSchema()
 reset_password_model = convert_marshmallow_to_restx_model(auth_ns, reset_password_schema)
 
+logger = logging.getLogger(__name__)
 
 @auth_ns.route('/signup')
 class SignupResource(Resource):
@@ -65,8 +73,13 @@ class SignupResource(Resource):
             template = 'welcome_email.html'
             body = render_template(template, name=name)
             send_reset_email.delay(email=email,  body=body, subject=subject, recipient=to)
-            return activation_or_reset_email(email, name=name, subject=subject, template='confirm_email.html',
-                                             url_frontend=url_frontend)
+            return activation_or_reset_email(
+                email,
+                name=name,
+                subject=subject,
+                template='confirm_email.html',
+                url_frontend=url_frontend
+            )
         except ValidationError as err:
             return {"errors": err.messages}, 400
 
@@ -74,7 +87,9 @@ class SignupResource(Resource):
 @auth_ns.route('/signup/activation')
 class SignupConfirmResource(Resource):
     @auth_ns.expect(user_activation_model)
-    @auth_ns.response(201, "User Account successfully activated", model=user_activation_model)
+    @auth_ns.response(
+        201, "User Account successfully activated", model=user_activation_model
+    )
     @auth_ns.response(400, "Validation Error")
     def post(self):
         try:
@@ -86,17 +101,22 @@ class SignupConfirmResource(Resource):
             if not result["valid"]:
                 return {"error": (result["error"])}, 400
             return UserService.activate_user(email)
+
         except ValidationError as err:
+            logger.error(f"Validation error occurred: {str(err)}")
             return {"errors": err.messages}, 400
 
         except Exception as err:
-            return {"errors": f"{err}"}, 500
+            logger.error(f"An unexpected error occurred: {str(err)}")
+            return {"errors": f"{err}"}, 400
 
 
 @auth_ns.route('/login')
 class LoginResource(Resource):
     @auth_ns.expect(login_model)
-    @auth_ns.response(201, "User successfully logged", model=user_response_model)
+    @auth_ns.response(
+        201, "User successfully logged", model=user_response_model
+    )
     @auth_ns.response(400, "Validation Error")
     def post(self):
         try:
@@ -110,6 +130,7 @@ class LoginResource(Resource):
                 abort(401, description="Invalid credentials.")
 
         except ValidationError as err:
+            logger.error(f"Validation error occurred: {str(err)}")
             return {"errors": err.messages}, 400
 
 
@@ -126,7 +147,9 @@ class LogoutResource(Resource):
 class PasswordResetRequestResource(Resource):
 
     @auth_ns.expect(password_reset_request_model)
-    @auth_ns.response(200, "Password reset email sent", model=password_reset_request_model)
+    @auth_ns.response(
+        200, "Password reset email sent", model=password_reset_request_model
+    )
     @auth_ns.response(400, "Validation Error")
     def post(self):
         try:
@@ -139,21 +162,29 @@ class PasswordResetRequestResource(Resource):
             user = UserService.get_user_by_email(email)
             name: str = user.name
 
-            return activation_or_reset_email(email, name=name, subject=subject,  template='password_reset_email.html',
-                                             url_frontend=url_frontend)
+            return activation_or_reset_email(
+                email,
+                name=name,
+                subject=subject,
+                template='password_reset_email.html',
+                url_frontend=url_frontend
+            )
 
         except ValidationError as err:
             return {"errors": err.messages}, 400
 
         except Exception as err:
-            return {"errors": err}, 500
+            return {"errors": err}, 400
 
 
 @auth_ns.route('/reset_password')
 class ResetPasswordResource(Resource):
 
     @auth_ns.expect(reset_password_model)
-    @auth_ns.response(200, "Password has been reset successfully", model=reset_password_model)
+    @auth_ns.response(200,
+                      "Password has been reset successfully",
+                      model=reset_password_model
+                      )
     @auth_ns.response(400, "Validation Error")
     def post(self):
         try:
@@ -161,10 +192,12 @@ class ResetPasswordResource(Resource):
             data = reset_password_schema.load(request.get_json())
             new_password = data.get("new_password")
             token = data.get('token')
-
             return UserService.reset_password(token, new_password)
+
         except ValidationError as err:
+            logger.error(f"Valider error occurred: {str(err)}")
             return {"errors": err.messages}, 400
 
         except Exception as err:
-            return {"errors": err}, 500
+            logger.error(f"An unexpected error occurred: {str(err)}")
+            return {"errors": err}, 400

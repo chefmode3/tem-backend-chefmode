@@ -63,11 +63,11 @@ class IngredientIDSchema(Schema):
     })
 
 
-class NutritionItemSchema(Schema):
-    name = fields.String(required=True)
-    value = fields.Float(required=True)
-    unit = fields.String(required=True)
-
-
 class NutritionSchema(Schema):
-    nutritions = fields.List(fields.Nested(NutritionItemSchema), required=True)
+    name = fields.Str(required=False)
+    total_quantity = fields.Float(required=False)
+    unit_serving = fields.Float(required=False)
+    unit = fields.Str(required=False)
+
+    class Meta:
+        fields = ("name", "total_quantity", "unit_serving", "unit")
