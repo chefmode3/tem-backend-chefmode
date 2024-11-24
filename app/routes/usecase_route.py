@@ -3,7 +3,7 @@ from flask import request
 from flask_login import login_required
 from marshmallow import ValidationError
 
-
+from app.decorateur.anonyme_user import load_or_create_anonymous_user, track_anonymous_requests
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.usecase_logic import RecipeService
 from app.serializers.usecase_serializer import (
@@ -11,7 +11,6 @@ from app.serializers.usecase_serializer import (
     RecipeRequestSchema,
     FlagStatusResponseSchema,
     RecipeQuerySchema,
-    NutrientSchema,
     IngredientIDSchema,
     NutritionSchema
 )
@@ -55,6 +54,9 @@ class GetRecipeResource(Resource):
 
 @recipe_ns.route('/get_all_recipes')
 class GetAllRecipesResource(Resource):
+    @load_or_create_anonymous_user
+    @track_anonymous_requests
+
     @recipe_ns.doc(params={
         'page': 'Page number (default: 1)',
         'page_size': 'Number of results per page (default: 10)'

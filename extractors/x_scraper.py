@@ -1,9 +1,11 @@
+import logging
+
 import requests
-import json
-import urllib.request
 import re
 
 from utils.common import save_video_to_file
+
+logger = logging.getLogger(__name__)
 
 
 def extract_tweet_id(url):
@@ -12,7 +14,7 @@ def extract_tweet_id(url):
     if match:
         return match.group(1)
     else:
-        print("Invalid URL format. Could not extract tweet ID.")
+        logger.info("Invalid URL format. Could not extract tweet ID.")
         return None
 
 
@@ -21,7 +23,6 @@ def download_twitter_video(url, output_filename="downloaded_video.mp4"):
     tweet_id = extract_tweet_id(url)
     if not tweet_id:
         return
-
     # Define the API request details
     api_url = "https://twitter154.p.rapidapi.com/tweet/details"
     headers = {
@@ -47,27 +48,27 @@ def download_twitter_video(url, output_filename="downloaded_video.mp4"):
 
         # Check if we have at least two videos with distinct resolutions
         if len(video_urls_sorted) < 2:
-            print("Not enough video resolutions available.")
+            logger.info("Not enough video resolutions available.")
             return
 
         # Select the second-highest resolution video
         second_highest_resolution_url = video_urls_sorted[-2]['url']
-        print(f"Downloading video from: {second_highest_resolution_url}")
+        logger.info(f"Downloading video from: {second_highest_resolution_url}")
 
     except (KeyError, IndexError):
-        print("Error: Could not extract video URL.")
+        logger.error("Error: Could not extract video URL.")
         return
 
     # Step 5: Download the MP4 video
     try:
         video_response = requests.get(second_highest_resolution_url, stream=True)
         if video_response.status_code != 200:
-            print("Failed to download the video.")
+            logger.info("Failed to download the video.")
             return None
         video_buffer = video_response.content
         return save_video_to_file(video_buffer)
     except Exception as e:
-        print(f"Error downloading video: {e}")
+        logger.info(f"Error downloading video: {e}")
 
 
 # # Example usage:

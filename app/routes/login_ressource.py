@@ -1,16 +1,8 @@
-from flask import session
-import json
-import requests
+
 from flask import session,  redirect, request, abort
 from flask_restx import Resource, Namespace
-from google.oauth2 import id_token
-from flask_jwt_extended import create_access_token
-import google.auth.transport.requests
-from google.auth.exceptions import GoogleAuthError
 from oauthlib.oauth2.rfc6749.errors import MissingCodeError
 from marshmallow import ValidationError
-from app.extensions import db
-from app.config import flow, GOOGLE_CLIENT_ID
 from app.config import flow
 
 from app.serializers.user_serializer import GoogleCallBackSchema, UserRegisterSchema
