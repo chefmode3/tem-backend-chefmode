@@ -68,5 +68,5 @@ class TestingConfig(Config):
 
 class ProductionConfig(Config):
     """Production configuration"""
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('PROD_DATABASE_URL')
     DEBUG = False  # Deactivate debug mode in production environment

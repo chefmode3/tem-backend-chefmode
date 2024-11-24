@@ -19,12 +19,12 @@ mail = Mail()
 login_manager = LoginManager()
 
 
-def make_celery():
+def make_celery(app):
     celery = Celery(__name__)
 
     # Updated configuration using lowercase keys
     celery.conf.update(
-        broker_url=os.getenv('CELERY_broker_url'),
+        broker_url=os.getenv('CELERY_BROKER_URL'),
         result_backend=os.getenv('CELERY_RESULT_BACKEND'),
         accept_content=['json'],  # Only allow JSON content
         task_serializer='json',  # Serialize tasks using JSON
@@ -33,4 +33,12 @@ def make_celery():
         broker_connection_retry_on_startup=True
     )
 
+    # Initialize Celery
+    celery.conf.update(app.config)
+    class ContextTask(celery.Task):
+        def __call__(self, *args, **kwargs):
+            with app.app_context():  # Push the application context
+                return self.run(*args, **kwargs)
+
+    celery.Task = ContextTask
     return celery
