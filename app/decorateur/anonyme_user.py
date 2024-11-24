@@ -1,40 +1,99 @@
+import logging
 from flask import session, request, jsonify, g
-from app.services import AnonymeUserService
+
 from functools import wraps
-import uuid
+from flask import jsonify, make_response
+
+from app.services import AnonymeUserService
+
+
+Logger = logging.getLogger(__name__)
+
 
 def load_or_create_anonymous_user(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # check if the user is login
-        if g.get("user", None):
-            return f(*args, **kwargs)
+        try:
+            # Check if the user is logged in
+            if g.get("user", None):
+                return f(*args, **kwargs)
 
-        # get the user id from the cleint
-        client_uuid = request.headers.get("X-Client-UUID")
-        anonymous_user = None
-        if not client_uuid:
-            # if not uuid is found then creat one
-            anonymous_user = AnonymeUserService.create_anonymous_user()
-        else:
-            anonymous_user = AnonymeUserService.get_anonymous_user_by_id(client_uuid)
+            # Get the client UUID
+            client_uuid = request.headers.get("X-Client-UUID")
+            anonymous_user = None
+            new_user_created = False
+            Logger.error(f"anonyme user {client_uuid}")
+            if client_uuid:
+                # Try to fetch the anonymous user
+                anonymous_user = AnonymeUserService.get_anonymous_user_by_id(client_uuid)
+            Logger.error(f"anonyme user {anonymous_user}")
+            if not anonymous_user:
+                # Create a new anonymous user if not found
+                anonymous_user = AnonymeUserService.create_anonymous_user()
+                new_user_created = True
 
-        # link anonyme user to the global context
-        g.user = anonymous_user
-        return f(*args, **kwargs)
+            # Link the anonymous user to the global context
+            g.user = anonymous_user
+
+            # Call the decorated function
+            response = f(*args, **kwargs)
+
+            # Handle different response formats
+            if isinstance(response, tuple) and len(response) == 2:
+                # Handle (dict, status_code) format
+                response_body, status_code = response
+                response_obj = make_response(jsonify(response_body), status_code)
+            elif isinstance(response, dict):
+                # Handle plain dict format
+                response_obj = make_response(jsonify(response), 200)
+            else:
+                # Assume it's already a Response object
+                response_obj = response
+
+            # Modify headers if a new user was created
+
+            response_obj.headers["X-Client-UUID"] = anonymous_user.id
+
+            return response_obj
+        except Exception as err:
+            Logger.error(f"Error in load_or_create_anonymous_user: {str(err)}")
+            return {"error": "An unexpected error occurred"}, 400
+
     return decorated_function
 
 
 def track_anonymous_requests(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        user = g.get("user", None)
-        if not user or not user.is_anonymous:
+        try:
+            # Retrieve the user from the global context
+            user = g.get("user", None)
+
+            # Ensure the user exists and has a request_count attribute
+            if not user:
+                Logger.error("No user found in global context")
+                return f(*args, **kwargs)
+
+            # Ensure the user has a request_count
+            if not hasattr(user, 'request_count') or user.request_count is None:
+                Logger.error("User has no request_count attribute or it is None")
+                return f(*args, **kwargs)
+
+            # Increment the request count
+            updated_user = AnonymeUserService.increment_request_count(user.id)
+            Logger.info(f"Request count for user {user.id}: {updated_user.request_count}")
+
+            # Check if the request limit is exceeded
+            if updated_user.request_count >= 6:
+                Logger.warning(f"Request limit reached for user {user.id}")
+                return {"error": "Maximum free requests reached. Please register."}, 403
+
             return f(*args, **kwargs)
 
-        AnonymeUserService.increment_request_count(user.id)
-        if user.request_count > 5:
-            return jsonify({"error": "Maximum free requests reached. Please register."}), 403
+        except Exception as err:
+            Logger.error(f"Error in track_anonymous_requests: {err}")
+            return {"error": "Internal server error"}, 500
 
-        return f(*args, **kwargs)
     return decorated_function
+
+

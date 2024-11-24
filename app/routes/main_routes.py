@@ -1,3 +1,4 @@
+import logging
 import os
 
 from flask_login import login_required
@@ -17,6 +18,8 @@ from app.serializers.user_serializer import (
     ResetPasswordSchema,
     UserActivationSchema
 )
+
+logger = logging.getLogger(__name__)
 
 
 auth_ns = Namespace('auth', description="user authentication")
@@ -68,6 +71,7 @@ class SignupResource(Resource):
             return activation_or_reset_email(email, name=name, subject=subject, template='confirm_email.html',
                                              url_frontend=url_frontend)
         except ValidationError as err:
+            logger.error(f'{err.messages} : status ,400')
             return {"errors": err.messages}, 400
 
 
@@ -82,15 +86,24 @@ class SignupConfirmResource(Resource):
             data = user_activation_schema.load(request.get_json())
             email = data.get('email')
             token = data.get('token')
+
+            # Verify the reset token
             result = verify_reset_token(token, max_age=86400)
             if not result["valid"]:
-                return {"error": (result["error"])}, 400
+                return {"error": result["error"]}, 400
+
+            # Ensure the token matches the email
+            if result["email"] != email:
+                return {"error": "Token does not match the provided email"}, 400
+
+            # Activate the user
             return UserService.activate_user(email)
         except ValidationError as err:
+            logger.error(f'{err.messages} : status ,400')
             return {"errors": err.messages}, 400
-
         except Exception as err:
-            return {"errors": f"{err}"}, 500
+            logger.error(f'{str(err)} : status ,500')
+            return {"errors": str(err)}, 400
 
 
 @auth_ns.route('/login')
@@ -110,6 +123,7 @@ class LoginResource(Resource):
                 abort(401, description="Invalid credentials.")
 
         except ValidationError as err:
+            logger.error(f'{err.messages} : status ,400')
             return {"errors": err.messages}, 400
 
 

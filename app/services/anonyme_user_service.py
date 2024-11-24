@@ -16,9 +16,9 @@ class AnonymeUserService:
     @staticmethod
     def get_anonymous_user_by_id(user_id):
         """Retrieves a anonymous_user by their ID."""
-        anonymous_user = AnonymousUser.query.filter_by(uuid=user_id).first()
-        if not anonymous_user:
-           return AnonymeUserService.create_anonymous_user()
+        anonymous_user = AnonymousUser.query.get(user_id)
+        # if not anonymous_user:
+        #    return AnonymeUserService.create_anonymous_user()
         return anonymous_user
 
     @staticmethod
