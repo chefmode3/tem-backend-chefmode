@@ -8,12 +8,12 @@ from app.task.send_email import send_reset_email
 
 
 def generate_reset_token(email):
-    serializer = URLSafeTimedSerializer("your_secret_key")
+    serializer = URLSafeTimedSerializer(os.environ.get('SECRET_KEY'))
     return serializer.dumps(email, salt="password-reset-salt")
 
 
 def verify_reset_token(token, max_age=3600):  # 30 minutes
-    serializer = URLSafeTimedSerializer("your_secret_key")
+    serializer = URLSafeTimedSerializer(os.environ.get('SECRET_KEY'))
     try:
         email = serializer.loads(token, salt="password-reset-salt", max_age=max_age)
         return {"valid": True, "email": email}
