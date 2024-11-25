@@ -228,7 +228,7 @@ class IngredientNutritionResource(Resource):
                         model=nutrition_response_model
                         )
     @recipe_ns.response(404, "Ingredient not found.")
-    @recipe_ns.response(500, "Unexpected error.")
+    @recipe_ns.response(400, "Unexpected error.")
     def get(self):
         """
         Get nutrition data for a specific ingredient.
