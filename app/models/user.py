@@ -36,16 +36,13 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(255), unique=True, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    reset_token = db.Column(db.String(255), unique=True, nullable=True)
     # Relationships
     recipes_association = db.relationship('UserRecipe', back_populates='user')
 
     def __repr__(self):
         return f'<User {self.name}>'
 
-    def __init__(self, name, email, activate=False, password=None, google_token=None, google_id=None):
-        self.name = name
-        self.email = email
-        self.password = password
-        self.activate = activate
-        self.google_id = google_id
-        self.google_token = google_token
+

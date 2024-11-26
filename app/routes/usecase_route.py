@@ -19,6 +19,7 @@ from app.serializers.usecase_serializer import (
 from app.services.user_service import UserService
 from app.serializers.recipe_serializer import RecipeSerializer
 
+
 logger = logging.getLogger(__name__)
 recipe_ns = Namespace('recipe', description="user recipe")
 
