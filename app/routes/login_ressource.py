@@ -1,13 +1,16 @@
-
-from flask import session,  redirect, request, abort
+import requests
+from flask import session,   request, abort
 from flask_restx import Resource, Namespace
 from oauthlib.oauth2.rfc6749.errors import MissingCodeError
 from marshmallow import ValidationError
-from app.config import flow
+from app.config import flow, GOOGLE_CLIENT_ID
+from google.oauth2 import id_token
+from pip._vendor import cachecontrol
+import google.auth.transport.requests
 
 from app.serializers.user_serializer import GoogleCallBackSchema, UserRegisterSchema
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
-
+from app.services import UserService
 
 auth_google_ns = Namespace('auth', description="Opérations d'authentification")
 user_callback_schema = GoogleCallBackSchema()
@@ -43,48 +46,35 @@ class CallbackResource(Resource):
         
         try:
             data = request.json
-            try:
-                validated_data = GoogleCallBackSchema().load(data)
-            except ValidationError as err:
-                abort(400, description=err.messages)
+
+            validated_data = GoogleCallBackSchema().load(data)
             authorization_code = validated_data.get('code')
-            if not authorization_code:
-                auth_google_ns.abort(400, f"Authorization {authorization_code} code is required")
+            # Verify the token with Google
+            print(authorization_code)
 
             flow.fetch_token(authorization_response=authorization_code)
-            # credentials = flow.credentials
-            # request_session = requests.session()
-            # cached_session = cachecontrol.CacheControl(request_session)
-            # token_request = google.auth.transport.requests.Request(session=cached_session)
-            # id_info = id_token.verify_oauth2_token(
-            #     id_token=credentials._id_token,
-            #     request=token_request,
-            #     audience=GOOGLE_CLIENT_ID
-            # )
-            # print(id_info)
-            # 
-            # if user_info['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
-            #     raise ValueError('Wrong issuer.')
-            # 
-            # # Extract user information
-            # id_token_str = user_info.get('google_token')
-            # google_id = user_info.get('google_id')
-            # name = user_info.get('name')
-            # email = user_info.get('email')
-            # 
-            # # # Check if the user already exists in the database
-            # user = UserService.get_user_by_email(email)
-            # # print(user)
-            # if not user:
-            #     user = UserService.create_user(name, email, google_id=google_id, google_token=id_token_str, activate=True)
-            # #
-            # # # Generate an access token
-            # access_token = create_access_token(identity=email)
-            # #
-            # # # Add the access token to the response
-            # user['access_token'] = access_token
-            # 
-            # return user, 200
+            credentials = flow.credentials
+            request_session = requests.session()
+            cached_session = cachecontrol.CacheControl(request_session)
+            token_request = google.auth.transport.requests.Request(session=cached_session)
+            id_info = id_token.verify_oauth2_token(
+                id_token=credentials._id_token,
+                request=token_request,
+                audience=GOOGLE_CLIENT_ID
+            )
+
+            user, status = UserService.create_user(
+                        email=id_info.get("email"),
+                        name=id_info.get("name"),
+                        activate=id_info.get("email_verified"),
+                        google_id=id_info.get("sub"),
+                        google_token=credentials._id_token,
+                        )
+            user_data = user_register_schema.dump(user)
+            return {'result': user_data}, 401
+
+        except ValidationError as err:
+            abort(400, description=err.messages)
         except MissingCodeError as google_err:
             return {'error': f'{google_err}'}, 400
         except ValueError as e:

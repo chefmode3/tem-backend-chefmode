@@ -64,7 +64,7 @@ class SignupResource(Resource):
             name = user_data.get("name")
             subject = "Email Activation"
             # email, body, subject, recipient
-            url_frontend = "http://127.0.0.1:5000/auth/reset_password/"
+            url_frontend = os.getenv('VERIFY_EMAIL')
             to = os.getenv('DEFAULT_FROM_EMAIL')
             # Render the HTML template with context
             template = 'welcome_email.html'
@@ -159,7 +159,7 @@ class PasswordResetRequestResource(Resource):
         try:
             data = password_reset_request_schema.load(request.get_json())
             email = data.get("email")
-            url_frontend = " http://127.0.0.1:5000/auth/reset_password/"
+            url_frontend = os.getenv('REQUEST_PASSWORD')
 
             subject = "Password Reset Request"
 
