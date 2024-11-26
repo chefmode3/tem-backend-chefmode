@@ -1,142 +1,119 @@
-import http
-import json
-
-import cv2
-import ffmpeg
-import requests
-from pytube import YouTube
-# import whisper
-import tempfile
 import os
+import smtplib
+from flask import Flask, render_template, request
+from flask_mailman import Mail, EmailMessage
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from flask_sqlalchemy import SQLAlchemy
 
-from extractors.new_youtube import extract_video_id
-from extractors.video_analyzer import extract_transcript
+# Scopes nécessaires pour envoyer des emails via Gmail
+SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 
+# Configuration Flask
+app = Flask(__name__)
 
-def get_video_stream_url(video_url):
-    """
-    Utilise Pytube pour extraire l'URL du flux vidéo et audio.
-    """
-    yt = YouTube(video_url)
-    # Sélectionner la meilleure qualité vidéo et audio
-    video_stream = yt.streams.filter(progressive=True, file_extension="mp4").first()
-    return video_stream.url
+# Configuration de la base de données SQLite avec SQLAlchemy
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///emails.db'  # Fichier de la base de données SQLite
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Désactiver les modifications inutiles
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = 'votre_email@gmail.com'  # Remplacez par votre email
+app.config['MAIL_PASSWORD'] = None  # Pas besoin de mot de passe avec OAuth2
+app.config['DEFAULT_FROM_EMAIL'] = 'votre_email@gmail.com'
 
-def extract_audio_to_tempfile(video_url):
-    """
-    Download video to buffer, extract audio, and save it to a temporary file.
-    """
-    video_id = extract_video_id(video_url)
-    if not video_id:
-        print("Invalid video URL.")
-        return None
+mail = Mail(app)
+db = SQLAlchemy(app)
 
-    # Step 1: Fetch video URL using RapidAPI
-    conn = http.client.HTTPSConnection("youtube-media-downloader.p.rapidapi.com")
-    headers = {
-        'x-rapidapi-key': "f2d1322fc9mshd04f3762ac0793ep11069cjsn4e55258922af",
-        'x-rapidapi-host': "youtube-media-downloader.p.rapidapi.com"
-    }
-    conn.request("GET", f"/v2/video/details?videoId={video_id}", headers=headers)
-    res = conn.getresponse()
-    data = res.read()
+# Modèle pour enregistrer les emails envoyés dans la base de données
+class SentEmail(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    recipient = db.Column(db.String(120), nullable=False)
+    subject = db.Column(db.String(200), nullable=False)
+    body = db.Column(db.Text, nullable=False)
 
-    # Parse JSON response
-    # response = json.loads(data.decode("utf-8"))
-    #
-    # try:
-    #     video_streams = response['videos']['items']
-    #     video_url_with_audio = video_streams[0].get('url')
-    #     if not video_url_with_audio:
-    #         print("Error: No valid video URL found.")
-    #         return None
-    # except (KeyError, IndexError):
-    #     print("Error: Unable to fetch video details.")
-    #     return None
-    #
-    # # Step 2: Download video into a buffer
-    # print("Downloading video into memory...")
-    # video_response = requests.get(video_url_with_audio, stream=True)
-    # if video_response.status_code != 200:
-    #     print("Failed to download the video.")
-    #     return None
-    # video_buffer = video_response.content
-    # print("Video downloaded into memory.")
-    #
-    # # Step 3: Extract audio to a temporary file
-    # temp_audio_path = tempfile.NamedTemporaryFile(delete=True, suffix=".wav").name
-    # print(f"Extracting audio to temporary file: {temp_audio_path}")
-    #
-    # # Use ffmpeg-python to process the video buffer
-    # try:
-    #     process = (
-    #         ffmpeg
-    #         .input('pipe:0')  # Input from stdin
-    #         .output(temp_audio_path, format='wav', acodec='pcm_s16le', ac=1, ar='16000')  # Audio specs
-    #         .run(input=video_buffer)
-    #     )
-    #     print(f"Audio extracted successfully to: {temp_audio_path}")
-    #     return temp_audio_path
-    # except ffmpeg.Error as e:
-    #     print(f"Error during audio extraction: {e}")
-    #     return None
+    def __repr__(self):
+        return f'<SentEmail {self.subject}>'
 
+# Fonction pour obtenir le jeton d'accès OAuth2
+def get_access_token():
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    else:
+        # Si aucun jeton existe, démarrer l'authentification OAuth2
+        flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+        creds = flow.run_local_server(port=0)
+        # Enregistrer le jeton pour les futurs appels
+        with open('token.json', 'w') as token:
+            token.write(creds.to_json())
 
-    # return temp_audio_path
+    return creds.token
 
-# def transcribe_audio_in_real_time(audio_path):
-#     """
-#     Transcrit l'audio à partir d'un fichier avec Whisper.
-#     """
-#     model = whisper.load_model("base")
-#     print("Transcription en cours...")
-#
-#     # Transcrire l'audio
-#     result = model.transcribe(audio_path)
-#     return result["text"]
+# Classe pour l'authentification OAuth2 dans SMTP
+class OAuth2SMTP(smtplib.SMTP):
+    def __init__(self, *args, **kwargs):
+        self.access_token = kwargs.pop('access_token', None)
+        super().__init__(*args, **kwargs)
 
-def read_and_process_stream_with_opencv(video_url):
-    """
-    Charge un flux vidéo avec OpenCV pour traitement en temps réel
-    et affiche la transcription de l'audio.
-    """
-    print("Téléchargement de l'audio pour transcription...")
-    # audio_path = extract_audio_to_tempfile(video_url)
+    def login(self, user, password=None):
+        if self.access_token:
+            self.ehlo()
+            self.starttls()
+            self.ehlo()
+            auth_string = f"user={user}\1auth=Bearer {self.access_token}\1\1"
+            self.docmd('AUTH', 'XOAUTH2 ' + auth_string.encode('ascii').decode())
+        else:
+            super().login(user, password)
 
-    try:
-        audio_path = extract_audio_to_tempfile(video_url)
-        # Transcrire l'audio
-        transcription = extract_transcript(audio_path)
-        print("Transcription :", transcription)
+# Route pour envoyer un email et l'enregistrer dans la base de données
+@app.route('/send-email', methods=['GET', 'POST'])
+def send_email():
+    if request.method == 'POST':
+        recipient = request.form['recipient']
+        subject = request.form['subject']
+        body = request.form['body']
 
-        # # Lire le flux vidéo
-        # stream_url = get_video_stream_url(video_url)
-        # cap = cv2.VideoCapture(stream_url)
-        #
-        # if not cap.isOpened():
-        #     print("Impossible d'ouvrir le flux vidéo.")
-        #     return
-        #
-        # while True:
-        #     ret, frame = cap.read()
-        #     if not ret:
-        #         print("Fin du flux vidéo.")
-        #         break
-        #
-        #     # Afficher la vidéo avec OpenCV
-        #     cv2.imshow("Video Stream", frame)
-        #
-        #     # Quitter avec la touche 'q'
-        #     if cv2.waitKey(1) & 0xFF == ord('q'):
-        #         break
-        #
-        # cap.release()
-        # cv2.destroyAllWindows()
-    finally:
-        # Supprimer le fichier audio temporaire
-        if os.path.exists(audio_path):
-            os.remove(audio_path)
+        access_token = get_access_token()  # Obtenez le jeton d'accès
+        try:
+            # Utilisation de OAuth2 pour l'authentification SMTP
+            with OAuth2SMTP(
+                app.config['MAIL_SERVER'],
+                app.config['MAIL_PORT'],
+                access_token=access_token
+            ) as smtp:
+                email = EmailMessage(
+                    subject=subject,
+                    body=body,
+                    to=[recipient],
+                )
+                smtp.sendmail(
+                    app.config['MAIL_USERNAME'],
+                    email.to,
+                    email.message().as_string()
+                )
 
-# Exemple d'utilisation
-video_url = "https://youtu.be/EYXQmbZNhy8?si=XZTClNZyEluMEJMw"  # Remplacez par une URL valide
-read_and_process_stream_with_opencv(video_url)
+            # Enregistrer l'email dans la base de données
+            sent_email = SentEmail(
+                recipient=recipient,
+                subject=subject,
+                body=body
+            )
+            db.session.add(sent_email)
+            db.session.commit()
+
+            return "Email envoyé avec succès et enregistré dans la base de données !"
+        except Exception as e:
+            return f"Erreur lors de l'envoi de l'email : {e}"
+
+    return render_template('send_email.html')
+
+# Route pour afficher tous les emails envoyés
+@app.route('/sent-emails')
+def sent_emails():
+    emails = SentEmail.query.all()  # Récupère tous les emails envoyés
+    return render_template('sent_emails.html', emails=emails)
+
+if __name__ == '__main__':
+    db.create_all()  # Crée la base de données si elle n'existe pas encore
+    app.run(debug=True)
