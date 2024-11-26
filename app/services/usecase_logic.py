@@ -175,7 +175,7 @@ class RecipeService:
                     new_total_quantity = (serving * original_total_quantity) / original_servings
                     unit_quantity = new_total_quantity / serving
                 else:
-                    new_total_quantity = original_total_quantitygi
+                    new_total_quantity = original_total_quantity
                     unit_quantity = original_total_quantity / original_servings
 
                 adjusted_nutritions.append({
