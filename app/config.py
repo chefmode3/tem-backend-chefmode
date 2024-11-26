@@ -1,25 +1,25 @@
 import os
-from os.path import join, dirname
+
 from dotenv import load_dotenv
 from utils.settings import BASE_DIR
 
 from google_auth_oauthlib.flow import Flow
 
-dotenv_path = BASE_DIR / '.flaskenv'
-load_dotenv(dotenv_path)
+
+load_dotenv()
+
 
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
-client_secrets_file = BASE_DIR / "client_secret.json"
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 flow = Flow.from_client_secrets_file(
-    client_secrets_file=client_secrets_file,
-    scopes=["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"],
-    redirect_uri="http://localhost:5000/callback"
+    client_secrets_file=BASE_DIR / "client_secret.json",
+    scopes=os.getenv("GOOGLE_SCOPE"),
+    redirect_uri=os.getenv("GOOGLE_REDIRECT_URI")
 )
+
+
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'your-secret-key'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///' + os.path.join(os.path.dirname(os.path.dirname(__file__)), 'app.db')
+    SECRET_KEY = os.environ.get('SECRET_KEY', '')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     """Base configuration"""
@@ -29,15 +29,23 @@ class Config:
     DEBUG_TB_ENABLED = True
     CSRF_ENABLED = True
 
-    MAIL_SERVER = os.getenv('MAIL_SERVER')
+    # SMTP setup to reset password
     MAIL_PORT = os.getenv('MAIL_PORT')
+    MAIL_SERVER = os.getenv('MAIL_SERVER')
+    DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
     MAIL_USERNAME = os.getenv('MAIL_USERNAME')
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
     MAIL_USE_TLS = os.getenv('MAIL_USE_TLS')
-    MAIL_USE_SSL = os.getenv('MAIL_USE_SSL')
+    MAIL_USE_SLL = os.getenv('MAIL_USE_SLL')
+
+    # Celery config
+    CELERY_broker_url = os.getenv('CELERY_BROKER_URL')
+    RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
+    REDIS_MAX_CONNECTIONS = 10
+    TASK_SERIALIZER = 'json'
+    RESULT_SERIALIZER = 'json'
 
 
-# defining dev config
 class DevelopmentConfig(Config):
     """Development configuration"""
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL_DEV')
@@ -50,14 +58,13 @@ class DevelopmentConfig(Config):
     OAUTHLIB_INSECURE_TRANSPORT = "1"
 
 
-# defining testing config
 class TestingConfig(Config):
     """Testing configuration"""
     TESTING = True
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_TEST_URL')
 
-# defining production config
+
 class ProductionConfig(Config):
     """Production configuration"""
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('PROD_DATABASE_URL')
     DEBUG = False  # Deactivate debug mode in production environment

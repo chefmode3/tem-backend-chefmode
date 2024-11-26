@@ -1,147 +1,19 @@
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import SQLAlchemyError
+from flask import abort
 
 from app.extensions import db
-from app.models.user import (
-    User,
-    AnonymousUser,
-    Recipe,
-    Ingredient,
-    Process,
-    UserRecipe,
-    AnonymousUserRecipe
-)
+from app.models.recipe import Recipe
+from app.models.user import UserRecipe
 
 
 class RecipeService:
-
-    @staticmethod
-    def save_recipe_data(data, user_id=None, anonymous_user_identifier=None):
-        """
-        Save a complete recipe with ingredients, processes, and user/anonymous association.
-        :param data: JSON data for the recipe
-        :param user_id: ID of the authenticated user (if any)
-        :param anonymous_user_identifier: Identifier for the anonymous user (if any)
-        :return: A dictionary with the saved recipe's details
-        """
-        try:
-            recipe = RecipeService._save_recipe(data)
-
-            if 'ingredients' in data:
-                RecipeService._add_ingredients(recipe.id, data['ingredients'])
-
-            if 'processes' in data:
-                RecipeService._add_processes(recipe.id, data['processes'])
-
-            if user_id:
-                RecipeService._link_recipe_to_user(recipe.id, user_id)
-            elif anonymous_user_identifier:
-                RecipeService._link_recipe_to_anonymous_user(recipe.id, anonymous_user_identifier)
-            else:
-                raise ValueError("Either 'user_id' or 'anonymous_user_identifier' must be provided.")
-
-            db.session.commit()
-
-            return {
-                "id": recipe.id,
-                "title": recipe.title,
-                "origin": recipe.origin,
-                "servings": recipe.servings,
-                "preparation_time": recipe.preparation_time,
-                "description": recipe.description,
-                "image_url": recipe.image_url,
-            }
-        except IntegrityError as e:
-            db.session.rollback()
-            raise ValueError(f"Database error: {str(e)}")
-        except Exception as e:
-            db.session.rollback()
-            raise ValueError(f"Unexpected error: {str(e)}")
-
-    @staticmethod
-    def _save_recipe(data):
-        """
-        Save a recipe without ingredients or processes.
-        """
-        if not data.get('title') or not data.get('origin'):
-            raise ValueError("Recipe title and origin are required.")
-
-        recipe = Recipe(
-            title=data.get('title'),
-            origin=data.get('origin'),
-            servings=data.get('servings'),
-            preparation_time=data.get('preparation_time'),
-            description=data.get('description'),
-            image_url=data.get('image_url')
-        )
-        db.session.add(recipe)
-        db.session.flush()
-
-        return recipe
-
-    @staticmethod
-    def _add_ingredients(recipe_id, ingredients_data):
-        """
-        Add ingredients to a recipe.
-        """
-        for ingredient_data in ingredients_data:
-            ingredient = Ingredient(
-                name=ingredient_data.get('name'),
-                quantity=ingredient_data.get('quantity'),
-                unit=ingredient_data.get('unit'),
-                recipe_id=recipe_id
-            )
-            db.session.add(ingredient)
-
-    @staticmethod
-    def _add_processes(recipe_id, processes_data):
-        """
-        Add processes to a recipe.
-        """
-        for process_data in processes_data:
-            process = Process(
-                step_number=process_data.get('step_number'),
-                instructions=process_data.get('instructions'),
-                recipe_id=recipe_id
-            )
-            db.session.add(process)
-
-    @staticmethod
-    def _link_recipe_to_user(recipe_id, user_id, flag=False):
-        """
-        Link a recipe to an authenticated user.
-        """
-        user = User.query.get(user_id)
-        if not user:
-            raise ValueError(f"User with ID {user_id} does not exist.")
-
-        user_recipe = UserRecipe(user_id=user.id, recipe_id=recipe_id, flag=flag)
-        db.session.add(user_recipe)
-
-    @staticmethod
-    def _link_recipe_to_anonymous_user(recipe_id, anonymous_user_identifier):
-        """
-        Link a recipe to an anonymous user.
-        """
-        anonymous_user = AnonymousUser.query.filter_by(identifier=anonymous_user_identifier).first()
-        if not anonymous_user:
-            raise ValueError(f"Anonymous user with identifier {anonymous_user_identifier} does not exist.")
-
-        anon_user_recipe = AnonymousUserRecipe(
-            anonymous_user_id=anonymous_user.id, recipe_id=recipe_id, request_count=1
-        )
-        db.session.add(anon_user_recipe)
 
     @staticmethod
     def get_recipe_by_id(recipe_id):
         """
         Get a recipe with its ingredients and processes by ID.
         """
-        recipe = Recipe.query.options(
-            joinedload(Recipe.ingredients),
-            joinedload(Recipe.processes)
-        ).filter_by(id=recipe_id).first()
-
+        recipe = Recipe.query.filter_by(id=recipe_id).first()
         if not recipe:
             return None
 
@@ -153,10 +25,8 @@ class RecipeService:
         Get all recipes with pagination and related ingredients and processes.
         """
         query = Recipe.query.options(
-            joinedload(Recipe.ingredients),
-            joinedload(Recipe.processes)
-        ).order_by(Recipe.id.desc())
-
+            db.joinedload(Recipe.users_association)
+        ).order_by(Recipe.created_at.desc())
         pagination = query.paginate(page=page, per_page=page_size, error_out=False)
 
         return {
@@ -164,7 +34,7 @@ class RecipeService:
             "pages": pagination.pages,
             "current_page": pagination.page,
             "page_size": pagination.per_page,
-            "data": pagination.items
+            "data": [recipe for recipe in pagination.items]
         }
 
     @staticmethod
@@ -174,19 +44,29 @@ class RecipeService:
         """
         query = Recipe.query.join(UserRecipe).filter(
             UserRecipe.user_id == user_id
-        ).options(
-            joinedload(Recipe.ingredients),
-            joinedload(Recipe.processes)
-        ).order_by(Recipe.id.desc())
+        ).order_by(Recipe.created_at.desc())
 
         pagination = query.paginate(page=page, per_page=page_size, error_out=False)
-
         return {
             "total": pagination.total,
             "pages": pagination.pages,
             "current_page": pagination.page,
             "page_size": pagination.per_page,
-            "data": pagination.items
+            "data": [
+                {
+                    "id": recipe.id,
+                    "title": recipe.title,
+                    "origin": recipe.origin,
+                    "servings": recipe.servings,
+                    "created_at": recipe.created_at,
+                    "preparation_time": recipe.preparation_time,
+                    "description": recipe.description,
+                    "image_url": recipe.image_url,
+                    "ingredients": recipe.ingredients,
+                    "processes": recipe.processes,
+                }
+                for recipe in pagination.items
+            ]
         }
 
     @staticmethod
@@ -198,14 +78,17 @@ class RecipeService:
 
         if not user_recipe:
             return None
-        user_recipe.flag = True
+        user_recipe.flag = not user_recipe.flag
+
         try:
             db.session.commit()
+            return {
+                "message": "Recipe flag status updated successfully.",
+                "flag": user_recipe.flag
+            }
         except SQLAlchemyError as e:
             db.session.rollback()
             abort(500, description=f"Database error: {str(e)}")
-
-        return {"message": "Recipe flagged successfully."}
 
     @staticmethod
     def is_recipe_flagged_by_user(recipe_id, user_id):
@@ -232,11 +115,51 @@ class RecipeService:
             pagination = query.paginate(page=page, per_page=page_size, error_out=False)
 
             return {
-                "data": pagination.items,
                 "total": pagination.total,
                 "pages": pagination.pages,
                 "current_page": pagination.page,
                 "page_size": pagination.per_page,
+                "data": [
+                    {
+                        "id": recipe.id,
+                        "title": recipe.title,
+                        "origin": recipe.origin,
+                        "servings": recipe.servings,
+                        "created_at": recipe.created_at,
+                        "preparation_time": recipe.preparation_time,
+                        "description": recipe.description,
+                        "image_url": recipe.image_url,
+                        "ingredients": recipe.ingredients,
+                        "processes": recipe.processes,
+                    }
+                    for recipe in pagination.items
+                ]
             }
         except SQLAlchemyError as e:
             raise RuntimeError(f"Database error: {str(e)}")
+
+    @staticmethod
+    def get_nutrition_by_ingredient(recipe_id):
+        """
+        Fetch nutrition data for a specific ingredient.
+        :param recipe_id: ID of the ingredient
+        :return: List of nutrients associated with the ingredient
+        """
+        try:
+            recipe = Recipe.query.filter_by(id=recipe_id).first()
+            if not recipe or not recipe.nutritions:
+                return None
+
+            return recipe
+        except Exception as e:
+            raise RuntimeError(f"Unexpected error: {str(e)}")
+
+    @staticmethod
+    def get_recipe_by_origin(origin):
+        """
+        get the origin to avoid duplication in the database
+        """
+        origin_recipe = Recipe.query.filter_by(origin=origin).first()
+
+        if origin_recipe:
+            return origin_recipe

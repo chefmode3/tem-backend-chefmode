@@ -1,2 +1,3 @@
-web: gunicorn app:app --timeout 9999999999
-worker: celery -A app.celery worker --loglevel=info
+web: gunicorn manage:app --timeout 9999999999
+worker: celery -A manage.celery worker --loglevel=info
+release: python manage.py db upgrade

@@ -1,7 +1,12 @@
 import http.client
 import json
-import urllib.request
+import logging
 import re
+import requests
+
+from utils.common import save_video_to_file
+
+logger = logging.getLogger(__name__)
 
 
 def extract_video_id(youtube_url):
@@ -10,7 +15,7 @@ def extract_video_id(youtube_url):
     if match:
         return match.group(2)
     else:
-        print("Error: Unable to extract video ID.")
+        logger.info("Error: Unable to extract video ID.")
         return None
 
 
@@ -30,24 +35,34 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
     res = conn.getresponse()
     data = res.read()
 
-    # Parse the JSON response
+    # Parse JSON response
     response = json.loads(data.decode("utf-8"))
-    print(response)  # Optional: print the full response for debugging
 
-    # Extract the first video URL with audio
     try:
         video_streams = response['videos']['items']
-        video_url = video_streams[0].get('url')
-    except (KeyError, IndexError):
-        print("Error: Video URL not found.")
-        return
+        video_url_with_audio = video_streams[0].get('url')
+        if not video_url_with_audio:
+            logger.info("Error: No valid video URL found.")
+            return None
+        logger.info("Downloading video into memory...")
+        video_response = requests.get(video_url_with_audio, stream=True)
+        if video_response.status_code != 200:
+            logger.info("Failed to download the video.")
+            return None
+        video_buffer = video_response.content
+        # print(video_buffer)
+        return save_video_to_file(video_buffer)
 
-    # Download the video
-    try:
-        urllib.request.urlretrieve(video_url, output_filename)
-        print(f"Video downloaded successfully as {output_filename}")
-    except Exception as e:
-        print(f"Error downloading video: {e}")
+    except (KeyError, IndexError):
+        logger.error("Error: Unable to fetch video details.")
+        return None
+
+# Download the video
+    # try:
+    #     urllib.request.urlretrieve(video_url, output_filename)
+    #     print(f"Video downloaded successfully as {output_filename}")
+    # except Exception as e:
+    #     print(f"Error downloading video: {e}")
 
 # # Example usage:
 # youtube_url = "https://www.youtube.com/watch?v=1LzFy7Rr89E"  # Or a Shorts URL
