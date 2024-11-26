@@ -1,10 +1,11 @@
-from sqlalchemy.exc import SQLAlchemyError
-from flask import abort
+import logging
 
 from app.extensions import db
 from app.models.recipe import Recipe
 from app.models.user import UserRecipe
 
+
+logger = logging.getLogger(__name__)
 
 class RecipeService:
 
@@ -85,7 +86,9 @@ class RecipeService:
         """
         Mark a recipe as flagged for a specific user.
         """
-        user_recipe = UserRecipe.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
+        user_recipe = UserRecipe.query.filter_by(
+            user_id=user_id, recipe_id=recipe_id
+        ).first()
 
         if not user_recipe:
             return None
@@ -97,9 +100,10 @@ class RecipeService:
                 "message": "Recipe flag status updated successfully.",
                 "flag": user_recipe.flag
             }
-        except SQLAlchemyError as e:
+        except Exception as e:
             db.session.rollback()
-            abort(500, description=f"Database error: {str(e)}")
+            logger.error(f"Database error: {str(e)}")
+            return None
 
     @staticmethod
     def is_recipe_flagged_by_user(recipe_id, user_id):
@@ -146,8 +150,9 @@ class RecipeService:
                     for recipe in pagination.items
                 ]
             }
-        except SQLAlchemyError as e:
-            raise RuntimeError(f"Database error: {str(e)}")
+        except Exception as e:
+            logger.error(f"Database error: {str(e)}")
+            return None
 
     @staticmethod
     def get_nutrition_by_recipe_id(recipe_id: str, serving: int):
@@ -188,7 +193,8 @@ class RecipeService:
             return adjusted_nutritions
 
         except Exception as e:
-            raise RuntimeError(f"Unexpected error: {str(e)}")
+            logger.error(f"Database error: {str(e)}")
+            return None
 
     @staticmethod
     def get_recipe_by_origin(origin):

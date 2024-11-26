@@ -58,10 +58,10 @@ class SignupResource(Resource):
 
             if is_activate:
                 return {"result": "Account created"}, 200
-            if user_data.reste_token:
+            if user_data.reset_token:
                 return {"result": "An email has already send please check your email to verify your address"}, 200
-            email = user_data.get("email")
-            name = user_data.get("name")
+            email = user_data.email
+            name = user_data.name
             subject = "Email Activation"
             # email, body, subject, recipient
             url_frontend = "http://127.0.0.1:5000/auth/reset_password/"
