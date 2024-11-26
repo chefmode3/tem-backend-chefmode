@@ -4,11 +4,10 @@ import os
 from flask_jwt_extended import create_access_token
 from flask_login import login_required
 from flask_restx import Namespace, Resource
-from flask import request, abort, render_template, session
+from flask import request, abort, session
 from marshmallow import ValidationError
 
 from app.utils.send_email import verify_reset_token, activation_or_reset_email
-from app.task.send_email import send_reset_email
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.user_service import UserService
 from app.serializers.user_serializer import (
@@ -54,7 +53,7 @@ class SignupResource(Resource):
             # Validate and deserialize input
             data = signup_schema.load(request.get_json())
             user_data, is_activate = UserService.signup(data['email'], data['password'])
-            print(user_data)
+            logger.info(user_data)
 
             if is_activate:
                 return {"result": "Account created"}, 200

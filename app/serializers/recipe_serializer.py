@@ -1,6 +1,5 @@
-from marshmallow import Schema, fields, validate, ValidationError
-from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, auto_field
-
+from marshmallow import Schema, fields
+from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 from app.models import Recipe
 
 

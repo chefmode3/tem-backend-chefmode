@@ -16,7 +16,7 @@ def download_tiktok(video_url, browser='chrome'):
             metadata_fn=None,  # Skip metadata storage
         )
         video_buffer = video_url_with_audio.content
-        # print(video_buffer)
+        # logger.info(video_buffer)
         return save_video_to_file(video_buffer)
     except Exception as e:
         logger.error(f"An error occurred: {e}")

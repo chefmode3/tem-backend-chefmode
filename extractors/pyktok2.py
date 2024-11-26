@@ -335,7 +335,7 @@ def save_tiktok(video_url,
             tt_video = requests.get(tt_video_url, allow_redirects=True, headers=headers, cookies=cookies)
             # with open("../../downloaded_video.mp4", 'wb') as fn:
             #     fn.write(tt_video.content)
-            # print("Saved video\n", video_url, "\nto\n", os.getcwd())
+            # logger.info("Saved video\n", video_url, "\nto\n", os.getcwd())
             return tt_video
 
         if metadata_fn != '':
@@ -417,7 +417,7 @@ def save_tiktok_multi_urls(video_urls,
     for u in tt_urls:
         save_tiktok(u,save_video,metadata_fn,browser_name)
         time.sleep(random.randint(1, sleep))
-    print('Saved',len(tt_urls),'videos and/or lines of metadata')
+    logger.info('Saved',len(tt_urls),'videos and/or lines of metadata')
 
 
 def save_tiktok_multi_page(

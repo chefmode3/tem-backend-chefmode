@@ -1,3 +1,5 @@
+import logging
+
 import requests
 from flask import session,   request, abort
 from flask_restx import Resource, Namespace
@@ -17,6 +19,7 @@ user_callback_schema = GoogleCallBackSchema()
 user_callback_model = convert_marshmallow_to_restx_model(auth_google_ns, user_callback_schema)
 user_register_schema = UserRegisterSchema()
 user_register_model = convert_marshmallow_to_restx_model(auth_google_ns, user_register_schema)
+logger = logging.getLogger(__name__)
 
 
 @auth_google_ns.route('/login_google')
@@ -50,7 +53,6 @@ class CallbackResource(Resource):
             validated_data = GoogleCallBackSchema().load(data)
             authorization_code = validated_data.get('code')
             # Verify the token with Google
-            print(authorization_code)
 
             flow.fetch_token(authorization_response=authorization_code)
             credentials = flow.credentials
