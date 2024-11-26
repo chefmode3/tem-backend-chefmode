@@ -39,7 +39,7 @@ class UserResponseSchema(Schema):
     id = fields.Str(required=True)
     name = fields.Str(required=False)
     email = fields.Email(required=True)
-    activate = fields.Boolean(required=False, default=False)
+    activate = fields.Boolean(required=False)
     google_token = fields.Str(required=False)
     google_id = fields.Str(required=False)
     access_token = fields.Str(required=True)

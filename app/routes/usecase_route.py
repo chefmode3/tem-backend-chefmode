@@ -1,21 +1,25 @@
+import logging
+
 from flask_restx import Namespace, Resource
 from flask import request
 from flask_login import login_required
 from marshmallow import ValidationError
 
-
+from app.decorateur.anonyme_user import load_or_create_anonymous_user, track_anonymous_requests
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.usecase_logic import RecipeService
 from app.serializers.usecase_serializer import (
     RecipeResponseSchema,
     RecipeRequestSchema,
     FlagStatusResponseSchema,
+    RecipeQuerySchema,
+    IngredientIDSchema,
     NutritionSchema
 )
 from app.services.user_service import UserService
 from app.serializers.recipe_serializer import RecipeSerializer
 
-
+logger = logging.getLogger(__name__)
 recipe_ns = Namespace('recipe', description="user recipe")
 
 # Schemas and models
@@ -55,11 +59,14 @@ class GetRecipeResource(Resource):
 
 @recipe_ns.route('/get_all_recipes')
 class GetAllRecipesResource(Resource):
+
     @recipe_ns.doc(params={
         'page': 'Page number (default: 1)',
         'page_size': 'Number of results per page (default: 10)'
     })
     @recipe_ns.response(200, "Recipes fetched successfully", model=recipe_response_model)
+    @load_or_create_anonymous_user
+    @track_anonymous_requests
     def get(self):
         """
         Fetch all recipes with pagination.
@@ -68,7 +75,7 @@ class GetAllRecipesResource(Resource):
             page = request.args.get("page", default=1, type=int)
             page_size = request.args.get("page_size", default=3, type=int)
             data = RecipeService.get_all_recipes(page, page_size)
-
+            # logger.error(f"request left ")
             return {
                 "data": RecipeSerializer(many=True).dump(data["data"]),
                 "total": data["total"],
@@ -106,7 +113,8 @@ class GetMyRecipesResource(Resource):
                 "page_size": data["page_size"],
             }, 200
         except Exception as e:
-            return {"error": "An unexpected error occurred", "details": str(e)}, 500
+            logger.error(f'An unexpected error occurred", "details": {str(e)}')
+            return {"error": "An unexpected error occurred"}, 400
 
 
 @recipe_ns.route('/flag_recipe')

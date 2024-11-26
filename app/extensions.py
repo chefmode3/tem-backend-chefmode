@@ -24,7 +24,7 @@ def make_celery(app):
 
     # Updated configuration using lowercase keys
     celery.conf.update(
-        broker_url=os.getenv('CELERY_broker_url'),
+        broker_url=os.getenv('CELERY_BROKER_URL'),
         result_backend=os.getenv('CELERY_RESULT_BACKEND'),
         accept_content=['json'],  # Only allow JSON content
         task_serializer='json',  # Serialize tasks using JSON

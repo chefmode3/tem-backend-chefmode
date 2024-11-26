@@ -1,5 +1,7 @@
+import logging
 import os
 
+from flask_jwt_extended import create_access_token
 from flask_login import login_required
 from flask_restx import Namespace, Resource
 from flask import request, abort, render_template, session
@@ -17,6 +19,8 @@ from app.serializers.user_serializer import (
     ResetPasswordSchema,
     UserActivationSchema
 )
+
+logger = logging.getLogger(__name__)
 
 
 auth_ns = Namespace('auth', description="user authentication")
@@ -50,11 +54,12 @@ class SignupResource(Resource):
             # Validate and deserialize input
             data = signup_schema.load(request.get_json())
             user_data, is_activate = UserService.signup(data['email'], data['password'])
-            # print(user_data)
+            print(user_data)
+
             if is_activate:
-                return user_response_schema.dump(user_data), 200
-            elif not user_data:
-                return {"error" "user not found"}, 404
+                return {"result": "Account created"}, 200
+            if user_data.reste_token:
+                return {"result": "An email has already send please check your email to verify your address"}, 200
             email = user_data.get("email")
             name = user_data.get("name")
             subject = "Email Activation"
@@ -63,11 +68,12 @@ class SignupResource(Resource):
             to = os.getenv('DEFAULT_FROM_EMAIL')
             # Render the HTML template with context
             template = 'welcome_email.html'
-            body = render_template(template, name=name)
-            send_reset_email.delay(email=email,  body=body, subject=subject, recipient=to)
-            return activation_or_reset_email(email, name=name, subject=subject, template='confirm_email.html',
-                                             url_frontend=url_frontend)
+
+            activation_or_reset_email(email, name=name, subject=subject, template=template,
+                                      url_frontend=url_frontend)
+            return {"result": "Your account has been created. Please check your email to verify your address."}, 200
         except ValidationError as err:
+            logger.error(f'{err.messages} : status ,400')
             return {"errors": err.messages}, 400
 
 
@@ -82,15 +88,32 @@ class SignupConfirmResource(Resource):
             data = user_activation_schema.load(request.get_json())
             email = data.get('email')
             token = data.get('token')
-            result = verify_reset_token(token, max_age=86400)
-            if not result["valid"]:
-                return {"error": (result["error"])}, 400
-            return UserService.activate_user(email)
-        except ValidationError as err:
-            return {"errors": err.messages}, 400
 
+            # Verify the reset token
+            result = verify_reset_token(token, max_age=86400)
+            logger.error(f'user reset :1')
+            if not result["valid"]:
+                return {"error": result["error"], "error":1}, 400
+            logger.error(f'user reset :12')
+            # Ensure the token matches the email
+            if result["email"] != email:
+                return {"error": "Token does not match the provided email"}, 400
+            logger.error(f'user reset :112')
+            user, status = UserService.activate_user(email)
+            # Activate the user
+            user_data = user_response_schema.dump(user)
+            logger.error(f'user reset :1212 {user}')
+            if user:
+                logger.error(f'user reset : {user_data}')
+
+                return user_data, status
+            return {"error": f"Token or email are invalid "}, status
+        except ValidationError as err:
+            logger.error(f'{err.messages} : status ,400')
+            return {"errors": err.messages}, 400
         except Exception as err:
-            return {"errors": f"{err}"}, 500
+            logger.error(f'{str(err)} : status ,500')
+            return {"errors": str(err)}, 400
 
 
 @auth_ns.route('/login')
@@ -104,12 +127,16 @@ class LoginResource(Resource):
             # Validate and deserialize input
             data = login_schema.load(request.get_json())
             user_data = UserService.login(data['email'], data['password'])
+            access_token = create_access_token(identity=user_data.email)
             if user_data:
-                return user_response_schema.dump(user_data), 200
+                user = user_response_schema.dump(user_data)
+                user['access_token'] = access_token
+                return user, 200
             else:
                 abort(401, description="Invalid credentials.")
 
         except ValidationError as err:
+            logger.error(f'{err.messages} : status ,400')
             return {"errors": err.messages}, 400
 
 
@@ -137,10 +164,13 @@ class PasswordResetRequestResource(Resource):
             subject = "Password Reset Request"
 
             user = UserService.get_user_by_email(email)
-            name: str = user.name
+            if not user:
+                return {"result": "Email not found or incorect"}
 
-            return activation_or_reset_email(email, name=name, subject=subject,  template='password_reset_email.html',
-                                             url_frontend=url_frontend)
+            name: str = user.name
+            activation_or_reset_email(email, name=name, subject=subject, template='password_reset_email.html',
+                                      url_frontend=url_frontend)
+            return {"result": "An email is already sent to you "}
 
         except ValidationError as err:
             return {"errors": err.messages}, 400

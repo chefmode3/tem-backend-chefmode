@@ -1,18 +1,20 @@
 import json
-import logging
 
 from celery.result import AsyncResult
 from marshmallow import ValidationError
 
-from app.serializers.recipe_serializer import LinkRecipeSchema, TaskIdSchema
+from app.serializers.recipe_serializer import LinkRecipeSchema, TaskIdSchema, RecipeSerializer
 from flask_restx import Namespace, Resource
 from flask import request, abort, jsonify
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
+from app.services import RecipeCelService
 from app.task.fetch_desciption import call_fetch_description
 
-logger = logging.getLogger(__name__)
+
 
 recipe_ns = Namespace('recipe', description="user recipe")
+
+
 link_recipe_schema = LinkRecipeSchema()
 link_recipe_model = convert_marshmallow_to_restx_model(recipe_ns, link_recipe_schema)
 task_id_schema = TaskIdSchema()
@@ -30,6 +32,7 @@ class RecipeScrap(Resource):
             data = {
                 "video_url": link.get('link'),
             }
+
             task = call_fetch_description.delay(data)
             return {'task_id': task.id}, 200
         except ValidationError as form_ee:
@@ -64,11 +67,12 @@ class RecipeScrapPost(Resource):
             if find:
                 return content
 
-            logger.info(json.dumps(content, indent=4))
+            print(json.dumps(content, indent=4))
             # data = json.loads(result.get('content'))
-            # recipe = RecipeCelService.convert_and_store_recipe(content)
+            recipe = RecipeCelService.convert_and_store_recipe(content)
 
-            return content #RecipeSerializer().dump(recipe), 200
+
+            return RecipeSerializer().dump(recipe), 200
         elif res.state == 'FAILURE':
             return {"status": "FAILURE", "message": str(res.result)}, 500
         else:
