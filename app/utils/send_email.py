@@ -1,7 +1,7 @@
 import logging
 import os
 
-from flask import render_template
+from flask import render_template, abort
 from itsdangerous import URLSafeTimedSerializer
 
 from app.services import UserService
@@ -35,6 +35,10 @@ def activation_or_reset_email(
     reset_token = generate_reset_token(email)
 
     user_token = UserService.request_password_reset(email, reset_token)
+    if not user_token:
+        logger.info("User not found.")
+        abort(404, description="User not found.")
+
     reset_url = f"{url_frontend}{user_token.reset_token}"
 
     name = name
