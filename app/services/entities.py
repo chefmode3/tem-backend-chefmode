@@ -28,4 +28,3 @@ class SubscriptionEntity(BaseModel):
     payment_status : str = None
     subscription_id : str = None
     expires_at : datetime = None
-

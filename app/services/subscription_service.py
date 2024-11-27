@@ -1,19 +1,20 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 
 import stripe
 from sqlalchemy.orm import Session
 from stripe import StripeError
 
+from app.extensions import db
 from app.exceptions import SubscriptionException
-from app.models.payment import SubscriptionMembership
-from app.services.entities import SubscriptionEntity, CheckoutEntity
+from app.models import SubscriptionMembership, Subscription
+from app.services.entities import SubscriptionEntity
 
 
 @dataclass
 class UserSubscriptionService:
-    user_id: int
+    user: Any
     stripe_api_key: str
 
     def get_get_checkout_session(self, checkout_session_id: str) -> Optional[str]:
@@ -32,7 +33,7 @@ class UserSubscriptionService:
             stripe.api_key = self.stripe_api_key
             subscription = stripe.Subscription.retrieve(subscription_id)
             subscription_entity = SubscriptionEntity(
-                subscription_id=subscription,
+                subscription_id=subscription.get("id"),
                 product_id=subscription.get("items", {}).get("data", [{}])[0].get("price", {}).get("product", ""),
                 invoice_id=subscription.get("latest_invoice", {}),
                 customer_id=subscription.get("customer", ""),
@@ -55,16 +56,21 @@ class UserSubscriptionService:
         except StripeError as e:
             raise SubscriptionException(str(e), 400)
 
-    def subscribe_user(self, subscription_id: str, db: Session) -> None:
+    def subscribe_user(self, subscription_id: str):
         subscription_data = self.get_subscriptions(subscription_id)
         if not subscription_data:
             raise SubscriptionException("Subscription does not exist", 400)
-        s_membership = db.query(SubscriptionMembership).filter_by(id=self.user_id).first()
+        s_membership = SubscriptionMembership.query.filter_by(user_id=self.user.id).first()
         if not s_membership:
-            raise SubscriptionException("Subscription does not exist", 400)
-
+            subscription = Subscription.query.filter_by(product_id=subscription_data.product_id).first()
+            s_membership = SubscriptionMembership(
+                user=self.user,
+                subscription=subscription
+            )
         s_membership.pay(subscription_data)
+        db.session.add(s_membership)
         db.commit()
+        return s_membership
 
     def cancel_user_subscription(self, db: Session):
         try:

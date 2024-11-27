@@ -4,9 +4,8 @@ from datetime import datetime
 
 from app.extensions import db
 
-from sqlalchemy_fsm import FSMField, transition
-
 from app.services.entities import MembershipStates, SubscriptionEntity
+from fsm import FSMField, transition
 
 
 def get_paid_plan(product_id=None):
@@ -56,7 +55,7 @@ class SubscriptionMembership(db.Model):
     cancelled_at = db.Column(db.DateTime, nullable=True)
     expired_at = db.Column(db.DateTime, nullable=True)
     payment_frequency = db.Column(db.String(50), nullable=True)
-    price = db.Column(db.Float, nullable=False)
+    price = db.Column(db.Float, default=0)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
@@ -67,9 +66,8 @@ class SubscriptionMembership(db.Model):
         return self
 
     @transition(
-        field='state',
         source="*",
-        target=MembershipStates.PAID.value
+        target=MembershipStates.PAID.value,
     )
     def pay(self, subscription_data: SubscriptionEntity):
         self.from_dict(subscription_data.dict())
@@ -77,7 +75,6 @@ class SubscriptionMembership(db.Model):
         self.subscription = subscription
 
     @transition(
-        field='state',
         source=[MembershipStates.NEW.value, MembershipStates.PAID.value],
         target=MembershipStates.CANCELLED.value
      )
