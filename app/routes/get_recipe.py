@@ -1,21 +1,24 @@
-import json
+from __future__ import annotations
+
 import logging
 
 from celery.result import AsyncResult
+from flask import abort
+from flask import request
+from flask_restx import Namespace
+from flask_restx import Resource
 from marshmallow import ValidationError
 
-from app.serializers.recipe_serializer import (
-    LinkRecipeSchema,
-    TaskIdSchema,
-)
-from flask_restx import Namespace, Resource
-from flask import request, abort
+from app.serializers.recipe_serializer import LinkRecipeSchema
+from app.serializers.recipe_serializer import RecipeSerializer
+from app.serializers.recipe_serializer import TaskIdSchema
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
+from app.services import RecipeCelService
 from app.task.fetch_desciption import call_fetch_description
 
 logger = logging.getLogger(__name__)
 
-recipe_ns = Namespace('recipe', description="user recipe")
+recipe_ns = Namespace('recipe', description='user recipe')
 
 link_recipe_schema = LinkRecipeSchema()
 link_recipe_model = convert_marshmallow_to_restx_model(recipe_ns, link_recipe_schema)
@@ -26,13 +29,13 @@ task_id_model = convert_marshmallow_to_restx_model(recipe_ns, task_id_schema)
 @recipe_ns.route('/gen_recipe')
 class RecipeScrap(Resource):
     @recipe_ns.expect(link_recipe_model)
-    @recipe_ns.response(200, "Recipe fetched successfully", model=link_recipe_model)
-    @recipe_ns.response(404, "Recipe not found")
+    @recipe_ns.response(200, 'Recipe fetched successfully', model=link_recipe_model)
+    @recipe_ns.response(404, 'Recipe not found')
     def post(self):
         try:
             link = LinkRecipeSchema().load(request.get_json())
             data = {
-                "video_url": link.get('link'),
+                'video_url': link.get('link'),
             }
 
             task = call_fetch_description.delay(data)
@@ -45,12 +48,12 @@ class RecipeScrap(Resource):
 
 @recipe_ns.route('/fetch_results/<string:task_id>/')
 class RecipeScrapPost(Resource):
-    @recipe_ns.response(200, "Recipe fetched successfully", model=link_recipe_model)
-    @recipe_ns.response(404, "Recipe not found")
+    @recipe_ns.response(200, 'Recipe fetched successfully', model=link_recipe_model)
+    @recipe_ns.response(404, 'Recipe not found')
     def get(self, task_id):
         try:
 
-            TaskIdSchema().load({"task_id": task_id})
+            TaskIdSchema().load({'task_id': task_id})
         except ValidationError as ve:
             abort(400, description=ve.messages)
 
@@ -60,7 +63,7 @@ class RecipeScrapPost(Resource):
             abort(400, description=f"Invalid task ID: {str(e)}")
 
         if res.state == 'PENDING':
-            return {"status": "PENDING"}, 202
+            return {'status': 'PENDING'}, 202
         elif res.state == 'SUCCESS':
             result: dict = res.result
 
@@ -68,11 +71,13 @@ class RecipeScrapPost(Resource):
             find = result.get('find')
             if find:
                 return content
-            logger.info(json.dumps(content, indent=4))
+            # logger.error(json.dumps(content, indent=4))
+            # data = json.loads(result.get('content'))
+            recipe = RecipeCelService.convert_and_store_recipe(content)
 
-            return content
+            return RecipeSerializer().dump(recipe), 200
 
         elif res.state == 'FAILURE':
-            return {"status": "FAILURE", "message": str(res.result)}, 400
+            return {'status': 'FAILURE', 'message': str(res.result)}, 400
         else:
-            return {"status": res.state}, 202
+            return {'status': res.state}, 202

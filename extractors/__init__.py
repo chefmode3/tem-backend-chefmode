@@ -1,27 +1,32 @@
-import os
-import re
+from __future__ import annotations
 
-from extractors.facebook import download_facebook_video
-from extractors.tiktok import download_tiktok
-from extractors.new_youtube import download_youtube
-from extractors.instagram import download_instagram_video
-from extractors.video_analyzer import process_video
+import json
+import logging
+import os
 import time
+import uuid
+
+from app.utils.s3_storage import upload_to_s3
+from extractors.facebook import download_facebook_video
+from extractors.instagram import download_instagram_video
+from extractors.new_youtube import download_youtube
 from extractors.recipe_extractor_website import scrape_and_analyze_recipe
+from extractors.tiktok import download_tiktok
+from extractors.video_analyzer import process_video
 from extractors.x_scraper import download_twitter_video
 from utils.common import identify_platform
-import json
-
 from utils.settings import BASE_DIR
 
+
+logger = logging.getLogger(__name__)
 # Constants
-DOWNLOAD_FOLDER = BASE_DIR / "downloads"
+DOWNLOAD_FOLDER = BASE_DIR / 'downloads'
 SLEEP_TIME = 2
+
 
 def ensure_download_folder_exists():
     if not os.path.exists(DOWNLOAD_FOLDER):
         os.makedirs(DOWNLOAD_FOLDER)
-
 
 
 def retry_process_video(output_filepath):
@@ -39,8 +44,9 @@ def retry_process_video(output_filepath):
 
     return description
 
+
 def fetch_description(request_data):
-    video_url = request_data["video_url"]
+    video_url = request_data['video_url']
     platform = identify_platform(video_url)
 
     final_content, recipe, image_url = None, None, None
@@ -49,16 +55,16 @@ def fetch_description(request_data):
     ensure_download_folder_exists()
 
     # Define the output file path
-    output_filepath = os.path.join(DOWNLOAD_FOLDER, "downloaded_video.mp4")
+    output_filepath = os.path.join(DOWNLOAD_FOLDER, f'downloaded_video_{uuid.uuid4()}.mp4')
 
     logger.info(output_filepath)
     # Dictionary to map platforms to their respective download functions
     download_functions = {
-        "tiktok": download_tiktok,
-        "youtube": download_youtube,
-        "instagram": download_instagram_video,
-        "x": download_twitter_video,
-        "facebook": download_facebook_video
+        'tiktok': download_tiktok,
+        'youtube': download_youtube,
+        'instagram': download_instagram_video,
+        'x': download_twitter_video,
+        'facebook': download_facebook_video
     }
 
     if platform in download_functions:
@@ -69,21 +75,27 @@ def fetch_description(request_data):
         time.sleep(SLEEP_TIME)
 
         # Process the video
-        recipe, image_url = retry_process_video(video_url_with_audio)
+        recipe, image_url_to_store = retry_process_video(video_url_with_audio)
+        s3_file_name = f'{uuid.uuid4()}_image.jpg'
+        image_url = upload_to_s3(image_url_to_store, s3_file_name)
 
         # Remove the downloaded video after processing
-        if os.path.exists(video_url_with_audio):
-            os.remove(video_url_with_audio)
+        remove_file(video_url_with_audio)
+        remove_file(image_url_to_store)
 
-    elif platform == "website":
+    elif platform == 'website':
         recipe, got_image, image_url = scrape_and_analyze_recipe(video_url)
 
     logger.info(json.loads(recipe))
     final_content = {
-        "content": json.loads(recipe),
-        "origin": video_url,
-        "image_url": image_url
+        'content': json.loads(recipe),
+        'origin': video_url,
+        'image_url': image_url
     }
 
     return final_content
 
+
+def remove_file(file_path_to_remove):
+    if os.path.exists(file_path_to_remove):
+        os.remove(file_path_to_remove)

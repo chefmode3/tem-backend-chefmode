@@ -1,33 +1,37 @@
+from __future__ import annotations
+
+import logging
 import os
 import re
-
-
-from pathlib import Path
-from pydub import AudioSegment
-import ffmpeg
 import uuid
+from pathlib import Path
+
+import ffmpeg
+from pydub import AudioSegment
 
 from utils.settings import BASE_DIR
 
-DOWNLOAD_FOLDER = BASE_DIR / "downloads"
+DOWNLOAD_FOLDER = BASE_DIR / 'downloads'
+
+logger = logging.getLogger(__name__)
 
 
 def identify_platform(video_url):
     """
     Identify the platform from the video URL.
     """
-    if re.search(r"tiktok.com", video_url):
-        return "tiktok"
-    elif re.search(r"youtube.com|youtu.be", video_url):
-        return "youtube"
-    elif re.search(r"instagram.com", video_url):
-        return "instagram"
-    elif re.search(r"x.com", video_url):
-        return "x"
-    elif re.search(r"facebook.com", video_url):
-        return "facebook"
+    if re.search(r'tiktok.com', video_url):
+        return 'tiktok'
+    elif re.search(r'youtube.com|youtu.be', video_url):
+        return 'youtube'
+    elif re.search(r'instagram.com', video_url):
+        return 'instagram'
+    elif re.search(r'x.com', video_url):
+        return 'x'
+    elif re.search(r'facebook.com', video_url):
+        return 'facebook'
     else:
-        return "website"
+        return 'website'
 
 
 def save_video_to_file(video_buffer):
@@ -51,6 +55,7 @@ def save_video_to_file(video_buffer):
             .output(temp_video_path, format='mp4', vcodec='libx264', preset='fast')  # Video specs
             .run(input=video_buffer)  # Pass the buffer as input
         )
+        logger.info(f"{process}")
         logger.info(f"Video saved successfully to: {temp_video_path}")
         return temp_video_path
     except ffmpeg.Error as e:
@@ -72,7 +77,7 @@ def is_audio_valid_pydub(audio_path):
         return False
 
 
-def change_extension_to_image(filename, new_extension=".jpg"):
+def change_extension_to_image(filename, new_extension='.jpg'):
     """
     Change the extension of the given filename to the specified image format.
 
@@ -83,7 +88,7 @@ def change_extension_to_image(filename, new_extension=".jpg"):
     Returns:
         str: The filename with the updated extension.
     """
-    if not new_extension.startswith("."):
+    if not new_extension.startswith('.'):
         new_extension = f".{new_extension}"  # Ensure the extension starts with '.'
 
     # Use pathlib to handle the filename and extension

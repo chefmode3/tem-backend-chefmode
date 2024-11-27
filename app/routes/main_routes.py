@@ -1,28 +1,32 @@
+from __future__ import annotations
+
 import logging
 import os
 
+from flask import abort
+from flask import request
+from flask import session
 from flask_jwt_extended import create_access_token
 from flask_login import login_required
-from flask_restx import Namespace, Resource
-from flask import request, abort, session
+from flask_restx import Namespace
+from flask_restx import Resource
 from marshmallow import ValidationError
 
-from app.utils.send_email import verify_reset_token, activation_or_reset_email
+from app.serializers.user_serializer import PasswordResetRequestSchema
+from app.serializers.user_serializer import ResetPasswordSchema
+from app.serializers.user_serializer import UserActivationSchema
+from app.serializers.user_serializer import UserLoginSchema
+from app.serializers.user_serializer import UserResponseSchema
+from app.serializers.user_serializer import UserSignupSchema
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.user_service import UserService
-from app.serializers.user_serializer import (
-    UserSignupSchema,
-    UserLoginSchema,
-    UserResponseSchema,
-    PasswordResetRequestSchema,
-    ResetPasswordSchema,
-    UserActivationSchema
-)
+from app.utils.send_email import activation_or_reset_email
+from app.utils.send_email import verify_reset_token
 
 logger = logging.getLogger(__name__)
 
 
-auth_ns = Namespace('auth', description="user authentication")
+auth_ns = Namespace('auth', description='user authentication')
 
 signup_schema = UserSignupSchema()
 signup_model = convert_marshmallow_to_restx_model(auth_ns, signup_schema)
@@ -46,8 +50,8 @@ reset_password_model = convert_marshmallow_to_restx_model(auth_ns, reset_passwor
 @auth_ns.route('/signup')
 class SignupResource(Resource):
     @auth_ns.expect(signup_model)
-    @auth_ns.response(201, "User successfully created")
-    @auth_ns.response(400, "Validation Error")
+    @auth_ns.response(201, 'User successfully created')
+    @auth_ns.response(400, 'Validation Error')
     def post(self):
         try:
             # Validate and deserialize input
@@ -56,51 +60,51 @@ class SignupResource(Resource):
             logger.info(user_data)
 
             if is_activate:
-                return {"result": "Account created"}, 200
+                return {'result': 'Account created'}, 200
             if user_data.reset_token:
-                return {"result": "An email has already send please check your email to verify your address"}, 200
+                return {'result': 'An email has already send please check your email to verify your address'}, 200
             email = user_data.email
             name = user_data.name
-            subject = "Email Activation"
+            subject = 'Email Activation'
             # email, body, subject, recipient
-            url_frontend = os.getenv('URL_FRONTEND')
+            url_frontend = os.getenv('VERIFY_EMAIL_URL')
 
             # Render the HTML template with context
             template = 'welcome_email.html'
 
             activation_or_reset_email(email, name=name, subject=subject, template=template,
                                       url_frontend=url_frontend)
-            return {"result": "Your account has been created. Please check your email to verify your address."}, 200
+            return {'result': 'Your account has been created. Please check your email to verify your address.'}, 200
         except ValidationError as err:
             logger.error(f'{err.messages} : status ,500')
-            return {"errors": err.messages}, 400
+            return {'errors': err.messages}, 400
         except Exception as inter_erro:
             logger.error(f'{str(inter_erro)} : status ,500')
-            return {"errors": " unexpected error occurred"}, 400
+            return {'errors': ' unexpected error occurred'}, 400
 
 
 @auth_ns.route('/signup/activation')
 class SignupConfirmResource(Resource):
     @auth_ns.expect(user_activation_model)
-    @auth_ns.response(201, "User Account successfully activated", model=user_activation_model)
-    @auth_ns.response(400, "Validation Error")
+    @auth_ns.response(201, 'User Account successfully activated', model=user_activation_model)
+    @auth_ns.response(400, 'Validation Error')
     def post(self):
         try:
             # Validate and deserialize input
             data = user_activation_schema.load(request.get_json())
-            email = data.get('email')
-            token = data.get('token')
+            email = data.get('email', None)
+            token = data.get('token', None)
 
             # Verify the reset token
             result = verify_reset_token(token, max_age=86400)
-            logger.error(f'user reset :1')
-            if not result["valid"]:
-                return {"error": result["error"], "error":1}, 400
-            logger.error(f'user reset :12')
-            # Ensure the token matches the email
-            if result["email"] != email:
-                return {"error": "Token does not match the provided email"}, 400
-            logger.error(f'user reset :112')
+            logger.error('user reset :1')
+            if not result['valid']:
+                return result.get('error', None), 400
+            logger.error('user reset :12')
+            #  Ensure the token matches the email
+            if result['email'] != email:
+                return {'error': 'Token does not match the provided email'}, 400
+            logger.error('user reset :112')
             user, status = UserService.activate_user(email)
             # Activate the user
             user_data = user_response_schema.dump(user)
@@ -109,20 +113,20 @@ class SignupConfirmResource(Resource):
                 logger.error(f'user reset : {user_data}')
 
                 return user_data, status
-            return {"error": f"Token or email are invalid "}, status
+            return {'error': 'Token or email are invalid '}, status
         except ValidationError as err:
             logger.error(f'{err.messages} : status ,400')
-            return {"errors": err.messages}, 400
+            return {'errors': err.messages}, 400
         except Exception as err:
             logger.error(f'{str(err)} : status ,500')
-            return {"errors": " unexpected error occurred"}, 400
+            return {'errors': ' unexpected error occurred'}, 400
 
 
 @auth_ns.route('/login')
 class LoginResource(Resource):
     @auth_ns.expect(login_model)
-    @auth_ns.response(201, "User successfully logged", model=user_response_model)
-    @auth_ns.response(400, "Validation Error")
+    @auth_ns.response(201, 'User successfully logged', model=user_response_model)
+    @auth_ns.response(400, 'Validation Error')
     def post(self):
         try:
 
@@ -135,20 +139,17 @@ class LoginResource(Resource):
                 user['access_token'] = access_token
                 return user, 200
             else:
-                abort(401, description="Invalid credentials.")
-
+                abort(401, description='Invalid credentials.')
 
         except ValidationError as err:
 
             logger.error(f'{err.messages} : status ,500')
 
-            return {"errors": err.messages}, 400
+            return {'errors': err.messages}, 400
 
         except Exception as inter_erro:
-
             logger.error(f'{str(inter_erro)} : status ,500')
-
-            return {"errors": " unexpected error occurred"}, 400
+            return {'errors': ' unexpected error occurred'}, 400
 
 
 @auth_ns.route('/logout')
@@ -164,49 +165,51 @@ class LogoutResource(Resource):
 class PasswordResetRequestResource(Resource):
 
     @auth_ns.expect(password_reset_request_model)
-    @auth_ns.response(200, "Password reset email sent", model=password_reset_request_model)
-    @auth_ns.response(400, "Validation Error")
+    @auth_ns.response(200, 'Password reset email sent', model=password_reset_request_model)
+    @auth_ns.response(400, 'Validation Error')
     def post(self):
         try:
             data = password_reset_request_schema.load(request.get_json())
-            email = data.get("email")
-            url_frontend = os.getenv('REQUEST_PASSWORD')
+            email = data.get('email')
+            url_frontend = os.getenv('RESET_PASSWORD_URL')
 
-            subject = "Password Reset Request"
+            subject = 'Password Reset Request'
 
             user = UserService.get_user_by_email(email)
             if not user:
-                return {"result": "Email not found or incorect"}
+                return {'result': 'Email not found or incorect'}
 
             name: str = user.name
             activation_or_reset_email(email, name=name, subject=subject, template='password_reset_email.html',
                                       url_frontend=url_frontend)
-            return {"result": "An email is already sent to you "}
+            return {'result': 'An email is already sent to you '}
 
         except ValidationError as err:
-            return {"errors": err.messages}, 400
+            logger.error(f'{str(err.messages)} : status ,500')
+            return {'errors': err.messages}, 400
 
         except Exception as err:
-            return {"errors": " unexpected error occurred"}, 400
+            logger.error(f'{str(err)} : status ,500')
+            return {'errors': ' unexpected error occurred'}, 400
 
 
 @auth_ns.route('/reset_password')
 class ResetPasswordResource(Resource):
 
     @auth_ns.expect(reset_password_model)
-    @auth_ns.response(200, "Password has been reset successfully", model=reset_password_model)
-    @auth_ns.response(400, "Validation Error")
+    @auth_ns.response(200, 'Password has been reset successfully', model=reset_password_model)
+    @auth_ns.response(400, 'Validation Error')
     def post(self):
         try:
 
             data = reset_password_schema.load(request.get_json())
-            new_password = data.get("new_password")
+            new_password = data.get('new_password')
             token = data.get('token')
 
             return UserService.reset_password(token, new_password)
         except ValidationError as err:
             logger.error(f'{err.messages} : status ,500')
-            return {"errors": err.messages}, 400
+            return {'errors': err.messages}, 400
         except Exception as inter_erro:
             logger.error(f'{str(inter_erro)} : status ,500')
-            return {"errors": " unexpected error occurred"}, 400
+            return {'errors': ' unexpected error occurred'}, 400
