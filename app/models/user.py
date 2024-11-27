@@ -35,9 +35,8 @@ class User(db.Model, UserMixin):
     google_id = db.Column(db.String(255), unique=True, nullable=True)
     password = db.Column(db.String(255), unique=True, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
+    
     reset_token = db.Column(db.String(255), unique=True, nullable=True)
     # Relationships
     recipes_association = db.relationship('UserRecipe', back_populates='user')

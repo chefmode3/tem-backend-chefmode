@@ -53,6 +53,7 @@ class SignupResource(Resource):
             # Validate and deserialize input
             data = signup_schema.load(request.get_json())
             user_data, is_activate = UserService.signup(data['email'], data['password'])
+
             logger.info(user_data)
 
             if is_activate:
