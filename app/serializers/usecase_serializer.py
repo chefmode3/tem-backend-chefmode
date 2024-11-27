@@ -63,12 +63,6 @@ class IngredientIDSchema(Schema):
     })
 
 
-class NutritionItemSchema(Schema):
-    name = fields.String(required=True)
-    value = fields.Float(required=True)
-    unit = fields.String(required=True)
-
-
 class NutritionSchema(Schema):
     name = fields.Str(required=False)
     total_quantity = fields.Float(required=False)
