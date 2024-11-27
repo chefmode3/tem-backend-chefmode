@@ -1,7 +1,6 @@
 import logging
 
 from flask import abort
-from flask_jwt_extended import create_access_token
 from flask_login import login_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -20,7 +19,7 @@ class UserService:
     @staticmethod
     def signup(email, password):
         """Registers a new user."""
-        user = User.query.filter_by(email=email).first()
+        user = UserService.get_user_by_email(email)
         if user:
             return user,  user.activate
         user = User(email=email, name=email.split('@')[0], activate=False)
@@ -34,7 +33,7 @@ class UserService:
     @staticmethod
     def login(email, password):
         """Logs in a user if credentials are valid."""
-        user = User.query.filter_by(email=email).first()
+        user = UserService.get_user_by_email(email)
         if not user or not check_password_hash(user.password, password):
             abort(401, description="Invalid credentials.")
         if not user.activate:
@@ -46,8 +45,8 @@ class UserService:
     @staticmethod
     def create_user(name, email, password=None, google_id=None, google_token=None, activate=False):
         """Creates a new user."""
-        if User.query.filter_by(email=email).first():
-            abort(400, description="Email already exists.")
+        if UserService.get_user_by_email(email):
+            return None
 
         user = User(email=email, name=name,  google_id=google_id, google_token=google_token, activate=activate)
         if password:
@@ -55,7 +54,7 @@ class UserService:
 
         db.session.add(user)
         db.session.commit()
-        return UserSchema().dump(user)
+        return user
 
     @staticmethod
     def get_user_by_email(user_email):
@@ -70,19 +69,15 @@ class UserService:
         """Retrieves a user by their ID."""
         user = User.query.get(id=user_id)
         if not user:
-            abort(404, description="User not found.")
-        return {
-            "id": user.id,
-            "email": user.email,
-            "name": user.name
-        }
+            return None
+        return user
 
     @staticmethod
-    def request_password_reset(email, reset_token) -> User:
+    def request_password_reset(email, reset_token) -> User | None:
         """Generates a password reset token and sends it via email."""
-        user = User.query.filter_by(email=email).first()
+        user = UserService.get_user_by_email(email)
         if not user:
-            abort(404, description="User not found.")
+            return None
 
         user.reset_token = reset_token
         db.session.commit()
@@ -99,7 +94,7 @@ class UserService:
             return {"error": result["error"]}, 400
 
         email = result["email"]
-        user = User.query.filter_by(email=email).first()
+        user =UserService.get_user_by_email(email)
         if not user:
             return {"error": "Invalid or expired reset token."}, 404
 
@@ -117,18 +112,13 @@ class UserService:
         """Updates user profile information."""
         user = User.query.get(id)
         if not user:
-            abort(404, description="User not found.")
+           return None
 
         for key, value in kwargs.items():
             setattr(user, key, value)
 
         db.session.commit()
-        return {
-            "id": id,
-            "email": user.email,
-            "name": user.name,
-
-        }
+        return user
 
     @staticmethod
     def delete_user(user_id):
