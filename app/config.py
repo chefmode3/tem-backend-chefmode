@@ -8,11 +8,11 @@ from google_auth_oauthlib.flow import Flow
 
 load_dotenv()
 
-
+CLIENT_SECRET_FILE = BASE_DIR / "client_secret.json"
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 flow = Flow.from_client_secrets_file(
-    client_secrets_file=BASE_DIR / "client_secret.json",
-    scopes=os.getenv("GOOGLE_SCOPE"),
+    client_secrets_file=CLIENT_SECRET_FILE,
+    scopes=["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"],
     redirect_uri=os.getenv("GOOGLE_REDIRECT_URI")
 )
 

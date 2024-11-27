@@ -50,7 +50,7 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
             logger.info("Failed to download the video.")
             return None
         video_buffer = video_response.content
-        # print(video_buffer)
+        # logger.info(video_buffer)
         return save_video_to_file(video_buffer)
 
     except (KeyError, IndexError):
@@ -60,9 +60,9 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
 # Download the video
     # try:
     #     urllib.request.urlretrieve(video_url, output_filename)
-    #     print(f"Video downloaded successfully as {output_filename}")
+    #     logger.info(f"Video downloaded successfully as {output_filename}")
     # except Exception as e:
-    #     print(f"Error downloading video: {e}")
+    #     logger.info(f"Error downloading video: {e}")
 
 # # Example usage:
 # youtube_url = "https://www.youtube.com/watch?v=1LzFy7Rr89E"  # Or a Shorts URL

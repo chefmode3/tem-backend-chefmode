@@ -4,11 +4,10 @@ import os
 from flask_jwt_extended import create_access_token
 from flask_login import login_required
 from flask_restx import Namespace, Resource
-from flask import request, abort, render_template, session
+from flask import request, abort, session
 from marshmallow import ValidationError
 
 from app.utils.send_email import verify_reset_token, activation_or_reset_email
-from app.task.send_email import send_reset_email
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.user_service import UserService
 from app.serializers.user_serializer import (
@@ -54,17 +53,18 @@ class SignupResource(Resource):
             # Validate and deserialize input
             data = signup_schema.load(request.get_json())
             user_data, is_activate = UserService.signup(data['email'], data['password'])
-            print(user_data)
+
+            logger.info(user_data)
 
             if is_activate:
                 return {"result": "Account created"}, 200
-            if user_data.reset_token:
+            if user_data.reste_token:
                 return {"result": "An email has already send please check your email to verify your address"}, 200
-            email = user_data.email
-            name = user_data.name
+            email = user_data.get("email")
+            name = user_data.get("name")
             subject = "Email Activation"
             # email, body, subject, recipient
-            url_frontend = "http://127.0.0.1:5000/auth/reset_password/"
+            url_frontend = os.getenv('VERIFY_EMAIL')
             to = os.getenv('DEFAULT_FROM_EMAIL')
             # Render the HTML template with context
             template = 'welcome_email.html'
@@ -159,7 +159,7 @@ class PasswordResetRequestResource(Resource):
         try:
             data = password_reset_request_schema.load(request.get_json())
             email = data.get("email")
-            url_frontend = " http://127.0.0.1:5000/auth/reset_password/"
+            url_frontend = os.getenv('REQUEST_PASSWORD')
 
             subject = "Password Reset Request"
 
