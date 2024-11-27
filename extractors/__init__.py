@@ -75,12 +75,13 @@ def fetch_description(request_data):
         time.sleep(SLEEP_TIME)
 
         # Process the video
-        recipe, image_url = retry_process_video(video_url_with_audio)
+        recipe, image_url_to_store = retry_process_video(video_url_with_audio)
         s3_file_name = f'{uuid.uuid4()}_image.jpg'
-        image_url = upload_to_s3(image_url, s3_file_name)
+        image_url = upload_to_s3(image_url_to_store, s3_file_name)
+
         # Remove the downloaded video after processing
-        if os.path.exists(video_url_with_audio):
-            os.remove(video_url_with_audio)
+        remove_file(video_url_with_audio)
+        remove_file(image_url_to_store)
 
     elif platform == 'website':
         recipe, got_image, image_url = scrape_and_analyze_recipe(video_url)
@@ -93,3 +94,8 @@ def fetch_description(request_data):
     }
 
     return final_content
+
+
+def remove_file(file_path_to_remove):
+    if os.path.exists(file_path_to_remove):
+        os.remove(file_path_to_remove)
