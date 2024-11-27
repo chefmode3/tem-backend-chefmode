@@ -113,11 +113,15 @@ class SignupConfirmResource(Resource):
             logger.error(f'user reset :112')
             user, status = UserService.activate_user(email)
             user_data = user_response_schema.dump(user)
+
+            access_token = create_access_token(identity=email)
+            user_data['access_token'] = access_token
+
             logger.error(f'user reset :1212 {user}')
             if user:
                 logger.error(f'user reset : {user_data}')
-
                 return user_data, status
+
             return {"error": f"Token or email are invalid "}, status
         except ValidationError as err:
             logger.error(f'{err.messages} : status,400')
@@ -246,7 +250,7 @@ class UpdateUserResource(Resource):
                     "user": user_response_schema.dump(user)
                     }, 200
         except ValidationError as err:
-            logger.error(f'{err.messages} : status 400')
+            logger.error(f'{err.messages} : status, 400')
             return {"errors": err.messages}, 400
         except Exception as e:
             logger.error(f'Unexpected error: {str(e)} : status, 400')

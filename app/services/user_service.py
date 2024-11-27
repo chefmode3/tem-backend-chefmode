@@ -112,9 +112,8 @@ class UserService:
         """Updates user profile information."""
         user = User.query.get(id)
         if not user:
-            return None
+           return None
 
-        kwargs.pop('password', None)
         for key, value in kwargs.items():
             setattr(user, key, value)
 
