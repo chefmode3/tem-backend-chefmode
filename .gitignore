@@ -2,7 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+key.pem
+cert.pem
 # C extensions
 *.so
 .env

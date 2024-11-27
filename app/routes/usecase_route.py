@@ -5,7 +5,6 @@ from flask import request
 from flask_login import login_required
 from marshmallow import ValidationError
 
-
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.usecase_logic import RecipeService
 from app.serializers.usecase_serializer import (
@@ -17,7 +16,6 @@ from app.serializers.usecase_serializer import (
 
 from app.services.user_service import UserService
 from app.serializers.recipe_serializer import RecipeSerializer
-
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +81,7 @@ class GetAllRecipesResource(Resource):
         """
         try:
             page = request.args.get("page", default=1, type=int)
-            page_size = request.args.get("page_size", default=3, type=int)
+            page_size = request.args.get("page_size", default=10, type=int)
             data = RecipeService.get_all_recipes(page, page_size)
 
             return {
@@ -117,7 +115,7 @@ class GetMyRecipesResource(Resource):
             user = UserService.get_current_user()
             user_id = user['id']
             page = request.args.get("page", default=1, type=int)
-            page_size = request.args.get("page_size", default=3, type=int)
+            page_size = request.args.get("page_size", default=10, type=int)
             data = RecipeService.get_my_recipes(user_id, page, page_size)
             return {
                 "data": RecipeSerializer(many=True).dump(data["data"]),
@@ -193,7 +191,7 @@ class SearchRecipesResource(Resource):
         try:
             search_term = request.args.get("search", default="", type=str)
             page = request.args.get("page", default=1, type=int)
-            page_size = request.args.get("page_size", default=3, type=int)
+            page_size = request.args.get("page_size", default=10, type=int)
 
             if not search_term:
                 return {"message": "Search term is required."}, 400
