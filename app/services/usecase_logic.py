@@ -1,8 +1,12 @@
 import logging
+from sqlalchemy.exc import SQLAlchemyError
+
 
 from app.extensions import db
 from app.models.recipe import Recipe
 from app.models.user import UserRecipe
+
+logger = logging.getLogger(__name__)
 
 
 logger = logging.getLogger(__name__)
@@ -30,6 +34,8 @@ class RecipeService:
             })
         recipe.ingredients = ingredient_pre_serving
         return recipe
+
+
 
     @staticmethod
     def get_all_recipes(page, page_size):
@@ -102,8 +108,8 @@ class RecipeService:
             }
         except Exception as e:
             db.session.rollback()
-            logger.error(f"Database error: {str(e)}")
-            return None
+            logger.error(f"Database error occurred: {str(e)}")
+            return {"error": "Database error occurred", "details": str(e)}, 400
 
     @staticmethod
     def is_recipe_flagged_by_user(recipe_id, user_id):
@@ -151,8 +157,8 @@ class RecipeService:
                 ]
             }
         except Exception as e:
-            logger.error(f"Database error: {str(e)}")
-            return None
+            logger.error(f"Database error occurred: {str(e)}")
+            return {"error": "Database error occurred", "details": str(e)}, 400
 
     @staticmethod
     def get_nutrition_by_recipe_id(recipe_id: str, serving: int):
@@ -193,8 +199,8 @@ class RecipeService:
             return adjusted_nutritions
 
         except Exception as e:
-            logger.error(f"Database error: {str(e)}")
-            return None
+            logger.error(f"Database error occurred: {str(e)}")
+            return {"error": "Database error occurred", "details": str(e)}, 400
 
     @staticmethod
     def get_recipe_by_origin(origin):
