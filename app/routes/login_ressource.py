@@ -72,6 +72,8 @@ class CallbackResource(Resource):
                         google_id=id_info.get("sub"),
                         google_token=credentials._id_token,
                         )
+            if not user:
+                abort(400, description="Email already exists.")
             user_data = user_register_schema.dump(user)
             return {'result': user_data}, 401
 
