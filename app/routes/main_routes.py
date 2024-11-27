@@ -16,11 +16,11 @@ from app.serializers.user_serializer import (
     UserResponseSchema,
     PasswordResetRequestSchema,
     ResetPasswordSchema,
-    UserActivationSchema
+    UserActivationSchema,
+    UpdateUserSchema
 )
 
 logger = logging.getLogger(__name__)
-
 
 auth_ns = Namespace('auth', description="user authentication")
 
@@ -37,10 +37,15 @@ user_response_schema = UserResponseSchema()
 user_response_model = convert_marshmallow_to_restx_model(auth_ns, user_response_schema)
 
 password_reset_request_schema = PasswordResetRequestSchema()
-password_reset_request_model = convert_marshmallow_to_restx_model(auth_ns, password_reset_request_schema)
+password_reset_request_model = convert_marshmallow_to_restx_model(
+    auth_ns, password_reset_request_schema
+)
 
 reset_password_schema = ResetPasswordSchema()
 reset_password_model = convert_marshmallow_to_restx_model(auth_ns, reset_password_schema)
+
+update_user_schema = UpdateUserSchema()
+update_user_model = convert_marshmallow_to_restx_model(auth_ns, update_user_schema)
 
 
 @auth_ns.route('/signup')
@@ -50,7 +55,6 @@ class SignupResource(Resource):
     @auth_ns.response(400, "Validation Error")
     def post(self):
         try:
-            # Validate and deserialize input
             data = signup_schema.load(request.get_json())
             user_data, is_activate = UserService.signup(data['email'], data['password'])
             logger.info(user_data)
@@ -58,51 +62,56 @@ class SignupResource(Resource):
             if is_activate:
                 return {"result": "Account created"}, 200
             if user_data.reset_token:
-                return {"result": "An email has already send please check your email to verify your address"}, 200
+                return {"result": "An email has already send please"
+                                  " check your email to verify your address"
+                        }, 200
             email = user_data.email
             name = user_data.name
             subject = "Email Activation"
-            # email, body, subject, recipient
             url_frontend = os.getenv('URL_FRONTEND')
-
-            # Render the HTML template with context
             template = 'welcome_email.html'
 
-            activation_or_reset_email(email, name=name, subject=subject, template=template,
-                                      url_frontend=url_frontend)
-            return {"result": "Your account has been created. Please check your email to verify your address."}, 200
+            activation_or_reset_email(
+                email,
+                name=name,
+                subject=subject,
+                template=template,
+                url_frontend=url_frontend
+            )
+            return {"result": "Your account has been created. "
+                              "Please check your email to verify your address."
+                    }, 200
         except ValidationError as err:
-            logger.error(f'{err.messages} : status ,500')
+            logger.error(f'{err.messages} : status ,400')
             return {"errors": err.messages}, 400
         except Exception as inter_erro:
-            logger.error(f'{str(inter_erro)} : status ,500')
+            logger.error(f'{str(inter_erro)} : status, 400')
             return {"errors": " unexpected error occurred"}, 400
 
 
 @auth_ns.route('/signup/activation')
 class SignupConfirmResource(Resource):
     @auth_ns.expect(user_activation_model)
-    @auth_ns.response(201, "User Account successfully activated", model=user_activation_model)
+    @auth_ns.response(
+        201, "User Account successfully activated", model=user_activation_model
+    )
     @auth_ns.response(400, "Validation Error")
     def post(self):
         try:
-            # Validate and deserialize input
             data = user_activation_schema.load(request.get_json())
             email = data.get('email')
             token = data.get('token')
 
-            # Verify the reset token
-            result = verify_reset_token(token, max_age=86400)
+            result = verify_reset_token(token)
             logger.error(f'user reset :1')
             if not result["valid"]:
-                return {"error": result["error"], "error":1}, 400
+                return {"error": result["error"]}, 400
+
             logger.error(f'user reset :12')
-            # Ensure the token matches the email
             if result["email"] != email:
                 return {"error": "Token does not match the provided email"}, 400
             logger.error(f'user reset :112')
             user, status = UserService.activate_user(email)
-            # Activate the user
             user_data = user_response_schema.dump(user)
             logger.error(f'user reset :1212 {user}')
             if user:
@@ -111,22 +120,23 @@ class SignupConfirmResource(Resource):
                 return user_data, status
             return {"error": f"Token or email are invalid "}, status
         except ValidationError as err:
-            logger.error(f'{err.messages} : status ,400')
+            logger.error(f'{err.messages} : status,400')
             return {"errors": err.messages}, 400
         except Exception as err:
-            logger.error(f'{str(err)} : status ,500')
+            logger.error(f'{str(err)} : status,400')
             return {"errors": " unexpected error occurred"}, 400
 
 
 @auth_ns.route('/login')
 class LoginResource(Resource):
     @auth_ns.expect(login_model)
-    @auth_ns.response(201, "User successfully logged", model=user_response_model)
+    @auth_ns.response(
+        201, "User successfully logged", model=user_response_model
+    )
     @auth_ns.response(400, "Validation Error")
     def post(self):
         try:
 
-            # Validate and deserialize input
             data = login_schema.load(request.get_json())
             user_data = UserService.login(data['email'], data['password'])
             access_token = create_access_token(identity=user_data.email)
@@ -136,18 +146,12 @@ class LoginResource(Resource):
                 return user, 200
             else:
                 abort(401, description="Invalid credentials.")
-
-
         except ValidationError as err:
-
-            logger.error(f'{err.messages} : status ,500')
-
+            logger.error(f'{err.messages} : status ,400')
             return {"errors": err.messages}, 400
 
         except Exception as inter_erro:
-
-            logger.error(f'{str(inter_erro)} : status ,500')
-
+            logger.error(f'{str(inter_erro)} : status ,400')
             return {"errors": " unexpected error occurred"}, 400
 
 
@@ -164,7 +168,9 @@ class LogoutResource(Resource):
 class PasswordResetRequestResource(Resource):
 
     @auth_ns.expect(password_reset_request_model)
-    @auth_ns.response(200, "Password reset email sent", model=password_reset_request_model)
+    @auth_ns.response(
+        200, "Password reset email sent", model=password_reset_request_model
+    )
     @auth_ns.response(400, "Validation Error")
     def post(self):
         try:
@@ -176,17 +182,24 @@ class PasswordResetRequestResource(Resource):
 
             user = UserService.get_user_by_email(email)
             if not user:
-                return {"result": "Email not found or incorect"}
+                return {"result": "Email not found or incorrect"}
 
             name: str = user.name
-            activation_or_reset_email(email, name=name, subject=subject, template='password_reset_email.html',
-                                      url_frontend=url_frontend)
+            activation_or_reset_email(
+                email,
+                name=name,
+                subject=subject,
+                template='password_reset_email.html',
+                url_frontend=url_frontend
+            )
             return {"result": "An email is already sent to you "}
 
         except ValidationError as err:
+            logger.error(f'{str(err)} : status, 400')
             return {"errors": err.messages}, 400
 
         except Exception as err:
+            logger.error(f'{str(err)} : status, 400')
             return {"errors": " unexpected error occurred"}, 400
 
 
@@ -194,7 +207,9 @@ class PasswordResetRequestResource(Resource):
 class ResetPasswordResource(Resource):
 
     @auth_ns.expect(reset_password_model)
-    @auth_ns.response(200, "Password has been reset successfully", model=reset_password_model)
+    @auth_ns.response(
+        200, "Password has been reset successfully", model=reset_password_model
+    )
     @auth_ns.response(400, "Validation Error")
     def post(self):
         try:
@@ -205,8 +220,34 @@ class ResetPasswordResource(Resource):
 
             return UserService.reset_password(token, new_password)
         except ValidationError as err:
-            logger.error(f'{err.messages} : status ,500')
+            logger.error(f'{err.messages} : status ,400')
             return {"errors": err.messages}, 400
         except Exception as inter_erro:
-            logger.error(f'{str(inter_erro)} : status ,500')
+            logger.error(f'{str(inter_erro)} : status ,400')
             return {"errors": " unexpected error occurred"}, 400
+
+
+@auth_ns.route('/user/<string:id>')
+class UpdateUserResource(Resource):
+
+    @auth_ns.expect(update_user_model)
+    @auth_ns.response(200, "User updated successfully")
+    @auth_ns.response(404, "User not found")
+    @auth_ns.response(400, "Validation Error")
+    def put(self, id):
+        """Update user information (except password)."""
+        try:
+            data = update_user_schema.load(request.get_json())
+            user = UserService.update_user(id, **data)
+            if not user:
+                return {"message": "User not found"}, 404
+
+            return {"message": "User updated successfully",
+                    "user": user_response_schema.dump(user)
+                    }, 200
+        except ValidationError as err:
+            logger.error(f'{err.messages} : status 400')
+            return {"errors": err.messages}, 400
+        except Exception as e:
+            logger.error(f'Unexpected error: {str(e)} : status, 400')
+            return {"errors": "Unexpected error occurred"}, 400

@@ -21,8 +21,8 @@ def verify_reset_token(token, max_age=3600):  # 30 minutes
         email = serializer.loads(token, salt="password-reset-salt", max_age=max_age)
         return {"valid": True, "email": email}
     except Exception as e:
-
-        return {"valid": False, "error": str(e)}
+        logger.error(str(e))
+        return {"valid": False, "error": "token is not valid"}
 
 
 def activation_or_reset_email(
@@ -33,7 +33,6 @@ def activation_or_reset_email(
         url_frontend: str="http://127.0.0.1:5000/auth/reset_password/"
 ):
     reset_token = generate_reset_token(email)
-
     user_token = UserService.request_password_reset(email, reset_token)
     if not user_token:
         logger.info("User not found.")
