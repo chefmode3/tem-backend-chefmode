@@ -14,8 +14,10 @@ from app.serializers.usecase_serializer import (
     FlagStatusResponseSchema,
     NutritionSchema
 )
+
 from app.services.user_service import UserService
 from app.serializers.recipe_serializer import RecipeSerializer
+
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +50,7 @@ class GetRecipeResource(Resource):
     })
     @recipe_ns.response(
         200, "Recipe fetched successfully",model=recipe_response_model
+
     )
     @recipe_ns.response(404, "Recipe not found")
     def get(self):
@@ -73,6 +76,7 @@ class GetAllRecipesResource(Resource):
     @recipe_ns.response(
         200, "Recipes fetched successfully", model=recipe_response_model
     )
+
     def get(self):
         """
         Fetch all recipes with pagination.

@@ -1,3 +1,5 @@
+import logging
+
 from flask import abort
 from flask_jwt_extended import create_access_token
 from flask_login import login_user, current_user
@@ -8,6 +10,8 @@ from app.extensions import db, login_manager
 
 from app.serializers.user_serializer import UserSchema
 
+logger = logging.getLogger(__name__)
+
 
 class UserService:
 
@@ -17,23 +21,15 @@ class UserService:
     def signup(email, password):
         """Registers a new user."""
         user = User.query.filter_by(email=email).first()
-        if user and user.activate:
-            abort(400, description="Email already exists."), False
-        elif user and not user.activate:
-            return {
-            "id": user.id,
-            "email": user.email,
-            "name": user.name,
-            "activate": user.activate,
-
-        }, False
+        if user:
+            return user,  user.activate
         user = User(email=email, name=email.split('@')[0], activate=False)
         user.password = generate_password_hash(password)
 
         db.session.add(user)
         db.session.commit()
 
-        return {"success": "Your account has been created. Please check your email to verify your address."}, True
+        return user, user.activate
 
     @staticmethod
     def login(email, password):
@@ -44,14 +40,8 @@ class UserService:
         if not user.activate:
             abort(401, description="user is not activate or delete")
 
-        access_token = create_access_token(identity=email)
         login_user(user)
-        return {
-            "id": user.id,
-            "email": user.email,
-            "name": user.name,
-            "access_token": access_token
-        }
+        return user
 
     @staticmethod
     def create_user(name, email, password=None, google_id=None, google_token=None, activate=False):
@@ -185,11 +175,18 @@ class UserService:
 
     @classmethod
     def activate_user(cls, email):
-        user = UserService.get_user_by_email(email)
-        if not user:
-            return {"error": f"{email} not found"}, 400
-        user.activate = True
+        try:
+            user = UserService.get_user_by_email(email)
+            logger.error(f'user reset :{user.reset_token == None}')
+            if not user or not user.reset_token:
+                return None, 400
+            user.activate = True
+            user.reset_token = None
+            db.session.add(user)
+            db.session.commit()
+            return user, 200
 
-        db.session.add(user)
-        db.session.commit()
-        return {"result": "user activate"}, 200
+        except Exception as e:
+            db.session.rollback()
+            # Rollback si erreur
+            return {"error": str(e)}, 400

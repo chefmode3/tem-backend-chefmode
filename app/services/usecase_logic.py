@@ -1,12 +1,15 @@
 import logging
 from sqlalchemy.exc import SQLAlchemyError
 
+
 from app.extensions import db
 from app.models.recipe import Recipe
 from app.models.user import UserRecipe
 
 logger = logging.getLogger(__name__)
 
+
+logger = logging.getLogger(__name__)
 
 class RecipeService:
 
@@ -89,7 +92,9 @@ class RecipeService:
         """
         Mark a recipe as flagged for a specific user.
         """
-        user_recipe = UserRecipe.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
+        user_recipe = UserRecipe.query.filter_by(
+            user_id=user_id, recipe_id=recipe_id
+        ).first()
 
         if not user_recipe:
             return None

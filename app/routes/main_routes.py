@@ -1,13 +1,13 @@
 import os
 import logging
 
+from flask_jwt_extended import create_access_token
 from flask_login import login_required
 from flask_restx import Namespace, Resource
-from flask import request, abort, render_template, session
+from flask import request, abort, session
 from marshmallow import ValidationError
 
 from app.utils.send_email import verify_reset_token, activation_or_reset_email
-from app.task.send_email import send_reset_email
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.user_service import UserService
 from app.serializers.user_serializer import (
@@ -58,16 +58,18 @@ class SignupResource(Resource):
             # Validate and deserialize input
             data = signup_schema.load(request.get_json())
             user_data, is_activate = UserService.signup(data['email'], data['password'])
-            # print(user_data)
+
+            logger.info(user_data)
+
             if is_activate:
-                return user_response_schema.dump(user_data), 200
-            elif not user_data:
-                return {"error" "user not found"}, 404
+                return {"result": "Account created"}, 200
+            if user_data.reste_token:
+                return {"result": "An email has already send please check your email to verify your address"}, 200
             email = user_data.get("email")
             name = user_data.get("name")
             subject = "Email Activation"
             # email, body, subject, recipient
-            url_frontend = "http://127.0.0.1:5000/auth/reset_password/"
+            url_frontend = os.getenv('VERIFY_EMAIL')
             to = os.getenv('DEFAULT_FROM_EMAIL')
             # Render the HTML template with context
             template = 'welcome_email.html'
@@ -80,6 +82,7 @@ class SignupResource(Resource):
                 template='confirm_email.html',
                 url_frontend=url_frontend
             )
+
         except ValidationError as err:
             return {"errors": err.messages}, 400
 
@@ -98,6 +101,7 @@ class SignupConfirmResource(Resource):
             email = data.get('email')
             token = data.get('token')
             result = verify_reset_token(token, max_age=86400)
+            logger.error(f'user reset :1')
             if not result["valid"]:
                 return {"error": (result["error"])}, 400
             return UserService.activate_user(email)
@@ -124,8 +128,11 @@ class LoginResource(Resource):
             # Validate and deserialize input
             data = login_schema.load(request.get_json())
             user_data = UserService.login(data['email'], data['password'])
+            access_token = create_access_token(identity=user_data.email)
             if user_data:
-                return user_response_schema.dump(user_data), 200
+                user = user_response_schema.dump(user_data)
+                user['access_token'] = access_token
+                return user, 200
             else:
                 abort(401, description="Invalid credentials.")
 
@@ -155,12 +162,13 @@ class PasswordResetRequestResource(Resource):
         try:
             data = password_reset_request_schema.load(request.get_json())
             email = data.get("email")
-            url_frontend = " http://127.0.0.1:5000/auth/reset_password/"
+            url_frontend = os.getenv('REQUEST_PASSWORD')
 
             subject = "Password Reset Request"
 
             user = UserService.get_user_by_email(email)
-            name: str = user.name
+            if not user:
+                return {"result": "Email not found or incorect"}
 
             return activation_or_reset_email(
                 email,
