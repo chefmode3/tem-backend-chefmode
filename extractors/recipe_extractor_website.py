@@ -128,12 +128,12 @@ def scrape_and_analyze_recipe(url):
 
     end = time.time()
     logger.info(f"Extract all text content took {end - start} seconds")
-    # print(body_content)
+    # logger.info(body_content)
 
     start = time.time()
-    # Tokenize the body content and print token count
+    # Tokenize the body content and logger.info token count
     token_count, tokens = tokenize_text(body_content)
-    # print(f"Token Count: {token_count}")
+    # logger.info(f"Token Count: {token_count}")
     end = time.time()
     logger.info(f"Tokenize text content took {end - start} seconds")
 
@@ -154,7 +154,7 @@ def scrape_and_analyze_recipe(url):
         #         save_image_locally(image, 'recipe_image.jpg')  # Save the image locally
         #         got_image = True
         #     else:
-        #         print("Failed to retrieve the main image after multiple attempts.")
+        #         logger.info("Failed to retrieve the main image after multiple attempts.")
         #         got_image = False
         # else:
         # images = body.find_all('img')

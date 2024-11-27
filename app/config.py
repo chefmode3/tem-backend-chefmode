@@ -8,11 +8,11 @@ from google_auth_oauthlib.flow import Flow
 
 load_dotenv()
 
-
+CLIENT_SECRET_FILE = BASE_DIR / "client_secret.json"
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 flow = Flow.from_client_secrets_file(
-    client_secrets_file=BASE_DIR / "client_secret.json",
-    scopes=os.getenv("GOOGLE_SCOPE"),
+    client_secrets_file=CLIENT_SECRET_FILE,
+    scopes=["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email", "openid"],
     redirect_uri=os.getenv("GOOGLE_REDIRECT_URI")
 )
 
@@ -30,13 +30,11 @@ class Config:
     CSRF_ENABLED = True
 
     # SMTP setup to reset password
-    MAIL_HOST = os.getenv('MAIL_HOST')
     MAIL_PORT = os.getenv('MAIL_PORT')
     MAIL_SERVER = os.getenv('MAIL_SERVER')
-    MAIL_BACKEND = os.getenv('MAIL_BACKEND')
     DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
-    MAIL_HOST_USER = os.getenv('MAIL_HOST_USER')
-    MAIL_HOST_PASSWORD = os.getenv('MAIL_HOST_PASSWORD')
+    MAIL_USERNAME = os.getenv('MAIL_USERNAME')
+    MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
     MAIL_USE_TLS = os.getenv('MAIL_USE_TLS')
     MAIL_USE_SLL = os.getenv('MAIL_USE_SLL')
 
@@ -50,7 +48,7 @@ class Config:
 
 class DevelopmentConfig(Config):
     """Development configuration"""
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL_DEV')
     FLASK_ADMIN_SWATCH = 'cerulean'
     DEBUG_TB_ENABLED = True
     DEBUG = True  # Activate debug mode in development environment

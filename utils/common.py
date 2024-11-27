@@ -42,7 +42,7 @@ def save_video_to_file(video_buffer):
     """
 
     temp_video_path = os.path.join(DOWNLOAD_FOLDER, F"{uuid.uuid4()}.mp4")
-    print(temp_video_path)
+    logger.info(temp_video_path)
     try:
         # Process the video buffer and save it to a file
         process = (
@@ -51,10 +51,10 @@ def save_video_to_file(video_buffer):
             .output(temp_video_path, format='mp4', vcodec='libx264', preset='fast')  # Video specs
             .run(input=video_buffer)  # Pass the buffer as input
         )
-        print(f"Video saved successfully to: {temp_video_path}")
+        logger.info(f"Video saved successfully to: {temp_video_path}")
         return temp_video_path
     except ffmpeg.Error as e:
-        print(f"Error during video saving: {e}")
+        logger.info(f"Error during video saving: {e}")
         return None
 
 
@@ -62,13 +62,13 @@ def is_audio_valid_pydub(audio_path):
     try:
         audio = AudioSegment.from_file(audio_path)
         if len(audio) > 0:
-            print(f"L'audio est valide (durée : {len(audio) / 1000} secondes).")
+            logger.info(f"L'audio est valide (durée : {len(audio) / 1000} secondes).")
             return True
         else:
-            print("L'audio est vide ou invalide.")
+            logger.info("L'audio est vide ou invalide.")
             return False
     except Exception as e:
-        print(f"Erreur lors de la vérification de l'audio : {e}")
+        logger.info(f"Erreur lors de la vérification de l'audio : {e}")
         return False
 
 

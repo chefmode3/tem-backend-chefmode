@@ -12,11 +12,14 @@ from flask_cors import CORS
 from celery import Celery
 
 
+logger = logging.getLogger(__name__)
+
+
 def create_app():
     dotenv_path = join(dirname(__file__), '.env')
     load_dotenv(dotenv_path)
-    print(dotenv_path)
-    print(os.getenv("TIME_ZONE"))
+    logger.info(dotenv_path)
+    logger.info(os.getenv("TIME_ZONE"))
     app = Flask(__name__)
     cors = CORS(app, resources={r"/*": {"origins": "*"}})
 
@@ -61,5 +64,5 @@ def fetch_results():
     elif res.state == 'SUCCESS':
         return res.result
     elif res.state == 'FAILURE':
-        print("Failure Message:", res.result)
+        logger.info("Failure Message:", res.result)
         return {"status": "FAILURE"}

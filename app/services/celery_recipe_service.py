@@ -167,22 +167,33 @@ class RecipeCelService:
 
     @classmethod
     def create_anonyme_user_recipe(cls, user, recipe):
-        user_recipe = AnonymousUserRecipe(
+        user_recipe = AnonymousUserRecipe.query.filter_by(
             anonymous_user_id=user.id,
             recipe_id=recipe.id
-        )
-        db.session.add(user_recipe)
-        db.session.commit()
+        ).first()
+        if not user_recipe:
+            user_recipe = AnonymousUserRecipe(
+                anonymous_user_id=user.id,
+                recipe_id=recipe.id
+            )
+            db.session.add(user_recipe)
+            db.session.commit()
         return user_recipe
 
     @classmethod
     def create_user_anonyme(cls, user_id):
-        user_anonyme = AnonymousUser(
-            identifier=user_id
-        )
-        db.session.add(user_anonyme)
-        db.session.commit()
-        return user_anonyme
+        a_user = AnonymousUser.query.filter_by(
+            id=user_id,
+         ).first()
+
+        if not a_user:
+            user_anonyme = AnonymousUser(
+                identifier=user_id
+            )
+            db.session.add(user_anonyme)
+            db.session.commit()
+            return user_anonyme
+        return a_user
 
     @staticmethod
     def get_or_create_anonyme_user_recipe(recipe_data: dict) -> tuple[Recipe, bool]:

@@ -1,22 +1,34 @@
-from sqlalchemy.exc import SQLAlchemyError
-from flask import abort
+import logging
 
 from app.extensions import db
 from app.models.recipe import Recipe
 from app.models.user import UserRecipe
 
 
+logger = logging.getLogger(__name__)
+
 class RecipeService:
 
     @staticmethod
-    def get_recipe_by_id(recipe_id):
+    def get_recipe_by_id(recipe_id: str, serving: str=None):
         """
         Get a recipe with its ingredients and processes by ID.
         """
         recipe = Recipe.query.filter_by(id=recipe_id).first()
         if not recipe:
             return None
-
+        if not serving:
+            return recipe
+        ingredient_pre_serving = []
+        for ingredient in recipe.ingredients:
+            quantity = ingredient.get("quantity")
+            new_quantity = (serving * quantity) / recipe.servings
+            ingredient_pre_serving.append({
+                "name": ingredient["name"],
+                "quantity": round(new_quantity, 2),
+                "unit": ingredient["unit"]
+            })
+        recipe.ingredients = ingredient_pre_serving
         return recipe
 
     @staticmethod
@@ -74,7 +86,9 @@ class RecipeService:
         """
         Mark a recipe as flagged for a specific user.
         """
-        user_recipe = UserRecipe.query.filter_by(user_id=user_id, recipe_id=recipe_id).first()
+        user_recipe = UserRecipe.query.filter_by(
+            user_id=user_id, recipe_id=recipe_id
+        ).first()
 
         if not user_recipe:
             return None
@@ -86,9 +100,10 @@ class RecipeService:
                 "message": "Recipe flag status updated successfully.",
                 "flag": user_recipe.flag
             }
-        except SQLAlchemyError as e:
+        except Exception as e:
             db.session.rollback()
-            abort(500, description=f"Database error: {str(e)}")
+            logger.error(f"Database error: {str(e)}")
+            return None
 
     @staticmethod
     def is_recipe_flagged_by_user(recipe_id, user_id):
@@ -135,24 +150,51 @@ class RecipeService:
                     for recipe in pagination.items
                 ]
             }
-        except SQLAlchemyError as e:
-            raise RuntimeError(f"Database error: {str(e)}")
+        except Exception as e:
+            logger.error(f"Database error: {str(e)}")
+            return None
 
     @staticmethod
-    def get_nutrition_by_ingredient(recipe_id):
+    def get_nutrition_by_recipe_id(recipe_id: str, serving: int):
         """
-        Fetch nutrition data for a specific ingredient.
-        :param recipe_id: ID of the ingredient
-        :return: List of nutrients associated with the ingredient
+        Fetch nutrition data for a specific recipe.
+        Optionally adjust nutrition quantities based on servings.
+        :param recipe_id: ID of the recipe
+        :param serving: New serving size (optional)
+        :return: List of nutrients with adjusted quantities if serving is provided
         """
         try:
             recipe = Recipe.query.filter_by(id=recipe_id).first()
             if not recipe or not recipe.nutritions:
                 return None
 
-            return recipe
+            adjusted_nutritions = []
+            original_servings = recipe.servings
+
+            for nutrition in recipe.nutritions:
+                name = nutrition.get("name")
+                original_total_quantity = nutrition.get("quantity")
+                unit = nutrition.get("unit")
+
+                if serving:
+                    new_total_quantity = (serving * original_total_quantity) / original_servings
+                    unit_quantity = new_total_quantity / serving
+                else:
+                    new_total_quantity = original_total_quantity
+                    unit_quantity = original_total_quantity / original_servings
+
+                adjusted_nutritions.append({
+                    "name": name,
+                    "total_quantity": round(new_total_quantity, 2),
+                    "unit_serving": round(unit_quantity, 2),
+                    "unit": unit
+                })
+
+            return adjusted_nutritions
+
         except Exception as e:
-            raise RuntimeError(f"Unexpected error: {str(e)}")
+            logger.error(f"Database error: {str(e)}")
+            return None
 
     @staticmethod
     def get_recipe_by_origin(origin):
