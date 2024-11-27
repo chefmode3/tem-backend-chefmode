@@ -1,7 +1,6 @@
 import logging
 
 from flask import abort
-from flask_jwt_extended import create_access_token
 from flask_login import login_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
