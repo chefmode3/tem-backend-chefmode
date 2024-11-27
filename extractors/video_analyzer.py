@@ -5,6 +5,7 @@ import logging
 import math
 import os
 import tempfile
+import uuid
 
 import cv2
 from moviepy.video.io.VideoFileClip import VideoFileClip
@@ -85,7 +86,8 @@ def get_video_frames(video_path):
     #  Save the final frame as 'recipe_image.jpg' locally
     video.set(cv2.CAP_PROP_POS_FRAMES, frame_count - frame_count)
     success, frame = video.read()
-    recipe_img = BASE_DIR / 'recipe_img.jpg'
+
+    recipe_img = BASE_DIR / 'downloads' / f'{uuid.uuid4()}_recipe_img.jpg'
     #  change_extension_to_image(video_path)
     if success:
         cv2.imwrite(recipe_img, frame)

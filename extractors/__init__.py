@@ -55,7 +55,7 @@ def fetch_description(request_data):
     ensure_download_folder_exists()
 
     # Define the output file path
-    output_filepath = os.path.join(DOWNLOAD_FOLDER, 'downloaded_video.mp4')
+    output_filepath = os.path.join(DOWNLOAD_FOLDER, f'downloaded_video_{uuid.uuid4()}.mp4')
 
     logger.info(output_filepath)
     # Dictionary to map platforms to their respective download functions

@@ -225,4 +225,5 @@ def scrape_and_analyze_recipe(url):
     recipe_info = ai_response.choices[0].message.content
     s3_file_name = f'{uuid.uuid4()}_image.jpg'
     s3_url = save_image_to_s3_from_url(main_image_url, s3_file_name)
+    logger.info(f"s3_image: {s3_url}")
     return recipe_info, got_image, s3_url
