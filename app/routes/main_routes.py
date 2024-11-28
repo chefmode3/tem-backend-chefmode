@@ -1,13 +1,23 @@
+from __future__ import annotations
+
 import logging
 import os
 
+from flask import abort
+from flask import request
+from flask import session
 from flask_jwt_extended import create_access_token
 from flask_login import login_required
-from flask_restx import Namespace, Resource
-from flask import request, abort, session
+from flask_restx import Namespace
+from flask_restx import Resource
 from marshmallow import ValidationError
 
-from app.utils.send_email import verify_reset_token, activation_or_reset_email
+from app.serializers.user_serializer import PasswordResetRequestSchema
+from app.serializers.user_serializer import ResetPasswordSchema
+from app.serializers.user_serializer import UserActivationSchema
+from app.serializers.user_serializer import UserLoginSchema
+from app.serializers.user_serializer import UserResponseSchema
+from app.serializers.user_serializer import UserSignupSchema
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.user_service import UserService
 from app.serializers.user_serializer import (
@@ -51,8 +61,8 @@ update_user_model = convert_marshmallow_to_restx_model(auth_ns, update_user_sche
 @auth_ns.route('/signup')
 class SignupResource(Resource):
     @auth_ns.expect(signup_model)
-    @auth_ns.response(201, "User successfully created")
-    @auth_ns.response(400, "Validation Error")
+    @auth_ns.response(201, 'User successfully created')
+    @auth_ns.response(400, 'Validation Error')
     def post(self):
         try:
             data = signup_schema.load(request.get_json())
@@ -60,7 +70,7 @@ class SignupResource(Resource):
             logger.info(user_data)
 
             if is_activate:
-                return {"result": "Account created"}, 200
+                return {'result': 'Account created'}, 200
             if user_data.reset_token:
                 return {"result": "An email has already send please"
                                   " check your email to verify your address"
@@ -99,9 +109,8 @@ class SignupConfirmResource(Resource):
     def post(self):
         try:
             data = user_activation_schema.load(request.get_json())
-            email = data.get('email')
-            token = data.get('token')
-
+            email = data.get('email', None)
+            token = data.get('token', None)
             result = verify_reset_token(token)
             logger.error(f'user reset :1')
             if not result["valid"]:
@@ -121,7 +130,6 @@ class SignupConfirmResource(Resource):
             if user:
                 logger.error(f'user reset : {user_data}')
                 return user_data, status
-
             return {"error": f"Token or email are invalid "}, status
         except ValidationError as err:
             logger.error(f'{err.messages} : status,400')
@@ -179,10 +187,10 @@ class PasswordResetRequestResource(Resource):
     def post(self):
         try:
             data = password_reset_request_schema.load(request.get_json())
-            email = data.get("email")
-            url_frontend = os.getenv('REQUEST_PASSWORD')
+            email = data.get('email')
+            url_frontend = os.getenv('RESET_PASSWORD_URL')
 
-            subject = "Password Reset Request"
+            subject = 'Password Reset Request'
 
             user = UserService.get_user_by_email(email)
             if not user:
@@ -219,7 +227,7 @@ class ResetPasswordResource(Resource):
         try:
 
             data = reset_password_schema.load(request.get_json())
-            new_password = data.get("new_password")
+            new_password = data.get('new_password')
             token = data.get('token')
 
             return UserService.reset_password(token, new_password)
