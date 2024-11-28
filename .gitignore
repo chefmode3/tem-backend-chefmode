@@ -7,6 +7,7 @@ cert.pem
 # C extensions
 *.so
 .env
+test_ideas.py
 # Distribution / packaging
 .Python
 build/
