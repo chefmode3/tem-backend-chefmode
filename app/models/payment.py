@@ -4,8 +4,7 @@ from datetime import datetime
 
 from app.extensions import db
 
-from app.services.entities import MembershipStates, SubscriptionEntity
-from fsm import FSMField, transition
+from app.services.entities import MembershipStates
 
 
 def get_paid_plan(product_id=None):
@@ -41,11 +40,10 @@ class Subscription(db.Model):
 class SubscriptionMembership(db.Model):
     __tablename ='subscriptionmembership'
     id = db.Column(db.Integer, primary_key=True)
-    user = db.Column(db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.ForeignKey('user.id'), nullable=False)
     subscription= db.Column(db.ForeignKey('subscription.id'), nullable=False)
 
-    state = db.Column(FSMField, default=MembershipStates.NEW.value, nullable=False)
-    store = db.Column(db.String(50), nullable=True)
+    state = db.Column(db.String(50), default=MembershipStates.NEW.value, nullable=False)
 
     subscription_id = db.Column(db.String(50), nullable=True)
     product_id = db.Column(db.String(255), nullable=True)
@@ -64,19 +62,3 @@ class SubscriptionMembership(db.Model):
         for k, v in data.items():
             setattr(self, k, v)
         return self
-
-    @transition(
-        source="*",
-        target=MembershipStates.PAID.value,
-    )
-    def pay(self, subscription_data: SubscriptionEntity):
-        self.from_dict(subscription_data.dict())
-        subscription = get_paid_plan(self.product_id)
-        self.subscription = subscription
-
-    @transition(
-        source=[MembershipStates.NEW.value, MembershipStates.PAID.value],
-        target=MembershipStates.CANCELLED.value
-     )
-    def cancel(self):
-        ...

@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from pydantic import BaseModel
 
@@ -28,3 +28,4 @@ class SubscriptionEntity(BaseModel):
     payment_status : str = None
     subscription_id : str = None
     expires_at : datetime = None
+    canceled_at : Optional[datetime] = None
