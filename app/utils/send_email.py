@@ -42,7 +42,7 @@ def activation_or_reset_email(
         logger.info('User not found.')
         abort(404, description='User not found.')
 
-    reset_url = f"{url_frontend}/token={user_token.reset_token}"
+    reset_url = f"{url_frontend}/?token={user_token.reset_token}"
 
     name = name
     to = os.getenv('DEFAULT_FROM_EMAIL')

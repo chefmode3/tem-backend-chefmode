@@ -70,10 +70,11 @@ def fetch_description(request_data):
     if platform in download_functions:
         # Download the video
         video_url_with_audio = download_functions[platform](video_url)
-
+        logger.error(video_url_with_audio)
         # Wait for the download to complete
         time.sleep(SLEEP_TIME)
-
+        if not video_url_with_audio:
+            return {'error': 'video not found ', 'status': 404}
         # Process the video
         recipe, image_url_to_store = retry_process_video(video_url_with_audio)
         s3_file_name = f'{uuid.uuid4()}_image.jpg'
