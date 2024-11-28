@@ -58,3 +58,7 @@ class ResetPasswordSchema(Schema):
 class UserActivationSchema(Schema):
     email = fields.Email(required=True, description="User email for password reset request")
     token = fields.Str(required=True, description="token identifiction")
+
+
+class UpdateUserSchema(Schema):
+    name = fields.String(required=False, validate=validate.Length(max=64))
