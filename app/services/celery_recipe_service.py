@@ -1,6 +1,6 @@
 from app.extensions import db
+from app.models.nutrition import  Nutrition
 from app.models import (
-    Nutrition,
     Recipe,
     Ingredient,
     Process,
