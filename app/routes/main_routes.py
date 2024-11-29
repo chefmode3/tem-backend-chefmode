@@ -2,22 +2,19 @@ from __future__ import annotations
 
 import logging
 import os
+from datetime import datetime, timezone
 
 from flask import abort
 from flask import request
-from flask import session
-from flask_jwt_extended import create_access_token
-from flask_login import login_required
+from flask import jsonify
+from flask_jwt_extended import create_access_token, get_jwt, jwt_required
 from flask_restx import Namespace
 from flask_restx import Resource
 from marshmallow import ValidationError
 
-from app.serializers.user_serializer import PasswordResetRequestSchema
-from app.serializers.user_serializer import ResetPasswordSchema
-from app.serializers.user_serializer import UserActivationSchema
-from app.serializers.user_serializer import UserLoginSchema
-from app.serializers.user_serializer import UserResponseSchema
-from app.serializers.user_serializer import UserSignupSchema
+from app import db
+from app.decorateur.permissions import token_required
+from app.models.user import RevokedToken
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.user_service import UserService
 from app.serializers.user_serializer import (
@@ -29,6 +26,7 @@ from app.serializers.user_serializer import (
     UserActivationSchema,
     UpdateUserSchema
 )
+from app.utils.send_email import activation_or_reset_email, verify_reset_token
 
 logger = logging.getLogger(__name__)
 
@@ -169,12 +167,15 @@ class LoginResource(Resource):
 
 @auth_ns.route('/logout')
 class LogoutResource(Resource):
-
-    @login_required
+    @jwt_required(verify_type=False)
     def post(self):
-        session.clear()
-        return {'message': 'Logged out successfully'}
-
+        token = get_jwt()
+        jti = token["jti"]
+        ttype = token["type"]
+        now = datetime.now(timezone.utc)
+        db.session.add(RevokedToken(jti=jti, type=ttype, created_at=now))
+        db.session.commit()
+        return jsonify(msg=f"{ttype.capitalize()} token successfully revoked")
 
 @auth_ns.route('/password_reset_request')
 class PasswordResetRequestResource(Resource):
