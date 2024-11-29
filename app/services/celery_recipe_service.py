@@ -1,3 +1,5 @@
+import logging
+
 from app.extensions import db
 from app.models.nutrition import  Nutrition
 from app.models import (
@@ -9,6 +11,8 @@ from app.models import (
     AnonymousUser
 )
 from app.services import UserService
+
+logger = logging.getLogger(__name__)
 
 
 class RecipeCelService:
@@ -136,6 +140,10 @@ class RecipeCelService:
         recipe_info['processes'] = recipe_data.get('processes')
         recipe_info['nutrition'] = recipe_data.get('nutrition')
         recipe_info['image_url'] = recipe_json.get('image_url')
+
+        if not recipe_info['ingredients'] and not recipe_info['processes']:
+            logger.warning(f"Recipe from {recipe_info['origin']} has no ingredients or processes. Not saved.")
+            return {"Message": "Recipe has no ingredients or processes and was not saved."}
 
          # create and store recipe
         recipe, _ = RecipeCelService.get_or_create_recipe(recipe_info)
