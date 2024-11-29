@@ -1,5 +1,6 @@
 import uuid
 from flask_login import UserMixin
+from sqlalchemy import func
 
 from app.extensions import db
 from datetime import datetime
@@ -45,3 +46,9 @@ class User(db.Model, UserMixin):
         return f'<User {self.name}>'
 
 
+class RevokedToken(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    jti = db.Column(db.String(36), nullable=False, index=True)
+    type = db.Column(db.String(16), nullable=False)
+    user_id = db.Column(db.ForeignKey('user.id'),nullable=False)
+    created_at = db.Column(db.DateTime,server_default=func.now(),nullable=False,)

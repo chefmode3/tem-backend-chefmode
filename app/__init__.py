@@ -19,11 +19,30 @@ from app.routes.subscription_route import subscription_ns
 from app.routes.usecase_route import recipe_ns
 
 
+# Define the security scheme
+authorizations = {
+    'Bearer': {
+        'type': 'apiKey',
+        'in': 'header',
+        'name': 'Authorization',
+        'description': 'Enter the token as "Bearer <your-token>"'
+    }
+}
+
+
 def create_app(script_info=None):
     app = Flask(__name__)
     app_settings = os.getenv('APP_SETTINGS')
     app.config.from_object(app_settings)
-    api = Api(app, prefix='/api/v1', version='1.0', title='API', description='API documentation')
+    api = Api(
+        app,
+        prefix='/api/v1',
+        version='1.0',
+        title='CHEFMODE API',
+        description='API documentation',
+        authorizations=authorizations,
+        security='Bearer'
+    )
 
     # Initialize db
     db.init_app(app)
@@ -36,7 +55,7 @@ def create_app(script_info=None):
     mail.init_app(app)
 
     # Initialize JWT Manager
-    JWTManager(app)
+    jwt = JWTManager(app)
 
     # Initialize login manager
     login_manager.init_app(app)
