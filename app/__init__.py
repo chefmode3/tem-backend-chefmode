@@ -4,7 +4,6 @@ import os
 
 from flask import Flask
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager
 from flask_restx import Api
 
 from app import cli
@@ -53,9 +52,6 @@ def create_app(script_info=None):
 
     # Initialize mail extension
     mail.init_app(app)
-
-    # Initialize JWT Manager
-    jwt = JWTManager(app)
 
     # Initialize login manager
     login_manager.init_app(app)
