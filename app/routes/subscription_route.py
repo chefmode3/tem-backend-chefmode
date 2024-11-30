@@ -6,8 +6,10 @@ import stripe
 from flask import request, abort
 from marshmallow import ValidationError
 from flask_restx import Namespace, Resource
+from flask_jwt_extended import get_jwt, jwt_required
 
-from app.models import User
+from app.decorateur.permissions import token_required
+from app.models import User, SubscriptionMembership
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.subscription_service import UserSubscriptionService, SubscriptionWebhookService
 from app.serializers.subscription_serializer import (
@@ -37,19 +39,28 @@ def get_stripe_event_secret():
 @subscription_ns.route('/pay_subscriptions/')
 class UserPaidSubscriptions(Resource):
 
+    @token_required
+    @jwt_required(verify_type=False)
     def get(self):
-        return 'get'
+        token = get_jwt()
+        user = User.query.filter_by(email=token["sub"]).first()
+        subscription = SubscriptionMembership.query.filter_by(user_id=user.id).first()
+        if subscription:
+            UserSubscriptionSerializer().dump(subscription), 201
+        return "No subscription for this user"
 
     @subscription_ns.expect(payment_model)
     @subscription_ns.response(200, "Payment successful.", model=subscription_response)
     @subscription_ns.response(400, "Bad Request.")
     @subscription_ns.response(401, "User does not exist.")
+    @token_required
+    @jwt_required(verify_type=False)
     def post(self):
         try:
+            token = get_jwt()
             data = payment_payload.load(request.get_json())
-            email = data.get("user_email", "")
             session_id = data.get("customer_id")
-            user = User.query.filter_by(email=email).first()
+            user = User.query.filter_by(email=token['sub']).first()
 
             if not user or not user.activate:
                 abort(401, description="User does not exist.")
@@ -59,7 +70,7 @@ class UserPaidSubscriptions(Resource):
             )
             subscription_id = user_subscription.get_get_checkout_session(session_id)
             user_membership = user_subscription.subscribe_user(subscription_id)
-            return UserSubscriptionSerializer().dump(user_membership), 201
+            return UserSubscriptionSerializer().dump(user_membership), 200
         except ValidationError as err:
             abort(400, description=err.messages)
 

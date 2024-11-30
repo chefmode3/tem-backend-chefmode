@@ -14,8 +14,6 @@ class UserSubscriptionSerializer(SQLAlchemyAutoSchema):
 
 class PaymentSerializer(Schema):
     customer_id = fields.Str(required=True)
-    user_email = fields.Email(required=True)
-
 
 
 class StripeEventSchema(Schema):

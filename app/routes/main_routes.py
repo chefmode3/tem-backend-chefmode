@@ -14,7 +14,7 @@ from marshmallow import ValidationError
 
 from app import db
 from app.decorateur.permissions import token_required
-from app.models.user import RevokedToken
+from app.models.user import RevokedToken, User
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.user_service import UserService
 from app.serializers.user_serializer import (
@@ -168,12 +168,14 @@ class LoginResource(Resource):
 @auth_ns.route('/logout')
 class LogoutResource(Resource):
     @jwt_required(verify_type=False)
+    @token_required
     def post(self):
         token = get_jwt()
+        user = User.query.filter_by(email=token["sub"]).first()
         jti = token["jti"]
         ttype = token["type"]
         now = datetime.now(timezone.utc)
-        db.session.add(RevokedToken(jti=jti, type=ttype, created_at=now))
+        db.session.add(RevokedToken(user_id=user.id, jti=jti, type=ttype, created_at=now))
         db.session.commit()
         return jsonify(msg=f"{ttype.capitalize()} token successfully revoked")
 
@@ -185,6 +187,7 @@ class PasswordResetRequestResource(Resource):
         200, "Password reset email sent", model=password_reset_request_model
     )
     @auth_ns.response(400, "Validation Error")
+    @token_required
     def post(self):
         try:
             data = password_reset_request_schema.load(request.get_json())
@@ -224,6 +227,7 @@ class ResetPasswordResource(Resource):
         200, "Password has been reset successfully", model=reset_password_model
     )
     @auth_ns.response(400, "Validation Error")
+    @token_required
     def post(self):
         try:
 
@@ -247,6 +251,7 @@ class UpdateUserResource(Resource):
     @auth_ns.response(200, "User updated successfully")
     @auth_ns.response(404, "User not found")
     @auth_ns.response(400, "Validation Error")
+    @token_required
     def put(self, id):
         """Update user information (except password)."""
         try:

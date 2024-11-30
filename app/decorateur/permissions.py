@@ -1,4 +1,8 @@
+import jwt
+import os
 from flask import request, abort
+
+from app.models.user import RevokedToken
 
 
 def token_required(f):
@@ -6,15 +10,12 @@ def token_required(f):
         token = request.headers.get('Authorization')
         if not token or not token.startswith('Bearer '):
             abort(401, 'Token is missing or invalid.')
-        # Validate the token here (e.g., decode JWT, check in a database)
-        # Example:
-        # decoded = jwt.decode(token.split()[1], SECRET_KEY, algorithms=['HS256'])
+        try:
+            decoded = jwt.decode(token.split()[1], os.environ.get("SECRET_KEY"), algorithms=['HS256'])
+            revoked_token = RevokedToken.query.filter_by(jti=decoded.get("jti")).first()
+            if revoked_token:
+                abort(401, "This token has expired")
+        except Exception as e:
+            abort(401, "Token has expired")
         return f(*args, **kwargs)
-    return wrapper
-
-
-def free_trail_recipe(fun):
-    def wrapper(*args, **kwargs):
-        return fun(*args, **kwargs)
-
     return wrapper

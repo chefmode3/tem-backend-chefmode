@@ -95,6 +95,6 @@ def track_anonymous_requests(f):
 
         except Exception as err:
             Logger.error(f"Error in track_anonymous_requests: {err}")
-            return {'error': 'Internal server error'}, 500
+            return {'error': 'Internal server error'}, 400
 
     return decorated_function
