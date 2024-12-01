@@ -96,7 +96,7 @@ class UserSubscriptionService:
             db.session.commit()
         return s_membership
 
-    def create_checkout_session(self, checkout_entity: CheckoutCreationEntity) -> dict:
+    def create_checkout_session(self, checkout_entity: CheckoutCreationEntity) -> str:
         try:
             stripe.api_key = self.stripe_api_key
             response = stripe.checkout.Session.create(
