@@ -13,7 +13,8 @@ class UserSubscriptionSerializer(SQLAlchemyAutoSchema):
 
 
 class PaymentSerializer(Schema):
-    customer_id = fields.Str(required=True)
+    price_id = fields.Str(required=True)
+    mode = fields.Str(required=True)
 
 
 class StripeEventSchema(Schema):

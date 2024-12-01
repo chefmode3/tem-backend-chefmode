@@ -1,3 +1,4 @@
+import os
 import enum
 from datetime import datetime
 from typing import List, Tuple, Optional
@@ -29,3 +30,10 @@ class SubscriptionEntity(BaseModel):
     subscription_id : str = None
     expires_at : datetime = None
     canceled_at : Optional[datetime] = None
+
+
+class CheckoutCreationEntity(BaseModel):
+    price_id: str
+    mode: str = "subscription"
+    ui_mode: str = "embed"
+    redirect_url: str = ""
