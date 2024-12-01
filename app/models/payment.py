@@ -33,8 +33,8 @@ class Subscription(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     plan_name = db.Column(db.String(50), nullable=False, unique=True)
     expires_in_days = db.Column(db.Integer, default=0)
-    max_receipts = db.Column(db.Integer, default=5)
-    product_id = db.Column(db.String, nullable=False, unique=True)
+    max_receipts = db.Column(db.Integer, default=0)
+    price_id = db.Column(db.String, nullable=False, unique=True)
 
 
 class SubscriptionMembership(db.Model):
@@ -62,3 +62,13 @@ class SubscriptionMembership(db.Model):
         for k, v in data.items():
             setattr(self, k, v)
         return self
+
+
+class StripeUserCheckoutSession(db.Model):
+    __tablename = 'stripeusercheckoutsession'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.ForeignKey('user.id'), nullable=False)
+    session_id = db.Column(db.String(255), nullable=True)
+    customer_id = db.Column(db.String(255), nullable=True)
+    subscription_id = db.Column(db.String(255), nullable=True)
+    price_id = db.Column(db.String(255), nullable=True)

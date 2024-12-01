@@ -10,7 +10,8 @@ from stripe import StripeError
 from app.extensions import db
 from app.exceptions import SubscriptionException
 from app.models import SubscriptionMembership, Subscription
-from app.services.entities import SubscriptionEntity
+from app.models.payment import StripeUserCheckoutSession
+from app.services.entities import SubscriptionEntity, CheckoutCreationEntity
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +96,30 @@ class UserSubscriptionService:
             db.session.commit()
         return s_membership
 
+    def create_checkout_session(self, checkout_entity: CheckoutCreationEntity) -> dict:
+        try:
+            stripe.api_key = self.stripe_api_key
+            response = stripe.checkout.Session.create(
+                success_url=checkout_entity.redirect_url,
+                mode=checkout_entity.mode,
+                ui_mode=checkout_entity.ui_mode,
+                line_items=[
+                    {
+                        "price": checkout_entity.price_id
+                    }
+                ]
+            )
+            stripe_user = StripeUserCheckoutSession(
+                user_id=self.user.id,
+                session_id=response.get("id", ""),
+                price_id=checkout_entity.price_id
+            )
+            db.session.add(stripe_user)
+            db.session.commit()
+            return response.get("client_secrete")
+        except StripeError as e:
+            raise SubscriptionException(str(e), 400)
+
 
 @dataclass
 class SubscriptionWebhookService:
@@ -103,6 +128,7 @@ class SubscriptionWebhookService:
 
 
     def execute(self):
+        session_id = self.data.get("id")
         subscription_id = self.data.get("subscription")
         customer_id = self.data.get("customer")
         price = self.data.get("items", {}).get("data", [{}])[0].get("price", {}).get("unit_amount", ""),
@@ -120,12 +146,26 @@ class SubscriptionWebhookService:
             datetime.fromtimestamp(self.data.get("canceled_at"))
             if self.data.get("canceled_at") else None
         )
-        s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
 
-        if not s_membership:
-            raise SubscriptionException(f"User with customer_id {customer_id} does not exist", 400)
+        stripe_user = StripeUserCheckoutSession.query.filter_by(session_id=session_id).first()
+        if self.event_type == "checkout.session.completed":
+            customer_id = self.data.get("customer")
+            subscription_id = self.data.get("subscription")
+            if stripe_user:
+                stripe_user.customer_id = customer_id
+                stripe_user.subscription_id = subscription_id
+                db.session.commit()
+        elif self.event_type == "payment_intent.succeeded":
+            s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
 
-        if self.event_type == "payment_intent.succeeded":
+            if not s_membership and stripe_user:
+                subscription = Subscription.query.filter_by(price_id=stripe_user.price_id)
+                if not subscription:
+                    raise SubscriptionException("Internal Server Error", 400)
+                s_membership = SubscriptionMembership(
+                    subscription=subscription.id
+                )
+
             s_membership.price = price
             s_membership.customer_id = customer_id
             s_membership.subscription_id = subscription_id
@@ -136,6 +176,9 @@ class SubscriptionWebhookService:
             db.session.commit()
             logger.info(f"PaymentIntent succeeded")
         elif self.event_type in  ["invoice.payment_failed", "customer.subscription.deleted"]:
+            s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
+            if not s_membership:
+                raise SubscriptionException("Internal Server Error", 400)
             s_membership.state = status
             s_membership.cancelled_at = cancelled_at
             db.session.commit()

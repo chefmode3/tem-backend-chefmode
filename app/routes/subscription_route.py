@@ -10,7 +10,9 @@ from flask_jwt_extended import get_jwt, jwt_required
 
 from app.decorateur.permissions import token_required
 from app.models import User, SubscriptionMembership
+from app.models.payment import StripeUserCheckoutSession
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
+from app.services.entities import CheckoutCreationEntity
 from app.services.subscription_service import UserSubscriptionService, SubscriptionWebhookService
 from app.serializers.subscription_serializer import (
     PaymentSerializer,
@@ -59,7 +61,11 @@ class UserPaidSubscriptions(Resource):
         try:
             token = get_jwt()
             data = payment_payload.load(request.get_json())
-            session_id = data.get("customer_id")
+            checkout_entity = CheckoutCreationEntity(
+                price_id=data.get("price_id"),
+                mode=data.get("mode"),
+                redirect_url=os.environ.get("CHECKOUT_REDIRECT_URL")
+            )
             user = User.query.filter_by(email=token['sub']).first()
 
             if not user or not user.activate:
@@ -68,9 +74,8 @@ class UserPaidSubscriptions(Resource):
                 user=user,
                 stripe_api_key=get_api_key()
             )
-            subscription_id = user_subscription.get_get_checkout_session(session_id)
-            user_membership = user_subscription.subscribe_user(subscription_id)
-            return UserSubscriptionSerializer().dump(user_membership), 200
+            result = user_subscription.create_checkout_session(checkout_entity)
+            return {"client_secrete": result}, 200
         except ValidationError as err:
             abort(400, description=err.messages)
 
