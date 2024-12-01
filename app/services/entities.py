@@ -35,5 +35,5 @@ class SubscriptionEntity(BaseModel):
 class CheckoutCreationEntity(BaseModel):
     price_id: str
     mode: str = "subscription"
-    ui_mode: str = "embed"
+    ui_mode: str = "embedded"
     redirect_url: str = ""

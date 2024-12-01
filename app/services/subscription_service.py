@@ -100,12 +100,13 @@ class UserSubscriptionService:
         try:
             stripe.api_key = self.stripe_api_key
             response = stripe.checkout.Session.create(
-                success_url=checkout_entity.redirect_url,
+                return_url=checkout_entity.redirect_url,
                 mode=checkout_entity.mode,
                 ui_mode=checkout_entity.ui_mode,
                 line_items=[
                     {
-                        "price": checkout_entity.price_id
+                        "price": checkout_entity.price_id,
+                        "quantity": 1
                     }
                 ]
             )
@@ -116,7 +117,7 @@ class UserSubscriptionService:
             )
             db.session.add(stripe_user)
             db.session.commit()
-            return response.get("client_secrete")
+            return response.get("client_secret")
         except StripeError as e:
             raise SubscriptionException(str(e), 400)
 
