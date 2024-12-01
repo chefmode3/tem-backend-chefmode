@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 from dotenv import load_dotenv
 from utils.settings import BASE_DIR
@@ -44,6 +45,7 @@ class Config:
     REDIS_MAX_CONNECTIONS = 10
     TASK_SERIALIZER = 'json'
     RESULT_SERIALIZER = 'json'
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=24)
 
 
 class DevelopmentConfig(Config):

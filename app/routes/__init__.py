@@ -5,7 +5,7 @@ from app.routes.main_routes import (
     LogoutResource,
     PasswordResetRequestResource,
     ResetPasswordResource,
-
+    UpdateUserResource,
 )
 from app.routes.usecase_route import (
     GetRecipeResource,
