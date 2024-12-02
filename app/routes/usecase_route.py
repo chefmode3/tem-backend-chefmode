@@ -17,6 +17,8 @@ from app.serializers.usecase_serializer import (
 from app.services.user_service import UserService
 from app.serializers.recipe_serializer import RecipeSerializer
 
+from app.decorateur.anonyme_user import track_anonymous_requests, load_or_create_anonymous_user
+
 logger = logging.getLogger(__name__)
 
 recipe_ns = Namespace('recipe', description="user recipe")
@@ -33,9 +35,10 @@ flag_status_schema = FlagStatusResponseSchema()
 
 nutrition_response_model = convert_marshmallow_to_restx_model(recipe_ns, NutritionSchema())
 
-
 @recipe_ns.route('/get_recipe_by_id')
 class GetRecipeResource(Resource):
+    @track_anonymous_requests
+    @load_or_create_anonymous_user
     @recipe_ns.doc(params={
         'recipe_id': {'description': 'The ID of the recipe to fetch',
                       'required': True,
@@ -67,6 +70,8 @@ class GetRecipeResource(Resource):
 
 @recipe_ns.route('/get_all_recipes')
 class GetAllRecipesResource(Resource):
+    @track_anonymous_requests
+    @load_or_create_anonymous_user
     @recipe_ns.doc(params={
         'page': 'Page number (default: 1)',
         'page_size': 'Number of results per page (default: 10)'
