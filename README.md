@@ -1,7 +1,7 @@
 # CHEFMODE
 
-# To launch celery 
-`   
+# To launch celery
+`
     celery -A celery_worker.celery worker --loglevel=info
 `
 # Run with docker compose
@@ -12,10 +12,10 @@ clone the code and run the following command
 
 access the app on your local
 
-## database 
+## database
 connect to the db container using the following command
 
-`docker exec -it chef_mode_db bash`
+docker exec -it chef_mode_db bash
 
 ### connet to psql using the following command
 
@@ -88,4 +88,4 @@ The database is now ready for us to use in our app:
 ## start application
 just run the manage.py file
 
-        $ flask run 
+        $ flask run

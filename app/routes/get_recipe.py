@@ -9,12 +9,15 @@ from flask_restx import Namespace
 from flask_restx import Resource
 from marshmallow import ValidationError
 
+from app.decorateur.anonyme_user import load_or_create_anonymous_user
+from app.decorateur.anonyme_user import track_anonymous_requests
 from app.serializers.recipe_serializer import LinkRecipeSchema
 from app.serializers.recipe_serializer import RecipeSerializer
 from app.serializers.recipe_serializer import TaskIdSchema
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services import RecipeCelService
 from app.task.fetch_desciption import call_fetch_description
+from app.utils.slack_hool import send_slack_notification_recipe
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +34,8 @@ class RecipeScrap(Resource):
     @recipe_ns.expect(link_recipe_model)
     @recipe_ns.response(200, 'Recipe fetched successfully', model=link_recipe_model)
     @recipe_ns.response(404, 'Recipe not found')
+    @load_or_create_anonymous_user
+    @track_anonymous_requests
     def post(self):
         try:
             link = LinkRecipeSchema().load(request.get_json())
@@ -69,15 +74,17 @@ class RecipeScrapPost(Resource):
 
             content = result.get('result')
             find = result.get('find')
-            if find:
-                return content
             if content.get('error'):
                 return content, content.pop('status')
+
             # logger.error(json.dumps(content, indent=4))
             # data = json.loads(result.get('content'))
-            recipe = RecipeCelService.convert_and_store_recipe(content)
 
-            return RecipeSerializer().dump(recipe), 200
+            if not find:
+                content = RecipeCelService.convert_and_store_recipe(content)
+                content = RecipeSerializer().dump(content)
+            send_slack_notification_recipe(content.get('origin'))
+            return content, 200
 
         elif res.state == 'FAILURE':
             return {'status': 'FAILURE', 'message': str(res.result)}, 400
