@@ -5,6 +5,7 @@ from flask import request
 from flask_login import login_required
 from marshmallow import ValidationError
 
+from app.decorateur.permissions import token_required
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.usecase_logic import RecipeService
 from app.serializers.usecase_serializer import (
@@ -79,7 +80,6 @@ class GetAllRecipesResource(Resource):
     @recipe_ns.response(
         200, "Recipes fetched successfully", model=recipe_response_model
     )
-
     def get(self):
         """
         Fetch all recipes with pagination.
@@ -103,7 +103,7 @@ class GetAllRecipesResource(Resource):
 
 @recipe_ns.route('/get_my_recipes')
 class GetMyRecipesResource(Resource):
-    @login_required
+    @token_required
     @recipe_ns.doc(params={
         'page': 'Page number (default: 1)',
         'page_size': 'Number of results per page (default: 10)'
@@ -136,7 +136,7 @@ class GetMyRecipesResource(Resource):
 
 @recipe_ns.route('/flag_recipe')
 class FlagRecipeResource(Resource):
-    @login_required
+    @token_required
     @recipe_ns.expect(flag_recipe_model)
     @recipe_ns.response(201, "Recipe flagged successfully.")
     def post(self):
@@ -159,7 +159,7 @@ class FlagRecipeResource(Resource):
 
 @recipe_ns.route('/get_recipe/<string:recipe_id>/flag')
 class IsRecipeFlaggedResource(Resource):
-    @login_required
+    @token_required
     @recipe_ns.doc(params={
         'recipe_id': {'description': 'The ID of the recipe to fetch',
                       'required': True,
@@ -182,6 +182,7 @@ class IsRecipeFlaggedResource(Resource):
 
 @recipe_ns.route('/search')
 class SearchRecipesResource(Resource):
+    @token_required
     @recipe_ns.doc(params={
         'search': 'The search term to look for in recipes',
         'page': 'Page number (default: 1)',
@@ -220,6 +221,7 @@ class SearchRecipesResource(Resource):
 
 @recipe_ns.route('/nutrition_by_recipe_id')
 class IngredientNutritionResource(Resource):
+    @token_required
     @recipe_ns.doc(params={
         'recipe_id': {'description': 'The ID of the recipe to fetch',
                       'required': True,
