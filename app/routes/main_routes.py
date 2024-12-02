@@ -76,7 +76,7 @@ class SignupResource(Resource):
             email = user_data.email
             name = user_data.name
             subject = "Email Activation"
-            url_frontend = os.getenv('URL_FRONTEND')
+            url_frontend = os.getenv('VERIFY_EMAIL_URL')
             template = 'welcome_email.html'
 
             activation_or_reset_email(
