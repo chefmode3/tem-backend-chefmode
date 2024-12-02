@@ -202,7 +202,11 @@ class SearchRecipesResource(Resource):
             if not search_term:
                 return {"message": "Search term is required."}, 400
 
-            results = RecipeService.search_recipes(search_term, page, page_size)
+            current_user = UserService.get_current_user()
+            if not current_user:
+                return {"message": "Authentication required."}, 401
+
+            results = RecipeService.search_recipes(search_term, current_user, page, page_size)
 
             return {
                 "data": RecipeSerializer(many=True).dump(results["data"]),

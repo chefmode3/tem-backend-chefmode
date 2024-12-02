@@ -107,7 +107,6 @@ class SignupConfirmResource(Resource):
     def post(self):
         try:
             data = user_activation_schema.load(request.get_json())
-            email = data.get('email', None)
             token = data.get('token', None)
             result = verify_reset_token(token)
             logger.error(f'user reset :1')
@@ -115,8 +114,11 @@ class SignupConfirmResource(Resource):
                 return {"error": result["error"]}, 400
 
             logger.error(f'user reset :12')
-            if result["email"] != email:
-                return {"error": "Token does not match the provided email"}, 400
+
+            email = result["email"]
+
+            if not email:
+                return {"error": "Token does not match"}, 400
             logger.error(f'user reset :112')
             user, status = UserService.activate_user(email)
             user_data = user_response_schema.dump(user)
@@ -178,6 +180,7 @@ class LogoutResource(Resource):
         db.session.add(RevokedToken(user_id=user.id, jti=jti, type=ttype, created_at=now))
         db.session.commit()
         return jsonify(msg=f"{ttype.capitalize()} token successfully revoked")
+
 
 @auth_ns.route('/password_reset_request')
 class PasswordResetRequestResource(Resource):

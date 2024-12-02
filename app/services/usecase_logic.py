@@ -9,8 +9,6 @@ from app.models.user import UserRecipe
 logger = logging.getLogger(__name__)
 
 
-logger = logging.getLogger(__name__)
-
 class RecipeService:
 
     @staticmethod
@@ -124,12 +122,13 @@ class RecipeService:
         return {"flagged": user_recipe.flag}
 
     @staticmethod
-    def search_recipes(search_term, page=1, page_size=10):
+    def search_recipes(search_term, current_user, page=1, page_size=10):
         """
         Search for recipes by title with pagination.
         """
         try:
-            query = Recipe.query.filter(
+            query = Recipe.query.join(UserRecipe).filter(
+                UserRecipe.user_id == current_user.id,
                 Recipe.title.ilike(f"%{search_term}%")
             )
 
