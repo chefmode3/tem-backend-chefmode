@@ -30,7 +30,7 @@ def send_slack_message(message: str):
         assert e.response['error']  # str like 'invalid_auth', 'channel_not_found'
 
 
-def send_slack_notification_recipe(recipe_link: str, head_message='New recipe generated'):
+def send_slack_notification_recipe(recipe_link: str, head_message: str = 'New recipe generated'):
     email: str = None
     get_user_type = 'free'
     if g.get('user', None):
