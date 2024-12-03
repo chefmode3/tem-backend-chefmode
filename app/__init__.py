@@ -4,6 +4,7 @@ import os
 
 from flask import Flask
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 from flask_restx import Api
 
 from app import cli
@@ -33,6 +34,7 @@ def create_app(script_info=None):
     app = Flask(__name__)
     app_settings = os.getenv('APP_SETTINGS')
     app.config.from_object(app_settings)
+    jwt = JWTManager(app)
     api = Api(
         app,
         prefix='/api/v1',
