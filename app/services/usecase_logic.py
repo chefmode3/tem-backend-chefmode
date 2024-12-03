@@ -128,7 +128,7 @@ class RecipeService:
         """
         try:
             query = Recipe.query.join(UserRecipe).filter(
-                UserRecipe.user_id == current_user.id,
+                UserRecipe.user_id == current_user['id'],
                 Recipe.title.ilike(f"%{search_term}%")
             )
 

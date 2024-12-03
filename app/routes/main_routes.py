@@ -230,7 +230,6 @@ class ResetPasswordResource(Resource):
         200, "Password has been reset successfully", model=reset_password_model
     )
     @auth_ns.response(400, "Validation Error")
-    @token_required
     def post(self):
         try:
 
