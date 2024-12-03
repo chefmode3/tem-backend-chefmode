@@ -11,6 +11,7 @@ from flask_jwt_extended import create_access_token, get_jwt, jwt_required
 from flask_restx import Namespace
 from flask_restx import Resource
 from marshmallow import ValidationError
+from werkzeug.exceptions import HTTPException
 
 from app import db
 from app.decorateur.permissions import token_required
@@ -89,6 +90,9 @@ class SignupResource(Resource):
             return {"result": "Your account has been created. "
                               "Please check your email to verify your address."
                     }, 200
+        except HTTPException as http_err:
+            logger.error(f'HTTP Exception: {http_err.description}')
+            return {"error": http_err.description}, http_err.code
         except ValidationError as err:
             logger.error(f'{err.messages} : status ,400')
             return {"errors": err.messages}, 400

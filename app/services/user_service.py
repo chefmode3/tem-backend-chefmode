@@ -8,7 +8,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app.models.user import User
 from app.extensions import db, login_manager
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -21,7 +20,7 @@ class UserService:
         """Registers a new user."""
         user = UserService.get_user_by_email(email)
         if user:
-            return user,  user.activate
+            abort(400, description="An account with this email already exists.")
         user = User(email=email, name=email.split('@')[0], activate=False)
         user.password = generate_password_hash(password)
 
