@@ -181,12 +181,14 @@ def scrape_and_analyze_recipe(url):
                     "      'name': 'string', "
                     "      'quantity': float, "
                     "      'unit': 'string', "
+                    "      'origin_name_with_quantity': 'string', "
                     '    } '
                     '  ], '
                     "  'processes': [ "
                     '    { '
+                    "      'title_process': 'string', "
                     "      'step_number': integer, "
-                    "      'instructions': 'string' "
+                    "      'origin_instructions': 'string' "
                     '    } '
                     '  ], '
                     "  'nutrition': ["
@@ -198,19 +200,16 @@ def scrape_and_analyze_recipe(url):
                     '  ]'
                     '}'
                     'Guidelines:'
-                    '1. All numerical values must be numbers, not text.'
-                    "2. Ingredients must always include a 'quantity' and 'unit' when available."
-                    '3. Processes must be sequentially numbered starting from 1.'
-                    '4. Nutritional information must include commonly available nutrients like calories, proteins, '
-                    'carbohydrates, fats, fiber, sugar, and sodium. Include as many as possible based on the '
-                    'data provided.'
-                    '5. Ensure the output is **exactly** in JSON format with no additional explanations, '
-                    'comments, or headers.'
-                    '6. Always use the exact ingredient amounts and details as found in the input text.'
-                    '7. Do not nest objects under the `recipe_information`, `ingredients`, or `processes`. '
-                    'Flatten the structure for clarity.'
-                    '8. Provide the output only as a JSON object without any extra descriptive text.'
-                    'Return only the JSON output as specified above.'
+                    'You are a culinary and nutrition expert tasked with extracting recipe information directly from the input provided. '
+                    'The response must be in JSON format strictly adhering to this structure: ... (structure follows) '
+                    'Guidelines: '
+                    '1. The response must match the input text as closely as possible, especially for processes and ingredient details. '
+                    '2. Do not change, rephrase, or interpret the instructions; use the exact words and numbers given. '
+                    '3. Ingredients and instructions should reflect the original order and detail from the text. '
+                    '4. Only the specified JSON structure should be output, without comments or extraneous text. '
+                    '5. Ensure all numerical values (e.g., preparation times, quantities) are converted to numbers.'
+                    '6. Use input text formatting and numbers directly without rounding or simplifying.'
+
                 )
             },
             {

@@ -139,12 +139,14 @@ def process_video(video_path):
                                 "      'name': 'string', "
                                 "      'quantity': float, "
                                 "      'unit': 'string', "
+                                "      'origin_name_with_quantity': 'string', "
                                 '    } '
                                 '  ], '
                                 "  'processes': [ "
                                 '    { '
+                                "      'title_process': 'string', "
                                 "      'step_number': integer, "
-                                "      'instructions': 'string' "
+                                "      'origin_instructions': 'string' "
                                 '    } '
                                 '  ], '
                                 "  'nutrition': ["
