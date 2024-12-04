@@ -48,7 +48,7 @@ class UserPaidSubscriptions(Resource):
         user = User.query.filter_by(email=token["sub"]).first()
         subscription = SubscriptionMembership.query.filter_by(user_id=user.id).first()
         if subscription:
-            UserSubscriptionSerializer().dump(subscription), 201
+            return UserSubscriptionSerializer().dump(subscription), 201
         return "No subscription for this user"
 
     @subscription_ns.expect(payment_model)
