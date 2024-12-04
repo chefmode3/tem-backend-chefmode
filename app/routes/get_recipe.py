@@ -77,9 +77,6 @@ class RecipeScrapPost(Resource):
             if content.get('error'):
                 return content, content.pop('status')
 
-            # logger.error(json.dumps(content, indent=4))
-            # data = json.loads(result.get('content'))
-
             if not find:
                 content = RecipeCelService.convert_and_store_recipe(content)
                 content = RecipeSerializer().dump(content)

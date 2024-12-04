@@ -55,9 +55,9 @@ def fetch_description(request_data):
     ensure_download_folder_exists()
 
     # Define the output file path
-    output_filepath = os.path.join(DOWNLOAD_FOLDER, f'downloaded_video_{uuid.uuid4()}.mp4')
+    os.path.join(DOWNLOAD_FOLDER, f'downloaded_video_{uuid.uuid4()}.mp4')
 
-    logger.info(output_filepath)
+    # logger.info(output_filepath)
     # Dictionary to map platforms to their respective download functions
     download_functions = {
         'tiktok': download_tiktok,
@@ -86,10 +86,12 @@ def fetch_description(request_data):
 
     elif platform == 'website':
         recipe, got_image, image_url = scrape_and_analyze_recipe(video_url)
-
-    logger.info(json.loads(recipe))
+    recipe_info = json.loads(recipe)
+    logger.info(image_url)
+    recipe_info['image_url'] = image_url
+    # logger.info(json.loads(recipe))
     final_content = {
-        'content': json.loads(recipe),
+        'content': recipe_info,
         'origin': video_url,
         'image_url': image_url
     }
