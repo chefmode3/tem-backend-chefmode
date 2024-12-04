@@ -1,11 +1,12 @@
+from __future__ import annotations
+
 from celery import shared_task
-
-from celery.utils.log import get_task_logger
 from celery.exceptions import MaxRetriesExceededError
+from celery.utils.log import get_task_logger
 
-from extractors import fetch_description
 from app.serializers.recipe_serializer import RecipeSerializer
 from app.services.usecase_logic import RecipeService
+from extractors import fetch_description
 
 logger = get_task_logger(__name__)
 
@@ -25,17 +26,17 @@ def call_fetch_description(self, data):
         # Fetch the description
         existing_data = data.get('video_url')
         description_result = RecipeService.get_recipe_by_origin(origin=existing_data)
-        if  description_result:
+        if description_result:
             return {
-            'status': 'success',
-            'find':True,
-            'result': RecipeSerializer().dump(description_result)
-        }
+                'status': 'success',
+                'find': True,
+                'result': RecipeSerializer().dump(description_result)
+                }
         description_result = fetch_description(data)
 
         return {
             'status': 'success',
-            'find':False,
+            'find': False,
             'result': description_result
         }
 
@@ -47,4 +48,4 @@ def call_fetch_description(self, data):
             self.retry(exc=exc)
 
         except MaxRetriesExceededError:
-            return {'error': f"Error in fetch_description task: {str(exc)}" }
+            return {'error': f"Error in fetch_description task: {str(exc)}"}

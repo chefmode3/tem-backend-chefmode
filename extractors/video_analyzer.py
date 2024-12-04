@@ -119,61 +119,41 @@ def process_video(video_path):
                 {
                     'role': 'system',
                     'content': (
-                                'You are a culinary and nutrition expert. Your task is to '
-                                'extract recipe information from video transcripts'
+                        'extract recipe information from video transcripts'
+                        'Extract recipe title, servings, total time in hours or minute, ingredients, and directions.'
+                        'title_process if available'
+                        ' Ensure the response is strictly in JSON format'
+                        ' and only follows this structure:'
 
-                                'and calculate '
-                                'nutritional values based on the provided details.'
-                                'Ensure the response is strictly in JSON format and follows this structure:'
+                        '{ '
+                        "  'recipe_information': { "
+                        "    'title': 'string', "
+                        "    'servings': integer, "
+                        "    'preparation_time': 'string', "
+                        "    'description': 'string', "
+                        "    'image_url': 'string' "
+                        '  }, '
+                        "  'ingredients': [ "
+                        '    { '
 
-                                '{ '
-                                "  'recipe_information': { "
-                                "    'title': 'string', "
-                                "    'servings': integer, "
-                                "    'preparation_time': integer, "
-                                "    'description': 'string', "
-                                "    'image_url': 'string' "
-                                '  }, '
-                                "  'ingredients': [ "
-                                '    { '
-                                "      'name': 'string', "
-                                "      'quantity': float, "
-                                "      'unit': 'string', "
-                                '    } '
-                                '  ], '
-                                "  'processes': [ "
-                                '    { '
-                                "      'step_number': integer, "
-                                "      'instructions': 'string' "
-                                '    } '
-                                '  ], '
-                                "  'nutrition': ["
-                                '    {'
-                                "      'name': 'string',"
-                                "      'quantity': float,"
-                                "      'unit': 'string'"
-                                '    }'
-                                '  ]'
-                                '}'
-                                'Guidelines:'
-                                '1. All numerical values must be numbers, not text.'
-                                "2. Ingredients must always include a 'quantity' and 'unit' when available."
-                                '3. Processes must be sequentially numbered starting from 1.'
-                                '4. Nutritional information must include commonly available nutrients like calories, '
-                                'proteins, carbohydrates, fats, fiber, sugar, and sodium. Include as many as possible'
-                                ' based on the data provided.'
-                                '5. Ensure the output is **exactly** in JSON format with no additional explanations,'
-                                ' comments, or headers.'
-                                '6. Always use the exact ingredient amounts and details as found in the input text.'
-                                '7. Do not nest objects under the `recipe_information`, `ingredients`, or `processes`.'
-                                'Flatten the structure for clarity.'
-                                '8. Provide the output only as a JSON object without any extra descriptive text.'
-                                '9. Return only the JSON output as specified above.'
-                                '10. No nested objects other than these ones.'
-                                "11. Never output a '''markdown identifier before you begin and return the value in object "
-                                'format that can easily convert into the json'
-                                '12. Provide this data in the same order and structure for each recipe without additional '
-                                'comments, descriptions, or variations.  maintain the structure.'
+                        '      "full_origin_name_with_quantity": "string" '
+                        "      'quantity': float, "
+                        "      'unit': 'string', "
+                        '    } '
+                        '  ], '
+                        "  'processes': [ "
+                        '    { '
+                        "      'title_process': 'string', "
+                        "      'step_number': integer, "
+                        "      'instructions': 'string' "
+                        '    } '
+                        '  ], '
+
+                        '}'
+                        'Do not infer or add any information not explicitly stated.'
+                        'only return the result in a json format and not in markdown'
+                        "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
+                        'You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text.'
                     )
                 },
                 {'role': 'user', 'content': f"Here is the transcript of the video {transcript}"}
