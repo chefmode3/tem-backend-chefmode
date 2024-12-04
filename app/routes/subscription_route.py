@@ -51,8 +51,8 @@ class UserPaidSubscriptions(Resource):
         user = User.query.filter_by(email=token['sub']).first()
         subscription = SubscriptionMembership.query.filter_by(user_id=user.id).first()
         if subscription:
-            UserSubscriptionSerializer().dump(subscription), 201
-        return 'No subscription for this user'
+            return UserSubscriptionSerializer().dump(subscription), 201
+        return "No subscription for this user"
 
     @subscription_ns.expect(payment_model)
     @subscription_ns.response(200, 'Payment successful.', model=subscription_response)
@@ -100,9 +100,8 @@ class SubscriptionWebhook(Resource):
             validated_data = stripe_schema.load(event)
         except ValidationError as err:
             return {'message': 'Validation error', 'errors': err.messages}, 400
-
-        event_type = validated_data['type']
-        data = validated_data.get('data', {})
+        event_type = validated_data["type"]
+        data = validated_data.get('data', {}).get("object")
         webhook_service = SubscriptionWebhookService(data, event_type)
         webhook_service.execute()
         return {'message': 'Webhook received'}, 200

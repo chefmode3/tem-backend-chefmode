@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import logging
 
+from flask_jwt_extended import jwt_required
+from flask_restx import Namespace, Resource
 from flask import request
 from flask_login import login_required
 from flask_restx import Namespace
 from flask_restx import Resource
 from marshmallow import ValidationError
-
 from app.serializers.recipe_serializer import RecipeSerializer
 from app.serializers.usecase_serializer import FlagStatusResponseSchema
 from app.serializers.usecase_serializer import NutritionSchema
@@ -17,6 +18,17 @@ from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.usecase_logic import RecipeService
 from app.services.user_service import UserService
 from app.utils.slack_hool import send_slack_notification_recipe
+from app.decorateur.permissions import token_required
+from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
+from app.serializers.usecase_serializer import (
+    RecipeResponseSchema,
+    RecipeRequestSchema,
+    FlagStatusResponseSchema,
+    NutritionSchema
+)
+from app.services.user_service import UserService
+from app.serializers.recipe_serializer import RecipeSerializer
+from app.decorateur.anonyme_user import track_anonymous_requests, load_or_create_anonymous_user
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +49,8 @@ nutrition_response_model = convert_marshmallow_to_restx_model(recipe_ns, Nutriti
 
 @recipe_ns.route('/get_recipe_by_id')
 class GetRecipeResource(Resource):
+    @track_anonymous_requests
+    @load_or_create_anonymous_user
     @recipe_ns.doc(params={
         'recipe_id': {'description': 'The ID of the recipe to fetch',
                       'required': True,
@@ -67,6 +81,8 @@ class GetRecipeResource(Resource):
 
 @recipe_ns.route('/get_all_recipes')
 class GetAllRecipesResource(Resource):
+    @track_anonymous_requests
+    @load_or_create_anonymous_user
     @recipe_ns.doc(params={
         'page': 'Page number (default: 1)',
         'page_size': 'Number of results per page (default: 10)'
@@ -97,7 +113,8 @@ class GetAllRecipesResource(Resource):
 
 @recipe_ns.route('/get_my_recipes')
 class GetMyRecipesResource(Resource):
-    @login_required
+    @jwt_required()
+    @token_required
     @recipe_ns.doc(params={
         'page': 'Page number (default: 1)',
         'page_size': 'Number of results per page (default: 10)'
@@ -130,7 +147,8 @@ class GetMyRecipesResource(Resource):
 
 @recipe_ns.route('/flag_recipe')
 class FlagRecipeResource(Resource):
-    @login_required
+    @jwt_required()
+    @token_required
     @recipe_ns.expect(flag_recipe_model)
     @recipe_ns.response(201, 'Recipe flagged successfully.')
     def post(self):
@@ -155,7 +173,8 @@ class FlagRecipeResource(Resource):
 
 @recipe_ns.route('/get_recipe/<string:recipe_id>/flag')
 class IsRecipeFlaggedResource(Resource):
-    @login_required
+    @jwt_required()
+    @token_required
     @recipe_ns.doc(params={
         'recipe_id': {'description': 'The ID of the recipe to fetch',
                       'required': True,
@@ -176,10 +195,12 @@ class IsRecipeFlaggedResource(Resource):
             return {'error': 'An unexpected error occurred', 'details': str(e)}, 400
 
 
-@recipe_ns.route('/search')
+@recipe_ns.route('/my_recipe/search')
 class SearchRecipesResource(Resource):
+    @jwt_required()
+    @token_required
     @recipe_ns.doc(params={
-        'search': 'The search term to look for in recipes',
+        'search': 'The search term to look for in recipes', 'required': True,
         'page': 'Page number (default: 1)',
         'page_size': 'Number of results per page (default: 10)'
     })
@@ -197,7 +218,11 @@ class SearchRecipesResource(Resource):
             if not search_term:
                 return {'message': 'Search term is required.'}, 400
 
-            results = RecipeService.search_recipes(search_term, page, page_size)
+            current_user = UserService.get_current_user()
+            if not current_user:
+                return {"message": "Authentication required."}, 401
+
+            results = RecipeService.search_recipes(search_term, current_user, page, page_size)
 
             return {
                 'data': RecipeSerializer(many=True).dump(results['data']),
@@ -216,6 +241,8 @@ class SearchRecipesResource(Resource):
 
 @recipe_ns.route('/nutrition_by_recipe_id')
 class IngredientNutritionResource(Resource):
+    @jwt_required()
+    @token_required
     @recipe_ns.doc(params={
         'recipe_id': {'description': 'The ID of the recipe to fetch',
                       'required': True,
