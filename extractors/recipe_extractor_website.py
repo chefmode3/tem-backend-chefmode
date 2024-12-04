@@ -108,9 +108,9 @@ def scrape_and_analyze_recipe(url):
         response = get_website_content(url)
         response.raise_for_status()
         end = time.time()
-        print(f"get_website_content took {end - start} seconds")
+        logger.error(f"get_website_content took {end - start} seconds")
     except Exception as e:
-        print(f"Failed to fetch content: {e}")
+        logger.error(f"Failed to fetch content: {e}")
         return None, False, None
 
     # Parse HTML
@@ -118,9 +118,9 @@ def scrape_and_analyze_recipe(url):
         start = time.time()
         soup = BeautifulSoup(response.text, 'html.parser')
         end = time.time()
-        print(f"parsing html took {end - start} seconds")
+        logger.error(f"parsing html took {end - start} seconds")
     except Exception as e:
-        print(f"HTML parsing error: {e}")
+        logger.error(f"HTML parsing error: {e}")
         return None, False, None
 
     # Extract title
@@ -133,13 +133,13 @@ def scrape_and_analyze_recipe(url):
         for element in soup.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
     )
     end = time.time()
-    print(f"Extract all text content took {end - start} seconds")
+    logger.error(f"Extract all text content took {end - start} seconds")
 
     # Tokenize text
     start = time.time()
     token_count, tokens = tokenize_text(body_content)
     end = time.time()
-    print(f"Tokenize text content took {end - start} seconds")
+    logger.error(f"Tokenize text content took {end - start} seconds")
 
     # Extract main image
     main_image_url = extract_main_image(soup)
@@ -193,7 +193,7 @@ def scrape_and_analyze_recipe(url):
             ]
         )
         end = time.time()
-        print(f"OpenAI took {end - start} seconds")
+        logger.error(f"OpenAI took {end - start} seconds")
 
         recipe_info = ai_response.choices[0].message.content
         logger.error(recipe_info)
@@ -201,7 +201,43 @@ def scrape_and_analyze_recipe(url):
         s3_url = save_image_to_s3_from_url(main_image_url, s3_file_name)
         logger.info(f"s3_image: {s3_url}")
     except Exception as e:
-        print(f"AI analysis failed: {e}")
+        logger.error(f"AI analysis failed: {e}")
         recipe_info = None
 
     return recipe_info, got_image, main_image_url
+
+
+def analyse_nutritions_base_ingredient(ingredient):
+    try:
+        start = time.time()
+        ai_response = client.chat.completions.create(
+            model='gpt-4o-mini',
+            messages=[
+                {
+                    'role': 'system',
+                    'content': (
+                        'calculate the nutritional information based on the provided details.  '
+                        ' Ensure the response returned is strictly in JSON format and follows this exact structure:  '
+                        'only return the result in a json format and not in markdown'
+                        "  'nutritions': [ "
+                        '    { '
+                        '      "name": "string" '
+                        "      'quantity': float, "
+                        "      'unit': 'string', "
+                        '    } '
+                        '  ], '
+                        )
+                },
+                {'role': 'user', 'content': f"Here is the  recipe:\n\n{ingredient}"}
+            ]
+        )
+        end = time.time()
+        logger.error(f"OpenAI took {end - start} seconds")
+
+        nutrtition_info = ai_response.choices[0].message.content
+        logger.error(nutrtition_info)
+        return nutrtition_info
+    except Exception as e:
+        logger.error(f"AI analysis failed: {e}")
+        nutrtition_info = None
+    return nutrtition_info

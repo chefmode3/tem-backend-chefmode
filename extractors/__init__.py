@@ -10,6 +10,7 @@ from app.utils.s3_storage import upload_to_s3
 from extractors.facebook import download_facebook_video
 from extractors.instagram import download_instagram_video
 from extractors.new_youtube import download_youtube
+from extractors.recipe_extractor_website import analyse_nutritions_base_ingredient
 from extractors.recipe_extractor_website import scrape_and_analyze_recipe
 from extractors.tiktok import download_tiktok
 from extractors.video_analyzer import process_video
@@ -86,7 +87,14 @@ def fetch_description(request_data):
 
     elif platform == 'website':
         recipe, got_image, image_url = scrape_and_analyze_recipe(video_url)
+    if not recipe:
+        return {'error': 'recipe not found', 'status': 404}
+
     recipe_info = json.loads(recipe)
+    nutritions = analyse_nutritions_base_ingredient(recipe)
+    nutritions_json = json.loads(nutritions)
+    logger.info(nutritions_json['nutritions'])
+    recipe_info['nutritions'] = nutritions_json['nutritions']
     logger.info(image_url)
     recipe_info['image_url'] = image_url
     # logger.info(json.loads(recipe))

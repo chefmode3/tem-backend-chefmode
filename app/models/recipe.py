@@ -1,6 +1,8 @@
-import uuid
+from __future__ import annotations
 
+import uuid
 from datetime import datetime
+
 from sqlalchemy import DateTime
 
 from app.extensions import db
@@ -12,7 +14,7 @@ class Recipe(db.Model):
     id = db.Column(db.String(255), primary_key=True, default=lambda: str(uuid.uuid4()))
     title = db.Column(db.String(255), nullable=False)
     origin = db.Column(db.String(255), nullable=False)
-    servings = db.Column(db.Integer, nullable=True)
+    servings = db.Column(db.String(255), nullable=True)
     created_at = db.Column(DateTime, default=datetime.utcnow, nullable=False)
 
     preparation_time = db.Column(db.Integer, nullable=True)
