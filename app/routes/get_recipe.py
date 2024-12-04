@@ -12,12 +12,12 @@ from marshmallow import ValidationError
 from app.decorateur.anonyme_user import load_or_create_anonymous_user
 from app.decorateur.anonyme_user import track_anonymous_requests
 from app.serializers.recipe_serializer import LinkRecipeSchema
+from app.serializers.recipe_serializer import RecipeSerializer
 from app.serializers.recipe_serializer import TaskIdSchema
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
+from app.services import RecipeCelService
 from app.task.fetch_desciption import call_fetch_description
 from app.utils.slack_hool import send_slack_notification_recipe
-# from app.serializers.recipe_serializer import RecipeSerializer
-# from app.services import RecipeCelService
 
 logger = logging.getLogger(__name__)
 
@@ -73,16 +73,13 @@ class RecipeScrapPost(Resource):
             result: dict = res.result
 
             content = result.get('result')
-            # find = result.get('find')
+            find = result.get('find')
             if content.get('error'):
                 return content, content.pop('status')
 
-            # logger.error(json.dumps(content, indent=4))
-            # data = json.loads(result.get('content'))
-
-            # if not find:
-            #     content = RecipeCelService.convert_and_store_recipe(content)
-            #     content = RecipeSerializer().dump(content)
+            if not find:
+                content = RecipeCelService.convert_and_store_recipe(content)
+                content = RecipeSerializer().dump(content)
             send_slack_notification_recipe(content.get('origin'))
             return content, 200
 

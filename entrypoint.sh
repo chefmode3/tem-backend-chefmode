@@ -11,6 +11,6 @@ then
     echo "PostgreSQL started"
 fi
 
-gunicorn -b 0.0.0.0:5000 manage:app --certfile=cert.pem --keyfile=key.pem --reload
+gunicorn -b 0.0.0.0:5001 manage:app --reload
 
 exec "$@"

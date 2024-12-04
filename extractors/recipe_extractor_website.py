@@ -102,127 +102,106 @@ def save_image_locally(image, filename='recipe_image.jpg'):
 
 
 def scrape_and_analyze_recipe(url):
-    # Make a request to the given URL with retries and user-agent spoofing
-    start = time.time()
-    response = get_website_content(url)
-    end = time.time()
-    logger.info(f"get_website_content took {end - start} seconds")
+    try:
+        # Fetch website content
+        start = time.time()
+        response = get_website_content(url)
+        response.raise_for_status()
+        end = time.time()
+        print(f"get_website_content took {end - start} seconds")
+    except Exception as e:
+        print(f"Failed to fetch content: {e}")
+        return None, False, None
 
-    # Parse the HTML content
-    start = time.time()
-    soup = BeautifulSoup(response.text, 'html.parser')
-    end = time.time()
-    logger.info(f"parsing html took {end - start} seconds")
+    # Parse HTML
+    try:
+        start = time.time()
+        soup = BeautifulSoup(response.text, 'html.parser')
+        end = time.time()
+        print(f"parsing html took {end - start} seconds")
+    except Exception as e:
+        print(f"HTML parsing error: {e}")
+        return None, False, None
 
-    # Extract title and body content from HTML
+    # Extract title
     title = soup.title.string if soup.title else 'No title found'
 
+    # Extract text content
     start = time.time()
-
-    # Extraire le contenu du corps de la page
-    body = soup.find('body')
-
-    # Extraire toutes les balises <img> à l'intérieur du corps
-
-    # Extraire le texte de différentes balises à l'intérieur du corps
-    text_elements = body.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
     body_content = ' '.join(
         element.get_text(separator=' ', strip=True)
-        for element in text_elements
+        for element in soup.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
     )
-
     end = time.time()
-    logger.info(f"Extract all text content took {end - start} seconds")
-    # logger.info(body_content)
+    print(f"Extract all text content took {end - start} seconds")
 
+    # Tokenize text
     start = time.time()
-    # Tokenize the body content and logger.info token count
     token_count, tokens = tokenize_text(body_content)
-    # logger.info(f"Token Count: {token_count}")
     end = time.time()
-    logger.info(f"Tokenize text content took {end - start} seconds")
+    print(f"Tokenize text content took {end - start} seconds")
 
-    start = time.time()
     # Extract main image
     main_image_url = extract_main_image(soup)
-    end = time.time()
-    logger.info(f"Main Image extraction took {end - start} seconds")
+    got_image = bool(main_image_url)
 
-    got_image = False
+    # Analyze content using AI
+    try:
+        start = time.time()
+        ai_response = client.chat.completions.create(
+            model='gpt-4o-mini',
+            messages=[
+                {
+                    'role': 'system',
+                    'content': (
+                        'Extract recipe title, servings, total time in hours or minute, ingredients, and directions.'
+                        'title_process if available'
+                        ' Ensure the response is strictly in JSON format'
+                        ' and only follows this structure:'
 
-    # Display the main image if found
-    if not main_image_url:
+                        '{ '
+                        "  'recipe_information': { "
+                        "    'title': 'string', "
+                        "    'servings': integer, "
+                        "    'preparation_time': 'string', "
+                        "    'description': 'string', "
+                        '  }, '
+                        "  'ingredients': [ "
+                        '    { '
 
-        logger.info('No main image found.')
+                        '      "full_origin_name_with_quantity": "string" '
+                        "      'quantity': float, "
+                        "      'unit': 'string', "
+                        '    } '
+                        '  ], '
+                        "  'processes': [ "
+                        '    { '
+                        "      'title_process': 'string', "
+                        "      'step_number': integer, "
+                        "      'instructions': 'string' "
+                        '    } '
+                        '  ], '
 
-    start = time.time()
-    # Use OpenAI to analyze the recipe content
-    ai_response = client.chat.completions.create(
-        model='gpt-4o-mini',
-        messages=[
-            {
-                'role': 'system',
-                'content': (
-                    'You are a culinary and nutrition expert. Your task is to extract recipe information from websites '
-                    'and calculate '
-                    'nutritional values based on the provided details. Ensure the response is strictly in JSON format'
-                    ' and follows this structure:'
+                        '}'
+                        'Do not infer or add any information not explicitly stated.'
+                            'only return the result in a json format and not in markdown'
+                            "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
+                            'You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text.'
+                        )
+                },
+                {'role': 'user', 'content': f"Title: {title}\nURL: {url}\n\n{body_content}"}
+            ]
+        )
+        end = time.time()
+        print(f"OpenAI took {end - start} seconds")
 
-                    '{ '
-                    "  'recipe_information': { "
-                    "    'title': 'string', "
-                    "    'servings': integer, "
-                    "    'preparation_time': integer, "
-                    "    'description': 'string', "
-                    "    'image_url': 'string' "
-                    '  }, '
-                    "  'ingredients': [ "
-                    '    { '
-                    "      'name': 'string', "
-                    "      'quantity': float, "
-                    "      'unit': 'string', "
-                    "      'origin_name_with_quantity': 'string', "
-                    '    } '
-                    '  ], '
-                    "  'processes': [ "
-                    '    { '
-                    "      'title_process': 'string', "
-                    "      'step_number': integer, "
-                    "      'origin_instructions': 'string' "
-                    '    } '
-                    '  ], '
-                    "  'nutrition': ["
-                    '    {'
-                    "      'name': 'string',"
-                    "      'quantity': float,"
-                    "      'unit': 'string'"
-                    '    }'
-                    '  ]'
-                    '}'
-                    'Guidelines:'
-                    'You are a culinary and nutrition expert tasked with extracting recipe information directly from the input provided. '
-                    'The response must be in JSON format strictly adhering to this structure: ... (structure follows) '
-                    'Guidelines: '
-                    '1. The response must match the input text as closely as possible, especially for processes and ingredient details. '
-                    '2. Do not change, rephrase, or interpret the instructions; use the exact words and numbers given. '
-                    '3. Ingredients and instructions should reflect the original order and detail from the text. '
-                    '4. Only the specified JSON structure should be output, without comments or extraneous text. '
-                    '5. Ensure all numerical values (e.g., preparation times, quantities) are converted to numbers.'
-                    '6. Use input text formatting and numbers directly without rounding or simplifying.'
+        recipe_info = ai_response.choices[0].message.content
+        logger.error(recipe_info)
+        s3_file_name = f'{uuid.uuid4()}_image.jpg'
+        s3_url = save_image_to_s3_from_url(main_image_url, s3_file_name)
+        logger.info(f"s3_image: {s3_url}")
+    except Exception as e:
+        print(f"AI analysis failed: {e}")
+        recipe_info = None
 
-                )
-            },
-            {
-                'role': 'user', 'content': f"Title: {title}\nURL: {url}"
-            }
-        ]
-    )
-
-    end = time.time()
-    logger.info(f"OpenAI took {end - start} seconds")
-
-    recipe_info = ai_response.choices[0].message.content
-    s3_file_name = f'{uuid.uuid4()}_image.jpg'
-    s3_url = save_image_to_s3_from_url(main_image_url, s3_file_name)
-    logger.info(f"s3_image: {s3_url}")
-    return recipe_info, got_image, s3_url
+    return recipe_info, got_image, main_image_url
