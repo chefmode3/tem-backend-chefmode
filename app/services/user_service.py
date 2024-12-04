@@ -1,13 +1,12 @@
 import logging
 
 from flask import abort
-from flask_login import login_user, current_user
+from flask_jwt_extended import get_jwt_identity
+from flask_login import login_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app.models.user import User
 from app.extensions import db, login_manager
-
-from app.serializers.user_serializer import UserSchema
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,7 @@ class UserService:
         """Registers a new user."""
         user = UserService.get_user_by_email(email)
         if user:
-            return user,  user.activate
+            abort(400, description="An account with this email already exists.")
         user = User(email=email, name=email.split('@')[0], activate=False)
         user.password = generate_password_hash(password)
 
@@ -152,11 +151,12 @@ class UserService:
 
     @staticmethod
     def get_current_user():
-        """Returns information about the currently authenticated user."""
-        user = current_user
-        if not user.is_authenticated:
+        user_identity = get_jwt_identity()
+        if not user_identity:
             return None
-
+        user = User.query.filter_by(email=user_identity).first()
+        if not user:
+            return None
         return {
             "id": user.id,
             "email": user.email,

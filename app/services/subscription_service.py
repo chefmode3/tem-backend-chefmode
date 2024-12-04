@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Optional, Any
 
 import stripe
+from sqlalchemy import or_
 from stripe import StripeError
 
 from app.extensions import db
@@ -132,8 +133,9 @@ class SubscriptionWebhookService:
         session_id = self.data.get("id")
         subscription_id = self.data.get("subscription")
         customer_id = self.data.get("customer")
-        price = self.data.get("items", {}).get("data", [{}])[0].get("price", {}).get("unit_amount", ""),
+        price = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("unit_amount", ""),
         status = self.data.get("status")
+        invoice = self.data.get("lines", {}).get("data", [{}])[0].get("invoice", "")
         purchase_date = (
             datetime.fromtimestamp(self.data.get("period_start"))
             if self.data.get("period_start") else None
@@ -142,13 +144,17 @@ class SubscriptionWebhookService:
             datetime.fromtimestamp(self.data.get("period_end"))
             if self.data.get("period_end") else None
         )
-        payment_frequency = self.data.get("data", [{}])[0].get("price", {}).get("recurring", {}).get("interval", ""),
+        payment_frequency = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("recurring", {}).get("interval", ""),
         cancelled_at = (
             datetime.fromtimestamp(self.data.get("canceled_at"))
             if self.data.get("canceled_at") else None
         )
+        product_id = self.data.get("lines", {}).get("data", [{}])[0].get("plan", {}).get("product")
+        price_id = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("id")
 
-        stripe_user = StripeUserCheckoutSession.query.filter_by(session_id=session_id).first()
+        stripe_user = StripeUserCheckoutSession.query.filter(
+            or_(session_id==session_id, customer_id==customer_id)
+        ).first()
         if self.event_type == "checkout.session.completed":
             customer_id = self.data.get("customer")
             subscription_id = self.data.get("subscription")
@@ -156,24 +162,26 @@ class SubscriptionWebhookService:
                 stripe_user.customer_id = customer_id
                 stripe_user.subscription_id = subscription_id
                 db.session.commit()
-        elif self.event_type == "payment_intent.succeeded":
+        elif self.event_type == "invoice.payment_succeeded":
             s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
-
             if not s_membership and stripe_user:
-                subscription = Subscription.query.filter_by(price_id=stripe_user.price_id)
+                subscription = Subscription.query.filter_by(price_id=price_id).first()
                 if not subscription:
-                    raise SubscriptionException("Internal Server Error", 400)
+                    raise SubscriptionException("Internal Server Error", 500)
                 s_membership = SubscriptionMembership(
+                    user_id=stripe_user.user_id,
                     subscription=subscription.id
                 )
-
             s_membership.price = price
+            s_membership.latest_invoice = invoice
             s_membership.customer_id = customer_id
+            s_membership.product_id = product_id
             s_membership.subscription_id = subscription_id
             s_membership.state = status
             s_membership.purchase_date = purchase_date
             s_membership.expired_at = expired_at
             s_membership.payment_frequency = payment_frequency
+            db.session.add(s_membership)
             db.session.commit()
             logger.info(f"PaymentIntent succeeded")
         elif self.event_type in  ["invoice.payment_failed", "customer.subscription.deleted"]:

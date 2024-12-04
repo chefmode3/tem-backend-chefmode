@@ -11,6 +11,7 @@ from flask_jwt_extended import create_access_token, get_jwt, jwt_required
 from flask_restx import Namespace
 from flask_restx import Resource
 from marshmallow import ValidationError
+from werkzeug.exceptions import HTTPException
 
 from app import db
 from app.decorateur.permissions import token_required
@@ -76,7 +77,7 @@ class SignupResource(Resource):
             email = user_data.email
             name = user_data.name
             subject = "Email Activation"
-            url_frontend = os.getenv('URL_FRONTEND')
+            url_frontend = os.getenv('VERIFY_EMAIL_URL')
             template = 'welcome_email.html'
 
             activation_or_reset_email(
@@ -89,6 +90,9 @@ class SignupResource(Resource):
             return {"result": "Your account has been created. "
                               "Please check your email to verify your address."
                     }, 200
+        except HTTPException as http_err:
+            logger.error(f'HTTP Exception: {http_err.description}')
+            return {"error": http_err.description}, http_err.code
         except ValidationError as err:
             logger.error(f'{err.messages} : status ,400')
             return {"errors": err.messages}, 400
@@ -107,7 +111,6 @@ class SignupConfirmResource(Resource):
     def post(self):
         try:
             data = user_activation_schema.load(request.get_json())
-            email = data.get('email', None)
             token = data.get('token', None)
             result = verify_reset_token(token)
             logger.error(f'user reset :1')
@@ -115,8 +118,11 @@ class SignupConfirmResource(Resource):
                 return {"error": result["error"]}, 400
 
             logger.error(f'user reset :12')
-            if result["email"] != email:
-                return {"error": "Token does not match the provided email"}, 400
+
+            email = result["email"]
+
+            if not email:
+                return {"error": "Token does not match"}, 400
             logger.error(f'user reset :112')
             user, status = UserService.activate_user(email)
             user_data = user_response_schema.dump(user)
@@ -179,6 +185,7 @@ class LogoutResource(Resource):
         db.session.commit()
         return jsonify(msg=f"{ttype.capitalize()} token successfully revoked")
 
+
 @auth_ns.route('/password_reset_request')
 class PasswordResetRequestResource(Resource):
 
@@ -227,7 +234,6 @@ class ResetPasswordResource(Resource):
         200, "Password has been reset successfully", model=reset_password_model
     )
     @auth_ns.response(400, "Validation Error")
-    @token_required
     def post(self):
         try:
 
