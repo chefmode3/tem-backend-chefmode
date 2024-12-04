@@ -35,6 +35,7 @@ class User(db.Model, UserMixin):
     google_token = db.Column(db.String(512), unique=True, nullable=True)
     google_id = db.Column(db.String(512), unique=True, nullable=True)
     password = db.Column(db.String(512), unique=True, nullable=True)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -50,5 +51,6 @@ class RevokedToken(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     jti = db.Column(db.String(512), nullable=False, index=True)
     type = db.Column(db.String(512), nullable=False)
+
     user_id = db.Column(db.ForeignKey('user.id'),nullable=False)
     created_at = db.Column(db.DateTime,server_default=func.now(),nullable=False,)

@@ -48,11 +48,13 @@ class SubscriptionMembership(db.Model):
     subscription_id = db.Column(db.String(512), nullable=True)
     product_id = db.Column(db.String(512), nullable=True)
     customer_id = db.Column(db.String(512), nullable=True)
+
     latest_invoice = db.Column(db.Text(), nullable=True)
     purchase_date = db.Column(db.DateTime, nullable=True)
     cancelled_at = db.Column(db.DateTime, nullable=True)
     expired_at = db.Column(db.DateTime, nullable=True)
     payment_frequency = db.Column(db.String(512), nullable=True)
+
     price = db.Column(db.Float, default=0)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
