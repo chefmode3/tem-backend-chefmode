@@ -149,7 +149,8 @@ class SubscriptionWebhookService:
             datetime.fromtimestamp(self.data.get("canceled_at"))
             if self.data.get("canceled_at") else None
         )
-        product_id=self.data.get("lines", {}).get("data", [{}])[0].get("plan", {}).get("product")
+        product_id = self.data.get("lines", {}).get("data", [{}])[0].get("plan", {}).get("product")
+        price_id = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("id")
 
         stripe_user = StripeUserCheckoutSession.query.filter(
             or_(session_id==session_id, customer_id==customer_id)
@@ -164,7 +165,7 @@ class SubscriptionWebhookService:
         elif self.event_type == "invoice.payment_succeeded":
             s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
             if not s_membership and stripe_user:
-                subscription = Subscription.query.filter_by(price_id=stripe_user.price_id).first()
+                subscription = Subscription.query.filter_by(price_id=price_id).first()
                 if not subscription:
                     raise SubscriptionException("Internal Server Error", 500)
                 s_membership = SubscriptionMembership(
