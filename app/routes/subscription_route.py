@@ -99,7 +99,7 @@ class SubscriptionWebhook(Resource):
             return {"message": "Validation error", "errors": err.messages}, 400
 
         event_type = validated_data["type"]
-        data = validated_data.get('data', {})
+        data = validated_data.get('data', {}).get("object")
         webhook_service = SubscriptionWebhookService(data, event_type)
         webhook_service.execute()
         return {"message": "Webhook received"}, 200

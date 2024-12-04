@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Optional, Any
 
 import stripe
+from sqlalchemy import or_
 from stripe import StripeError
 
 from app.extensions import db
@@ -148,7 +149,9 @@ class SubscriptionWebhookService:
             if self.data.get("canceled_at") else None
         )
 
-        stripe_user = StripeUserCheckoutSession.query.filter_by(session_id=session_id).first()
+        stripe_user = StripeUserCheckoutSession.query.filter(
+            or_(session_id==session_id, customer_id==customer_id)
+        ).first()
         if self.event_type == "checkout.session.completed":
             customer_id = self.data.get("customer")
             subscription_id = self.data.get("subscription")
@@ -158,11 +161,10 @@ class SubscriptionWebhookService:
                 db.session.commit()
         elif self.event_type == "payment_intent.succeeded":
             s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
-
             if not s_membership and stripe_user:
-                subscription = Subscription.query.filter_by(price_id=stripe_user.price_id)
+                subscription = Subscription.query.filter_by(price_id=stripe_user.price_id).first()
                 if not subscription:
-                    raise SubscriptionException("Internal Server Error", 400)
+                    raise SubscriptionException("Internal Server Error", 500)
                 s_membership = SubscriptionMembership(
                     subscription=subscription.id
                 )
