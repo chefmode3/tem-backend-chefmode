@@ -46,6 +46,7 @@ python-dotenv==1.0.1
 pytube==7.0.16
 redis==5.2.0
 requests==2.32.3
+slack_sdk==3.33.4
 SQLAlchemy==2.0.25
 tenacity==9.0.0
 TikTokApi==6.5.2

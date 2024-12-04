@@ -1,16 +1,23 @@
+from __future__ import annotations
+
 import logging
 
-import requests
-from flask import session,   request, abort
-from flask_restx import Resource, Namespace
-from oauthlib.oauth2.rfc6749.errors import MissingCodeError
-from marshmallow import ValidationError
-from app.config import flow, GOOGLE_CLIENT_ID
-from google.oauth2 import id_token
-from pip._vendor import cachecontrol
 import google.auth.transport.requests
+import requests
+from flask import abort
+from flask import request
+from flask import session
+from flask_restx import Namespace
+from flask_restx import Resource
+from google.oauth2 import id_token
+from marshmallow import ValidationError
+from oauthlib.oauth2.rfc6749.errors import MissingCodeError
+from pip._vendor import cachecontrol
 
-from app.serializers.user_serializer import GoogleCallBackSchema, UserRegisterSchema
+from app.config import flow
+from app.config import GOOGLE_CLIENT_ID
+from app.serializers.user_serializer import GoogleCallBackSchema
+from app.serializers.user_serializer import UserRegisterSchema
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services import UserService
 
@@ -27,7 +34,7 @@ class LoginResource(Resource):
 
     def get(self):
         authorization_url, state = flow.authorization_url()
-        session["state"] = state
+        session['state'] = state
         return {'authorization_url': authorization_url}
 
 
@@ -43,10 +50,10 @@ class LogoutResource(Resource):
 class CallbackResource(Resource):
 
     @auth_google_ns.expect(user_callback_model)
-    @auth_google_ns.response(200, "User logged in successfully", model=user_register_model)
-    @auth_google_ns.response(400, "Validation Error")
+    @auth_google_ns.response(200, 'User logged in successfully', model=user_register_model)
+    @auth_google_ns.response(400, 'Validation Error')
     def post(self):
-        
+
         try:
             data = request.json
 
@@ -66,14 +73,14 @@ class CallbackResource(Resource):
             )
 
             user, status = UserService.create_user(
-                        email=id_info.get("email"),
-                        name=id_info.get("name"),
-                        activate=id_info.get("email_verified"),
-                        google_id=id_info.get("sub"),
+                        email=id_info.get('email'),
+                        name=id_info.get('name'),
+                        activate=id_info.get('email_verified'),
+                        google_id=id_info.get('sub'),
                         google_token=credentials._id_token,
                         )
             if not user:
-                abort(400, description="Email already exists.")
+                abort(400, description='Email already exists.')
             user_data = user_register_schema.dump(user)
             return {'result': user_data}, 401
 
@@ -83,3 +90,6 @@ class CallbackResource(Resource):
             return {'error': f'{google_err}'}, 400
         except ValueError as e:
             return {'error': f'Failed to create user {e}'}, 401
+        except Exception as inter_erro:
+            logger.error(f'{str(inter_erro)} : status ,400')
+            return {'errors': ' unexpected error occurred'}, 400
