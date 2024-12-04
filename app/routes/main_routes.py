@@ -143,6 +143,44 @@ class SignupConfirmResource(Resource):
             return {"errors": " unexpected error occurred"}, 400
 
 
+@auth_ns.route('/resend-email')
+class EmailVerificationResource(Resource):
+    @auth_ns.expect(password_reset_request_model)
+    @auth_ns.response(200, 'Verification email sent')
+    @auth_ns.response(400, 'Validation Error')
+    def post(self):
+        try:
+            data = request.get_json()
+            email = data.get('email')
+
+            user = UserService.get_user_by_email(email)
+            if not user:
+                return {"error": "User does not exist."}, 400
+
+            if user.activate:
+                return {"result": "User account is already verified."}, 200
+
+            name = user.name
+            subject = "Verification Email"
+            url_frontend = os.getenv('VERIFY_EMAIL_URL')
+            template = 'welcome_email.html'
+
+            activation_or_reset_email(
+                email,
+                name=name,
+                subject=subject,
+                template=template,
+                url_frontend=url_frontend
+            )
+            return {"result": "Please check your email to verify your address."}
+        except ValidationError as err:
+            logger.error(f'{err.messages} : status, 400')
+            return {"errors": err.messages}, 400
+        except Exception as e:
+            logger.error(f'{str(e)} : status, 400')
+            return {"errors": "Unexpected error occurred"}, 400
+
+
 @auth_ns.route('/login')
 class LoginResource(Resource):
     @auth_ns.expect(login_model)

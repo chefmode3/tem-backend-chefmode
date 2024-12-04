@@ -29,7 +29,7 @@ class AnonymousUserRecipe(db.Model):
 class User(db.Model, UserMixin):
     __tablename__ = 'user'
     id = db.Column(db.String(255), primary_key=True, default=lambda: str(uuid.uuid4()))
-    name = db.Column(db.String(64), nullable=True)
+    name = db.Column(db.String(255), nullable=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     activate = db.Column(db.Boolean, default=False)
     google_token = db.Column(db.String(255), unique=True, nullable=True)
@@ -48,7 +48,7 @@ class User(db.Model, UserMixin):
 
 class RevokedToken(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    jti = db.Column(db.String(36), nullable=False, index=True)
-    type = db.Column(db.String(16), nullable=False)
+    jti = db.Column(db.String(255), nullable=False, index=True)
+    type = db.Column(db.String(255), nullable=False)
     user_id = db.Column(db.ForeignKey('user.id'),nullable=False)
     created_at = db.Column(db.DateTime,server_default=func.now(),nullable=False,)
