@@ -25,7 +25,8 @@ from app.serializers.user_serializer import (
     PasswordResetRequestSchema,
     ResetPasswordSchema,
     UserActivationSchema,
-    UpdateUserSchema
+    UpdateUserSchema,
+    DeleteUserSchema
 )
 from app.utils.send_email import activation_or_reset_email, verify_reset_token
 
@@ -55,6 +56,8 @@ reset_password_model = convert_marshmallow_to_restx_model(auth_ns, reset_passwor
 
 update_user_schema = UpdateUserSchema()
 update_user_model = convert_marshmallow_to_restx_model(auth_ns, update_user_schema)
+
+delete_user_schema = DeleteUserSchema()
 
 
 @auth_ns.route('/signup')
@@ -307,6 +310,29 @@ class UpdateUserResource(Resource):
             return {"message": "User updated successfully",
                     "user": user_response_schema.dump(user)
                     }, 200
+        except ValidationError as err:
+            logger.error(f'{err.messages} : status, 400')
+            return {"errors": err.messages}, 400
+        except Exception as e:
+            logger.error(f'Unexpected error: {str(e)} : status, 400')
+            return {"errors": "Unexpected error occurred"}, 400
+
+
+@auth_ns.route('/delete/<string:user_id>')
+class DeleteUserResource(Resource):
+
+    @auth_ns.response(200, "User successfully deleted")
+    @auth_ns.response(404, "User not found")
+    @auth_ns.response(400, "Validation Error")
+    @token_required
+    def delete(self, user_id):
+        """Delete user information (except password)."""
+        try:
+            user = UserService.delete_user(user_id)
+            if not user:
+                return {"message": "User not found"}, 404
+
+            return {"message": "User successfully deleted"}, 200
         except ValidationError as err:
             logger.error(f'{err.messages} : status, 400')
             return {"errors": err.messages}, 400
