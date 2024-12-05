@@ -72,13 +72,14 @@ class CallbackResource(Resource):
                 audience=GOOGLE_CLIENT_ID
             )
 
-            user, status = UserService.create_user(
+            user = UserService.create_user(
                         email=id_info.get('email'),
                         name=id_info.get('name'),
                         activate=id_info.get('email_verified'),
                         google_id=id_info.get('sub'),
                         google_token=credentials._id_token,
                         )
+
             if not user:
                 abort(400, description='Email already exists.')
             user_data = UserRegisterSchema().dump(user)
