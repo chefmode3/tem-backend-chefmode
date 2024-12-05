@@ -156,6 +156,16 @@ def scrape_and_analyze_recipe(url):
                     'content': (
                         'Extract recipe title, servings, total time in hours or minute, ingredients, and directions.'
                         'title_process if available'
+                        '2. **Ingredients**: For each ingredient, provide:'
+                        '  - `name`: A  names of the ingredient .'
+                        '  - `quantity`: A list of floats representing the range or exact quantities (e.g., [40, 50] for "40-50g").'
+                        ' - `unit`: The primary unit for the ingredient (e.g., "g", "cups").'
+                        '   - `alternative_measurements`: A list of objects where:'
+                        '     - Each object contains a `unit` (e.g., "cups", "tbsp").'
+                        '     - Each object contains a `quantity` as a list of floats (to support ranges if needed).'
+
+                        '**Example Ingredient**:'
+                        'For "40-50g (4 cups 2 tbsp) of bread flour", the JSON structure should look like this:'
                         ' Ensure the response is strictly in JSON format'
                         ' and only follows this structure:'
 
@@ -169,9 +179,15 @@ def scrape_and_analyze_recipe(url):
                         "  'ingredients': [ "
                         '    { '
 
-                        '      "full_origin_name_with_quantity": "string" '
-                        "      'quantity': float, "
+                        '      "name": "string" '
+                        "      'quantity': List[float], "
                         "      'unit': 'string', "
+                        "       'alternative_measurements': ["
+                        '     { '
+                        '         "unit": "string",'
+                        '          "quantity": [float]'
+                        '      },'
+                        '],'
                         '    } '
                         '  ], '
                         "  'processes': [ "

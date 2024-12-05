@@ -60,8 +60,9 @@ class RecipeCelService:
         existing_recipe = Recipe.query.filter_by(
             title=recipe_data.get('title'),
             origin=recipe_data.get('origin'),
-            preparation_time=recipe_data.get('preparation_time'),
-            servings=recipe_data.get('servings')
+            preparation_time=str(recipe_data.get('preparation_time')),
+            servings=recipe_data.get('servings'),
+            description=recipe_data.get('description'),
         ).first()
 
         if existing_recipe:

@@ -14,12 +14,12 @@ class Recipe(db.Model):
     id = db.Column(db.String(255), primary_key=True, default=lambda: str(uuid.uuid4()))
     title = db.Column(db.String(255), nullable=False)
     origin = db.Column(db.String(255), nullable=False)
-    servings = db.Column(db.String(255), nullable=True)
+    servings = db.Column(db.Integer, nullable=True)
     created_at = db.Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    preparation_time = db.Column(db.Integer, nullable=True)
+    preparation_time = db.Column(db.String(255), nullable=True)
     description = db.Column(db.Text, nullable=True)
-    image_url = db.Column(db.String(255), nullable=True)
+    image_url = db.Column(db.String(256), nullable=True)
 
     ingredients = db.Column(db.JSON, nullable=True)
     processes = db.Column(db.JSON, nullable=True)
