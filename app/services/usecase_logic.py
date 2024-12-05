@@ -22,22 +22,40 @@ class RecipeService:
             return None
         if not serving:
             return recipe
+
+        serving = int(serving)
         ingredient_pre_serving = []
+
         for ingredient in recipe.ingredients:
-            quantity = ingredient.get('quantity')
-            # alternative_mesure = ingredient.get('alternative_measurements')
-            ingredient_data = {}
-            # if alternative_mesure:
-            #     list_of_new_mesure = []
-            #     for mesure in alternative_mesure:
-            #         new_quantity_mesure = (serving * mesure.get("quantity")) / recipe.servings
-            #         ingredient_data['alternative_mesure'] = round(new_quantity_mesure, 2)
-            #
-            new_quantity = (serving * quantity) / recipe.servings
-            ingredient_data['name'] = ingredient['name']
-            ingredient_data['quantity'] = round(new_quantity, 2)
-            ingredient_data['unit'] = ingredient['unit']
-            ingredient_pre_serving.append(ingredient_data)
+            quantities = ingredient.get('quantity', [])
+            alternative_measurements = ingredient.get('alternative_measurements', [])
+
+            updated_ingredient = {
+                'name': ingredient['name'],
+                'quantity': [],
+                'unit': ingredient['unit'],
+                'alternative_measurements': []
+            }
+
+            # Adjust the main quantities
+            for qty in quantities:
+                new_quantity = (serving * qty) / recipe.servings
+                updated_ingredient['quantity'].append(round(new_quantity, 2))
+
+            # Adjust the alternative measurements
+            for alt_measure in alternative_measurements:
+                alt_quantities = alt_measure.get('quantity', [])
+                new_alt_measure = {
+                    'unit': alt_measure['unit'],
+                    'quantity': []
+                }
+                for alt_qty in alt_quantities:
+                    new_alt_quantity = (serving * alt_qty) / recipe.servings
+                    new_alt_measure['quantity'].append(round(new_alt_quantity, 2))
+                updated_ingredient['alternative_measurements'].append(new_alt_measure)
+
+            ingredient_pre_serving.append(updated_ingredient)
+
         recipe.ingredients = ingredient_pre_serving
         return recipe
 

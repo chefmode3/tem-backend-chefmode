@@ -224,7 +224,7 @@ def scrape_and_analyze_recipe(url):
         logger.error(f"AI analysis failed: {e}")
         recipe_info = None
 
-    return recipe_info, got_image, main_image_url
+    return recipe_info, got_image, s3_url
 
 
 def analyse_nutritions_base_ingredient(ingredient):
