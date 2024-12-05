@@ -81,7 +81,7 @@ class CallbackResource(Resource):
                         )
             if not user:
                 abort(400, description='Email already exists.')
-            user_data = user_register_schema.dump(user)
+            user_data = UserRegisterSchema().dump(user)
             return {'result': user_data}, 401
 
         except ValidationError as err:
