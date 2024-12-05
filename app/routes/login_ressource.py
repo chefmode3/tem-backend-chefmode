@@ -16,6 +16,7 @@ from pip._vendor import cachecontrol
 
 from app.config import flow
 from app.config import GOOGLE_CLIENT_ID
+from app.models import User
 from app.serializers.user_serializer import GoogleCallBackSchema
 from app.serializers.user_serializer import UserRegisterSchema
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
@@ -72,6 +73,10 @@ class CallbackResource(Resource):
                 audience=GOOGLE_CLIENT_ID
             )
 
+            user = User.query.filter_by(email=id_info.get('email')).first()
+            if user:
+                return {"access_token": credentials._id_token}, 200
+
             user = UserService.create_user(
                         email=id_info.get('email'),
                         name=id_info.get('name'),
@@ -80,7 +85,7 @@ class CallbackResource(Resource):
                         google_token=credentials._id_token,
                         )
             user_data = UserRegisterSchema().dump(user)
-            return {'result': user_data}, 401
+            return {'result': user_data, "access_token": credentials._id_token}, 201
 
         except ValidationError as err:
             abort(400, description=err.messages)
