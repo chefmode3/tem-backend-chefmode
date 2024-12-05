@@ -124,9 +124,8 @@ class UserService:
         """Deletes a user from the database."""
         user = User.query.get(user_id)
         if not user:
-            abort(404, description="User not found.")
-
-        db.session.delete(user)
+            return None
+        user.deleted = True
         db.session.commit()
         return {"message": "User deleted successfully"}
 
