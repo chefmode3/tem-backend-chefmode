@@ -37,35 +37,29 @@ def extract_main_image(soup):
 
 def get_website_content(url):
     """
-    Function to handle website requests with retries for handling 403 errors.
+    Function to get website content using ScrapeNinja API.
     """
-    headers_list = [
-        {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                          ' (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-        },
-        {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
-                          'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'
-        },
-        {
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) '
-                          'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36'
-        },
-    ]
-    for _ in range(5):  # Retry up to 5 times
-        headers = random.choice(headers_list)
-        try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            return response
-        except requests.exceptions.HTTPError as e:
-            if response.status_code == 403:
-                time.sleep(random.uniform(1, 3))  # Random sleep to avoid being blocked
-                continue
-            else:
-                raise e
-    raise requests.exceptions.RequestException('Failed to retrieve the website after multiple attempts.')
+    api_url = 'https://scrapeninja.p.rapidapi.com/scrape'
+
+    querystring = {'url': url}
+
+    headers = {
+        'x-rapidapi-key': '1776083f1dmsh864701c7fc5a69dp1d97f3jsn8cb7620cf8c2',
+        'x-rapidapi-host': 'scrapeninja.p.rapidapi.com'
+    }
+
+    api_response = requests.get(api_url, headers=headers, params=querystring)
+    api_response.raise_for_status()  # Raise an exception for HTTP errors
+
+    data = api_response.json()
+    body = data.get('body', '')
+
+    # Create a mock response object with a .text attribute containing body
+    class MockResponse:
+        def __init__(self, text):
+            self.text = text
+
+    return MockResponse(body)
 
 
 def get_image_with_retry(image_url, retries=5):
@@ -102,44 +96,35 @@ def save_image_locally(image, filename='recipe_image.jpg'):
 
 
 def scrape_and_analyze_recipe(url):
-    try:
-        # Fetch website content
-        start = time.time()
-        response = get_website_content(url)
-        response.raise_for_status()
-        end = time.time()
-        print(f"get_website_content took {end - start} seconds")
-    except Exception as e:
-        print(f"Failed to fetch content: {e}")
-        return None, False, None
+    # Make a request to the given URL using ScrapeNinja API
+    response = get_website_content(url)
 
-    # Parse HTML
-    try:
-        start = time.time()
-        soup = BeautifulSoup(response.text, 'html.parser')
-        end = time.time()
-        print(f"parsing html took {end - start} seconds")
-    except Exception as e:
-        print(f"HTML parsing error: {e}")
-        return None, False, None
+    # Parse the HTML content
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-    # Extract title
+    # Extract title and body content from HTML
     title = soup.title.string if soup.title else 'No title found'
 
-    # Extract text content
-    start = time.time()
+    # Extract all text content from various relevant tags
     body_content = ' '.join(
         element.get_text(separator=' ', strip=True)
         for element in soup.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
     )
-    end = time.time()
-    print(f"Extract all text content took {end - start} seconds")
 
-    # Tokenize text
-    start = time.time()
+    print(body_content)
+
+    # Tokenize the body content and print token count
     token_count, tokens = tokenize_text(body_content)
-    end = time.time()
-    print(f"Tokenize text content took {end - start} seconds")
+    print(f"Token Count: {token_count}")
+
+    # Check if token count is below 1000
+    if token_count < 1000:
+        raise ValueError('The content has fewer than 1,000 tokens, which does not meet the minimum requirement.')
+
+    # Limit body content to the first 150,000 characters if it exceeds this character count
+    if len(body_content) > 50000:
+        body_content = body_content[:50000]  # Truncate to the first 150,000 characters
+        print('Character count exceeded 150,000. Truncated content to the first 150,000 characters.')
 
     # Extract main image
     main_image_url = extract_main_image(soup)
@@ -156,6 +141,35 @@ def scrape_and_analyze_recipe(url):
                     'content': (
                         'Extract recipe title, servings, total time in hours or minute, ingredients, and directions.'
                         'title_process if available'
+                        '2. **Ingredients**: For each ingredient, provide:'
+                        '  - `name`: A  names of the ingredient .'
+                        '  - `quantity`: A list of floats representing the range or exact quantities (e.g., [40, 50] for "40-50g").'
+                        ' - `unit`: The primary unit for the ingredient (e.g., "g", "cups").'
+                        '   - `alternative_measurements`: A list of objects where:'
+                        '     - Each object contains a `unit` (e.g., "cups", "tbsp").'
+                        '     - Each object contains a `quantity` as a list of floats (to support ranges if needed).'
+
+                        '**Example Ingredient**:'
+                        'For "40-50g (4 cups 2 tbsp) of bread flour", the JSON structure should look like this:'
+                        '{'
+                        ' "name":  of bread flours",'
+                        '  "quantity": ['
+                        '    40, 50'
+                        '  ],'
+                        '  "unit": "g",'
+                        '   "alternative_measurements": ['
+                        '{'
+                            '  "quantity": ['
+                            '    4'
+                            '  ],'
+                            '  "unit": "cup",'
+                        '},'
+                        '  "quantity": ['
+                        '    2'
+                        '  ],'
+                        '  "unit": "tbsp",'
+                        ']'
+                        ' },'
                         ' Ensure the response is strictly in JSON format'
                         ' and only follows this structure:'
 
@@ -169,9 +183,15 @@ def scrape_and_analyze_recipe(url):
                         "  'ingredients': [ "
                         '    { '
 
-                        '      "full_origin_name_with_quantity": "string" '
-                        "      'quantity': float, "
+                        '      "name": "string" '
+                        "      'quantity': List[float], "
                         "      'unit': 'string', "
+                        "       'alternative_measurements': ["
+                        '       { '
+                        '         "unit": "string",'
+                        '          "quantity": [float]'
+                        '       },'
+                        '       ],'
                         '    } '
                         '  ], '
                         "  'processes': [ "
@@ -193,7 +213,7 @@ def scrape_and_analyze_recipe(url):
             ]
         )
         end = time.time()
-        print(f"OpenAI took {end - start} seconds")
+        logger.error(f"OpenAI took {end - start} seconds")
 
         recipe_info = ai_response.choices[0].message.content
         logger.error(recipe_info)
@@ -201,7 +221,43 @@ def scrape_and_analyze_recipe(url):
         s3_url = save_image_to_s3_from_url(main_image_url, s3_file_name)
         logger.info(f"s3_image: {s3_url}")
     except Exception as e:
-        print(f"AI analysis failed: {e}")
+        logger.error(f"AI analysis failed: {e}")
         recipe_info = None
 
-    return recipe_info, got_image, main_image_url
+    return recipe_info, got_image, s3_url
+
+
+def analyse_nutritions_base_ingredient(ingredient):
+    try:
+        start = time.time()
+        ai_response = client.chat.completions.create(
+            model='gpt-4o-mini',
+            messages=[
+                {
+                    'role': 'system',
+                    'content': (
+                        'calculate the nutritional information based on the provided details.  '
+                        ' Ensure the response returned is strictly in JSON format and follows this exact structure:  '
+                        'only return the result in a json format and not in markdown'
+                        "  'nutritions': [ "
+                        '    { '
+                        '      "name": "string" '
+                        "      'quantity': float, "
+                        "      'unit': 'string', "
+                        '    } '
+                        '  ], '
+                        )
+                },
+                {'role': 'user', 'content': f"Here is the  recipe:\n\n{ingredient}"}
+            ]
+        )
+        end = time.time()
+        logger.error(f"OpenAI took {end - start} seconds")
+
+        nutrtition_info = ai_response.choices[0].message.content
+        logger.error(nutrtition_info)
+        return nutrtition_info
+    except Exception as e:
+        logger.error(f"AI analysis failed: {e}")
+        nutrtition_info = None
+    return nutrtition_info

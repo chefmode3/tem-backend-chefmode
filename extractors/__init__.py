@@ -10,6 +10,7 @@ from app.utils.s3_storage import upload_to_s3
 from extractors.facebook import download_facebook_video
 from extractors.instagram import download_instagram_video
 from extractors.new_youtube import download_youtube
+from extractors.recipe_extractor_website import analyse_nutritions_base_ingredient
 from extractors.recipe_extractor_website import scrape_and_analyze_recipe
 from extractors.tiktok import download_tiktok
 from extractors.video_analyzer import process_video
@@ -46,57 +47,68 @@ def retry_process_video(output_filepath):
 
 
 def fetch_description(request_data):
-    video_url = request_data['video_url']
-    platform = identify_platform(video_url)
+    try:
+        video_url = request_data['video_url']
+        platform = identify_platform(video_url)
 
-    final_content, recipe, image_url = None, None, None
+        final_content, recipe, image_url = None, None, None
 
-    # Ensure the download folder exists
-    ensure_download_folder_exists()
+        # Ensure the download folder exists
+        ensure_download_folder_exists()
 
-    # Define the output file path
-    os.path.join(DOWNLOAD_FOLDER, f'downloaded_video_{uuid.uuid4()}.mp4')
+        # Define the output file path
+        os.path.join(DOWNLOAD_FOLDER, f'downloaded_video_{uuid.uuid4()}.mp4')
 
-    # logger.info(output_filepath)
-    # Dictionary to map platforms to their respective download functions
-    download_functions = {
-        'tiktok': download_tiktok,
-        'youtube': download_youtube,
-        'instagram': download_instagram_video,
-        'x': download_twitter_video,
-        'facebook': download_facebook_video
-    }
+        # logger.info(output_filepath)
+        # Dictionary to map platforms to their respective download functions
+        download_functions = {
+            'tiktok': download_tiktok,
+            'youtube': download_youtube,
+            'instagram': download_instagram_video,
+            'x': download_twitter_video,
+            'facebook': download_facebook_video
+        }
 
-    if platform in download_functions:
-        # Download the video
-        video_url_with_audio = download_functions[platform](video_url)
-        logger.error(video_url_with_audio)
-        # Wait for the download to complete
-        time.sleep(SLEEP_TIME)
-        if not video_url_with_audio:
-            return {'error': 'video not found ', 'status': 404}
-        # Process the video
-        recipe, image_url_to_store = retry_process_video(video_url_with_audio)
-        s3_file_name = f'{uuid.uuid4()}_image.jpg'
-        image_url = upload_to_s3(image_url_to_store, s3_file_name)
+        if platform in download_functions:
+            # Download the video
+            video_url_with_audio = download_functions[platform](video_url)
+            logger.error(video_url_with_audio)
+            # Wait for the download to complete
+            time.sleep(SLEEP_TIME)
+            if not video_url_with_audio:
+                return {'error': 'video not found ', 'status': 404}
+            # Process the video
+            recipe, image_url_to_store = retry_process_video(video_url_with_audio)
+            s3_file_name = f'{uuid.uuid4()}_image.jpg'
+            image_url = upload_to_s3(image_url_to_store, s3_file_name)
 
-        # Remove the downloaded video after processing
-        remove_file(video_url_with_audio)
-        remove_file(image_url_to_store)
+            # Remove the downloaded video after processing
+            remove_file(video_url_with_audio)
+            remove_file(image_url_to_store)
 
-    elif platform == 'website':
-        recipe, got_image, image_url = scrape_and_analyze_recipe(video_url)
-    recipe_info = json.loads(recipe)
-    logger.info(image_url)
-    recipe_info['image_url'] = image_url
-    # logger.info(json.loads(recipe))
-    final_content = {
-        'content': recipe_info,
-        'origin': video_url,
-        'image_url': image_url
-    }
+        elif platform == 'website':
+            recipe, got_image, image_url = scrape_and_analyze_recipe(video_url)
+        if not recipe:
+            return {'error': 'recipe not found', 'status': 404}
 
-    return final_content
+        recipe_info = json.loads(recipe)
+        nutritions = analyse_nutritions_base_ingredient(recipe)
+        nutritions_json = json.loads(nutritions)
+        logger.info(nutritions_json['nutritions'])
+        recipe_info['nutrition'] = nutritions_json['nutritions']
+        logger.info(image_url)
+        recipe_info['image_url'] = image_url
+        # logger.info(json.loads(recipe))
+        final_content = {
+            'content': recipe_info,
+            'origin': video_url,
+            'image_url': image_url
+        }
+
+        return final_content
+    except Exception as e:
+        logger.error(f"An error occurred while fetching the description.{e}")
+        pass
 
 
 def remove_file(file_path_to_remove):
