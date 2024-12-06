@@ -74,17 +74,17 @@ class RecipeScrapPost(Resource):
             result: dict = res.result
 
             content = result.get('result')
-            # find = result.get('find')
-            # if content.get('error'):
-            #     return content, content.pop('status')
-            #
-            # if not find:
-            #     logger.error('test of saving in database')
-            #     content = RecipeCelService.convert_and_store_recipe(content)
-            #     content = RecipeSerializer().dump(content)
-            # app_settings = os.getenv('APP_SETTINGS')
-            # if app_settings == 'app.config.ProductionConfig':
-            #     send_slack_notification_recipe(content.get('origin'))
+            find = result.get('find')
+            if content.get('error'):
+                return content, content.pop('status')
+
+            if not find:
+                logger.error('test of saving in database')
+                content = RecipeCelService.convert_and_store_recipe(content)
+                content = RecipeSerializer().dump(content)
+            app_settings = os.getenv('APP_SETTINGS')
+            if app_settings == 'app.config.ProductionConfig':
+                send_slack_notification_recipe(content.get('origin'))
             return content, 200
 
         elif res.state == 'FAILURE':
