@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 
 from celery.result import AsyncResult
 from flask import abort
@@ -81,7 +82,9 @@ class RecipeScrapPost(Resource):
                 logger.error('test of saving in database')
                 content = RecipeCelService.convert_and_store_recipe(content)
                 content = RecipeSerializer().dump(content)
-            send_slack_notification_recipe(content.get('origin'))
+            app_settings = os.getenv('APP_SETTINGS')
+            if app_settings == 'app.config.ProductionConfig':
+                send_slack_notification_recipe(content.get('origin'))
             return content, 200
 
         elif res.state == 'FAILURE':
