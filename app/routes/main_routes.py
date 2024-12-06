@@ -79,7 +79,7 @@ class SignupResource(Resource):
                         }, 200
             email = user_data.email
             name = user_data.name
-            subject = "Email Activation"
+            subject = "Welcome to Chefmode!"
             url_frontend = os.getenv('VERIFY_EMAIL_URL')
             template = 'welcome_email.html'
 
@@ -164,7 +164,7 @@ class EmailVerificationResource(Resource):
                 return {"result": "User account is already verified."}, 200
 
             name = user.name
-            subject = "Verification Email"
+            subject = "Chefmode: Email Activation"
             url_frontend = os.getenv('VERIFY_EMAIL_URL')
             template = 'welcome_email.html'
 
@@ -242,7 +242,7 @@ class PasswordResetRequestResource(Resource):
             email = data.get('email')
             url_frontend = os.getenv('RESET_PASSWORD_URL')
 
-            subject = 'Password Reset Request'
+            subject = 'Chefmode: Reset Password'
 
             user = UserService.get_user_by_email(email)
             if not user:
