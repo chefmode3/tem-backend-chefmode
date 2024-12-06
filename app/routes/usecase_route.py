@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import logging
 
-from flask_jwt_extended import jwt_required
-from flask_restx import Namespace, Resource
 from flask import request
-from flask_login import login_required
+from flask_jwt_extended import jwt_required
 from flask_restx import Namespace
 from flask_restx import Resource
 from marshmallow import ValidationError
+
+from app.decorateur.anonyme_user import load_or_create_anonymous_user
+from app.decorateur.anonyme_user import track_anonymous_requests
+from app.decorateur.permissions import token_required
 from app.serializers.recipe_serializer import RecipeSerializer
 from app.serializers.usecase_serializer import FlagStatusResponseSchema
 from app.serializers.usecase_serializer import NutritionSchema
@@ -18,17 +20,6 @@ from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.usecase_logic import RecipeService
 from app.services.user_service import UserService
 from app.utils.slack_hool import send_slack_notification_recipe
-from app.decorateur.permissions import token_required
-from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
-from app.serializers.usecase_serializer import (
-    RecipeResponseSchema,
-    RecipeRequestSchema,
-    FlagStatusResponseSchema,
-    NutritionSchema
-)
-from app.services.user_service import UserService
-from app.serializers.recipe_serializer import RecipeSerializer
-from app.decorateur.anonyme_user import track_anonymous_requests, load_or_create_anonymous_user
 
 logger = logging.getLogger(__name__)
 
@@ -74,9 +65,10 @@ class GetRecipeResource(Resource):
             recipe_id = request.args.get('recipe_id', type=str)
             recipe = RecipeService.get_recipe_by_id(recipe_id, serving)
             return RecipeSerializer().dump(recipe), 200
+
         except Exception as e:
             logger.error(f"An unexpected error occurred: {str(e)}")
-            return {'error': 'An unexpected error occurred', 'details': str(e)}, 400
+            return {'error': 'An unexpected error occurred'}, 400
 
 
 @recipe_ns.route('/get_all_recipes')
@@ -220,7 +212,7 @@ class SearchRecipesResource(Resource):
 
             current_user = UserService.get_current_user()
             if not current_user:
-                return {"message": "Authentication required."}, 401
+                return {'message': 'Authentication required.'}, 401
 
             results = RecipeService.search_recipes(search_term, current_user, page, page_size)
 

@@ -46,6 +46,5 @@ def call_fetch_description(self, data):
         try:
             # Retry the task
             self.retry(exc=exc)
-
         except MaxRetriesExceededError:
             return {'error': f"Error in fetch_description task: {str(exc)}"}
