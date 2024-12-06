@@ -194,7 +194,6 @@ class PasswordResetRequestResource(Resource):
         200, "Password reset email sent", model=password_reset_request_model
     )
     @auth_ns.response(400, "Validation Error")
-    @token_required
     def post(self):
         try:
             data = password_reset_request_schema.load(request.get_json())
