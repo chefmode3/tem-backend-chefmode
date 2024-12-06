@@ -39,14 +39,6 @@ class LoginResource(Resource):
         return {'authorization_url': authorization_url}
 
 
-@auth_google_ns.route('/logout_google')
-class LogoutResource(Resource):
-
-    def get(self):
-        session.clear()
-        return {'message': 'Logged out successfully'}
-
-
 @auth_google_ns.route('/callback')
 class CallbackResource(Resource):
 

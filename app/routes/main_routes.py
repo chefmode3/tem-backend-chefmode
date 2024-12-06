@@ -4,7 +4,7 @@ import logging
 import os
 from datetime import datetime, timezone
 
-from flask import abort
+from flask import abort, session
 from flask import request
 from flask import jsonify
 from flask_jwt_extended import create_access_token, get_jwt, jwt_required
@@ -224,6 +224,7 @@ class LogoutResource(Resource):
         now = datetime.now(timezone.utc)
         db.session.add(RevokedToken(user_id=user.id, jti=jti, type=ttype, created_at=now))
         db.session.commit()
+        session.clear()
         return jsonify(msg=f"{ttype.capitalize()} token successfully revoked")
 
 
