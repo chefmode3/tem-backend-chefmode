@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from flask import abort
 from flask import request
@@ -130,7 +130,10 @@ class SignupConfirmResource(Resource):
             user, status = UserService.activate_user(email)
             user_data = user_response_schema.dump(user)
 
-            access_token = create_access_token(identity=email)
+            access_token = create_access_token(
+                identity=email,
+                expires_delta=timedelta(days=1)
+            )
             user_data['access_token'] = access_token
 
             logger.error(f'user reset :1212 {user}')
@@ -196,7 +199,10 @@ class LoginResource(Resource):
 
             data = login_schema.load(request.get_json())
             user_data = UserService.login(data['email'], data['password'])
-            access_token = create_access_token(identity=user_data.email)
+            access_token = create_access_token(
+                identity=user_data.email,
+                expires_delta=timedelta(days=1)
+            )
             if user_data:
                 user = user_response_schema.dump(user_data)
                 user['access_token'] = access_token
