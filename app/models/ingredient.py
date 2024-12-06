@@ -12,6 +12,7 @@ class Ingredient(db.Model):
     unit = db.Column(db.String(512), nullable=False)
     recipe_id = db.Column(db.String(512), db.ForeignKey('recipes.id'), nullable=False)
     nutrition_id = db.Column(db.String(512), db.ForeignKey('nutritions.id'), nullable=False)
+    
     # Relationships
     # recipe = db.relationship('Recipe', back_populates='ingredients')
     # nutrition = db.relationship('Nutrition', back_populates='ingredient', uselist=False)

@@ -77,10 +77,8 @@ class RecipeScrapPost(Resource):
             if content.get('error'):
                 return content, content.pop('status')
 
-            # logger.error(json.dumps(content, indent=4))
-            # data = json.loads(result.get('content'))
-
             if not find:
+                logger.error('test of saving in database')
                 content = RecipeCelService.convert_and_store_recipe(content)
                 content = RecipeSerializer().dump(content)
             send_slack_notification_recipe(content.get('origin'))

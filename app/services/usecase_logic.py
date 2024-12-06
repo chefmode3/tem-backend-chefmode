@@ -1,10 +1,11 @@
-import logging
-from sqlalchemy.exc import SQLAlchemyError
+from __future__ import annotations
 
+import logging
 
 from app.extensions import db
 from app.models.recipe import Recipe
 from app.models.user import UserRecipe
+# from sqlalchemy.exc import SQLAlchemyError
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 class RecipeService:
 
     @staticmethod
-    def get_recipe_by_id(recipe_id: str, serving: str=None):
+    def get_recipe_by_id(recipe_id: str, serving: str = None):
         """
         Get a recipe with its ingredients and processes by ID.
         """
@@ -21,19 +22,42 @@ class RecipeService:
             return None
         if not serving:
             return recipe
+
+        serving = int(serving)
         ingredient_pre_serving = []
+
         for ingredient in recipe.ingredients:
-            quantity = ingredient.get("quantity")
-            new_quantity = (serving * quantity) / recipe.servings
-            ingredient_pre_serving.append({
-                "name": ingredient["name"],
-                "quantity": round(new_quantity, 2),
-                "unit": ingredient["unit"]
-            })
+            quantities = ingredient.get('quantity', [])
+            alternative_measurements = ingredient.get('alternative_measurements', [])
+
+            updated_ingredient = {
+                'name': ingredient['name'],
+                'quantity': [],
+                'unit': ingredient['unit'],
+                'alternative_measurements': []
+            }
+
+            # Adjust the main quantities
+            for qty in quantities:
+                new_quantity = (serving * qty) / recipe.servings
+                updated_ingredient['quantity'].append(round(new_quantity, 2))
+
+            # Adjust the alternative measurements
+            for alt_measure in alternative_measurements:
+                alt_quantities = alt_measure.get('quantity', [])
+                new_alt_measure = {
+                    'unit': alt_measure['unit'],
+                    'quantity': []
+                }
+                for alt_qty in alt_quantities:
+                    new_alt_quantity = (serving * alt_qty) / recipe.servings
+                    new_alt_measure['quantity'].append(round(new_alt_quantity, 2))
+                updated_ingredient['alternative_measurements'].append(new_alt_measure)
+
+            ingredient_pre_serving.append(updated_ingredient)
+
         recipe.ingredients = ingredient_pre_serving
         return recipe
-
-
 
     @staticmethod
     def get_all_recipes(page, page_size):
@@ -46,11 +70,11 @@ class RecipeService:
         pagination = query.paginate(page=page, per_page=page_size, error_out=False)
 
         return {
-            "total": pagination.total,
-            "pages": pagination.pages,
-            "current_page": pagination.page,
-            "page_size": pagination.per_page,
-            "data": [recipe for recipe in pagination.items]
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'current_page': pagination.page,
+            'page_size': pagination.per_page,
+            'data': [recipe for recipe in pagination.items]
         }
 
     @staticmethod
@@ -64,22 +88,22 @@ class RecipeService:
 
         pagination = query.paginate(page=page, per_page=page_size, error_out=False)
         return {
-            "total": pagination.total,
-            "pages": pagination.pages,
-            "current_page": pagination.page,
-            "page_size": pagination.per_page,
-            "data": [
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'current_page': pagination.page,
+            'page_size': pagination.per_page,
+            'data': [
                 {
-                    "id": recipe.id,
-                    "title": recipe.title,
-                    "origin": recipe.origin,
-                    "servings": recipe.servings,
-                    "created_at": recipe.created_at,
-                    "preparation_time": recipe.preparation_time,
-                    "description": recipe.description,
-                    "image_url": recipe.image_url,
-                    "ingredients": recipe.ingredients,
-                    "processes": recipe.processes,
+                    'id': recipe.id,
+                    'title': recipe.title,
+                    'origin': recipe.origin,
+                    'servings': recipe.servings,
+                    'created_at': recipe.created_at,
+                    'preparation_time': recipe.preparation_time,
+                    'description': recipe.description,
+                    'image_url': recipe.image_url,
+                    'ingredients': recipe.ingredients,
+                    'processes': recipe.processes,
                 }
                 for recipe in pagination.items
             ]
@@ -101,13 +125,13 @@ class RecipeService:
         try:
             db.session.commit()
             return {
-                "message": "Recipe flag status updated successfully.",
-                "flag": user_recipe.flag
+                'message': 'Recipe flag status updated successfully.',
+                'flag': user_recipe.flag
             }
         except Exception as e:
             db.session.rollback()
             logger.error(f"Database error occurred: {str(e)}")
-            return {"error": "Database error occurred", "details": str(e)}, 400
+            return {'error': 'Database error occurred', 'details': str(e)}, 400
 
     @staticmethod
     def is_recipe_flagged_by_user(recipe_id, user_id):
@@ -119,7 +143,7 @@ class RecipeService:
         if not user_recipe:
             return None
 
-        return {"flagged": user_recipe.flag}
+        return {'flagged': user_recipe.flag}
 
     @staticmethod
     def search_recipes(search_term, current_user, page=1, page_size=10):
@@ -135,29 +159,29 @@ class RecipeService:
             pagination = query.paginate(page=page, per_page=page_size, error_out=False)
 
             return {
-                "total": pagination.total,
-                "pages": pagination.pages,
-                "current_page": pagination.page,
-                "page_size": pagination.per_page,
-                "data": [
+                'total': pagination.total,
+                'pages': pagination.pages,
+                'current_page': pagination.page,
+                'page_size': pagination.per_page,
+                'data': [
                     {
-                        "id": recipe.id,
-                        "title": recipe.title,
-                        "origin": recipe.origin,
-                        "servings": recipe.servings,
-                        "created_at": recipe.created_at,
-                        "preparation_time": recipe.preparation_time,
-                        "description": recipe.description,
-                        "image_url": recipe.image_url,
-                        "ingredients": recipe.ingredients,
-                        "processes": recipe.processes,
+                        'id': recipe.id,
+                        'title': recipe.title,
+                        'origin': recipe.origin,
+                        'servings': recipe.servings,
+                        'created_at': recipe.created_at,
+                        'preparation_time': recipe.preparation_time,
+                        'description': recipe.description,
+                        'image_url': recipe.image_url,
+                        'ingredients': recipe.ingredients,
+                        'processes': recipe.processes,
                     }
                     for recipe in pagination.items
                 ]
             }
         except Exception as e:
             logger.error(f"Database error occurred: {str(e)}")
-            return {"error": "Database error occurred", "details": str(e)}, 400
+            return {'error': 'Database error occurred', 'details': str(e)}, 400
 
     @staticmethod
     def get_nutrition_by_recipe_id(recipe_id: str, serving: int):
@@ -177,9 +201,9 @@ class RecipeService:
             original_servings = recipe.servings
 
             for nutrition in recipe.nutritions:
-                name = nutrition.get("name")
-                original_total_quantity = nutrition.get("quantity")
-                unit = nutrition.get("unit")
+                name = nutrition.get('name')
+                original_total_quantity = nutrition.get('quantity')
+                unit = nutrition.get('unit')
 
                 if serving:
                     new_total_quantity = (serving * original_total_quantity) / original_servings
@@ -189,17 +213,17 @@ class RecipeService:
                     unit_quantity = original_total_quantity / original_servings
 
                 adjusted_nutritions.append({
-                    "name": name,
-                    "total_quantity": round(new_total_quantity, 2),
-                    "unit_serving": round(unit_quantity, 2),
-                    "unit": unit
+                    'name': name,
+                    'total_quantity': round(new_total_quantity, 2),
+                    'unit_serving': round(unit_quantity, 2),
+                    'unit': unit
                 })
 
             return adjusted_nutritions
 
         except Exception as e:
             logger.error(f"Database error occurred: {str(e)}")
-            return {"error": "Database error occurred", "details": str(e)}, 400
+            return {'error': 'Database error occurred', 'details': str(e)}, 400
 
     @staticmethod
     def get_recipe_by_origin(origin):

@@ -2,7 +2,7 @@
 services:
   redis:
     image: redis
-  
+
   web:
     build:
       context: .
@@ -16,9 +16,11 @@ services:
       - default
     depends_on:
       - chef_mode_db
+    restart: always
 
   celery:
     build: .
+    restart: always
     volumes:
       - .:/app
     command: celery -A manage.celery worker --loglevel=info

@@ -22,7 +22,7 @@ docker exec -it chef_mode_db bash
 `psql -U chefmode`
 ### create a new user and password for the db
 
-    `CREATE USER chefmode WITH PASSWORD chefmodedb`
+    `CREATE USER chefmode WITH PASSWORD 'chefmodedb'`
 
 ### create a new database for the db
     CREATE DATABASE chef_mode_backend OWNER chefmode;
