@@ -1,16 +1,17 @@
+from __future__ import annotations
+
 import logging
 
+from flask import g
+
 from app.extensions import db
-from app.models.nutrition import  Nutrition
-from app.models import (
-    Recipe,
-    Ingredient,
-    Process,
-    UserRecipe,
-    AnonymousUserRecipe,
-    AnonymousUser
-)
-from app.services import UserService
+from app.models import AnonymousUser
+from app.models import AnonymousUserRecipe
+from app.models import Ingredient
+from app.models import Process
+from app.models import Recipe
+from app.models import UserRecipe
+from app.models.nutrition import Nutrition
 
 logger = logging.getLogger(__name__)
 
@@ -59,8 +60,9 @@ class RecipeCelService:
         existing_recipe = Recipe.query.filter_by(
             title=recipe_data.get('title'),
             origin=recipe_data.get('origin'),
-            preparation_time=recipe_data.get('preparation_time'),
-            servings=recipe_data.get('servings')
+            preparation_time=str(recipe_data.get('preparation_time')),
+            servings=recipe_data.get('servings'),
+            description=recipe_data.get('description'),
         ).first()
 
         if existing_recipe:
@@ -68,26 +70,25 @@ class RecipeCelService:
         return RecipeCelService.create_recipe(recipe_data), True
 
     @staticmethod
-    def create_recipe(recipe_data: dict, ingredients_data: dict=None, processes_data: dict=None) -> Recipe:
+    def create_recipe(recipe_data: dict, ingredients_data: dict = None, processes_data: dict = None) -> Recipe:
 
-            recipe = Recipe(
-                title=recipe_data.get('title'),
-                description=recipe_data.get('description'),
-                image_url=recipe_data.get('image_url'),
-                preparation_time=recipe_data.get('preparation_time'),
-                servings=recipe_data.get('servings'),
-                origin=recipe_data.get('origin'),
-                ingredients=recipe_data.get('ingredients'),
-                processes=recipe_data.get('processes'),
-                nutritions=recipe_data.get('nutrition'),
-            )
-            db.session.add(recipe)
-            db.session.commit()
-            return recipe
-
+        recipe = Recipe(
+            title=recipe_data.get('title'),
+            description=recipe_data.get('description'),
+            image_url=recipe_data.get('image_url'),
+            preparation_time=recipe_data.get('preparation_time'),
+            servings=recipe_data.get('servings'),
+            origin=recipe_data.get('origin'),
+            ingredients=recipe_data.get('ingredients'),
+            processes=recipe_data.get('processes'),
+            nutritions=recipe_data.get('nutrition'),
+        )
+        db.session.add(recipe)
+        db.session.commit()
+        return recipe
 
     @staticmethod
-    def create_user_recipe(user_id:int, recipe_id:int):
+    def create_user_recipe(user_id: int, recipe_id: int):
         user_recipe = UserRecipe(
             user_id=user_id,
             recipe_id=recipe_id
@@ -131,7 +132,9 @@ class RecipeCelService:
     def convert_and_store_recipe(recipe_json: dict):
         # Extraire data from JSON
         recipe_data = recipe_json.get('content')
-        user = UserService.get_current_user()
+        user = None
+        if g.get('user', None):
+            user = g.get('user')
 
         recipe_info = recipe_data.get('recipe_information')
         recipe_info['origin'] = recipe_json.get('origin')
@@ -143,9 +146,9 @@ class RecipeCelService:
 
         if not recipe_info['ingredients'] and not recipe_info['processes']:
             logger.warning(f"Recipe from {recipe_info['origin']} has no ingredients or processes. Not saved.")
-            return {"Message": "Recipe has no ingredients or processes and was not saved."}
+            return {'Message': 'Recipe has no ingredients or processes and was not saved.'}
 
-         # create and store recipe
+        # create and store recipe
         recipe, _ = RecipeCelService.get_or_create_recipe(recipe_info)
         if user:
             RecipeCelService.get_or_create_user_recipe(user_id=user['id'], recipe_id=recipe.id)
@@ -164,7 +167,7 @@ class RecipeCelService:
 
     @staticmethod
     def get_or_create_anonyme_user():
-        user_id = "user1234"
+        user_id = 'user1234'
         existing_user = AnonymousUser.query.filter_by(
             identifier=user_id,
         ).first()

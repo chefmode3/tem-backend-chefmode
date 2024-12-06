@@ -32,9 +32,10 @@ class User(db.Model, UserMixin):
     name = db.Column(db.String(512), nullable=True)
     email = db.Column(db.String(512), unique=True, nullable=False)
     activate = db.Column(db.Boolean, default=False)
-    google_token = db.Column(db.String(512), unique=True, nullable=True)
     google_id = db.Column(db.String(512), unique=True, nullable=True)
     password = db.Column(db.String(512), unique=True, nullable=True)
+    deleted = db.Column(db.Boolean, default=False)
+    google_token = db.Column(db.String(2024), unique=True, nullable=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
