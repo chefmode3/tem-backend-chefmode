@@ -173,6 +173,8 @@ class SubscriptionWebhookService:
             s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
             if not s_membership and stripe_user:
                 subscription = Subscription.query.filter_by(price_id=price_id).first()
+                logger.info("subscription_price: %s" % price_id)
+
                 if not subscription:
                     raise SubscriptionException("Internal Server Error", 500)
                 s_membership = SubscriptionMembership(
