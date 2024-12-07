@@ -173,9 +173,7 @@ class SubscriptionWebhookService:
             if not s_membership and stripe_user:
                 subscription = Subscription.query.filter_by(customer_id=customer_id).first()
                 logger.info("subscription_price: %s" % price_id)
-
                 if not subscription:
-
                     raise SubscriptionException("Internal Server Error", 200)
                 s_membership = SubscriptionMembership(
                     user_id=stripe_user.user_id,
@@ -183,7 +181,7 @@ class SubscriptionWebhookService:
                 )
             s_membership.price = price
             s_membership.latest_invoice = invoice
-            s_membership.customer_id = customer_id
+                s_membership.customer_id = customer_id
             s_membership.product_id = product_id
             s_membership.subscription_id = subscription_id
             s_membership.state = status
