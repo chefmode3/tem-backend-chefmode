@@ -181,7 +181,7 @@ class SubscriptionWebhookService:
                 )
             s_membership.price = price
             s_membership.latest_invoice = invoice
-                s_membership.customer_id = customer_id
+            s_membership.customer_id = customer_id
             s_membership.product_id = product_id
             s_membership.subscription_id = subscription_id
             s_membership.state = status
