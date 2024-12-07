@@ -111,12 +111,17 @@ class UserSubscriptionService:
                     }
                 ]
             )
-            stripe_user = StripeUserCheckoutSession(
-                user_id=self.user.id,
-                session_id=response.get("id", ""),
-                price_id=checkout_entity.price_id
-            )
-            db.session.add(stripe_user)
+            
+            session_id=response.get("id", "")
+            stripe_user = StripeUserCheckoutSession.query.filter_by(user_id=self.user.id).first()
+            if not stripe_user:
+                stripe_user = StripeUserCheckoutSession(
+                    user_id=self.user.id,
+                    session_id=session_id
+                )
+                db.session.add(stripe_user)
+            
+            stripe_user.price_id = checkout_entity.price_id
             db.session.commit()
             return response.get("client_secret")
         except StripeError as e:
@@ -161,6 +166,7 @@ class SubscriptionWebhookService:
             if stripe_user:
                 stripe_user.customer_id = customer_id
                 stripe_user.subscription_id = subscription_id
+                
                 db.session.commit()
         elif self.event_type == "invoice.payment_succeeded":
             s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
