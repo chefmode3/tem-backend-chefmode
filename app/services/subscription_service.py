@@ -171,8 +171,9 @@ class SubscriptionWebhookService:
         elif self.event_type == "invoice.payment_succeeded":
             s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
             if not s_membership and stripe_user:
-                subscription = Subscription.query.filter_by(customer_id=customer_id).first()
-                logger.info("subscription_price: %s" % price_id)
+                subscription = Subscription.query.filter_by(price_id=stripe_user.price_id).first()
+                logger.info(Subscription.query.all())
+                logger.info("subscription_price: %s" % subscription)
                 if not subscription:
                     raise SubscriptionException("Internal Server Error", 200)
                 s_membership = SubscriptionMembership(
