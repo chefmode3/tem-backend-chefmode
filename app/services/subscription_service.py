@@ -171,9 +171,7 @@ class SubscriptionWebhookService:
         elif self.event_type == "invoice.payment_succeeded":
             s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
             if not s_membership and stripe_user:
-                subscription = Subscription.query.filter_by(price_id=stripe_user.price_id).first()
-                print(subscription)
-                print(stripe_user.price_id)
+                subscription = Subscription.query.filter_by(customer_id=customer_id).first()
                 logger.info("subscription_price: %s" % price_id)
 
                 if not subscription:
