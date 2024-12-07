@@ -120,6 +120,7 @@ class UserSubscriptionService:
                     session_id=session_id
                 )
                 db.session.add(stripe_user)
+                db.session.commit()
             
             stripe_user.price_id = checkout_entity.price_id
             db.session.commit()
