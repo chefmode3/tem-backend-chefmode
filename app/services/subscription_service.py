@@ -139,7 +139,7 @@ class SubscriptionWebhookService:
     @staticmethod
     def get_checkout_session(session_id) -> None:
         stripe.api_key = os.environ['STRIPE_SECRET_KEY']
-        user_checkout = stripe.checkout.session.retrieve(session_id)
+        user_checkout = stripe.checkout.Session.retrieve(session_id)
         customer_id = user_checkout.get("customer")
         subscription_id = user_checkout.get("subscription")
         amount = user_checkout.get("amount", "")
