@@ -7,6 +7,7 @@ import requests
 from flask import abort
 from flask import request
 from flask import session
+from flask_jwt_extended import create_access_token
 from flask_restx import Namespace
 from flask_restx import Resource
 from google.oauth2 import id_token
@@ -77,7 +78,8 @@ class CallbackResource(Resource):
                         google_token=credentials._id_token,
                         )
             user_data = UserRegisterSchema().dump(user)
-            return {'result': user_data, "access_token": credentials._id_token}, 201
+            access_token = create_access_token(identity=user_data.email)
+            return {'result': user_data, "access_token": access_token}, 201
 
         except ValidationError as err:
             abort(400, description=err.messages)

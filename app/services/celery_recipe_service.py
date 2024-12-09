@@ -76,7 +76,7 @@ class RecipeCelService:
             title=recipe_data.get('title'),
             description=recipe_data.get('description'),
             image_url=recipe_data.get('image_url'),
-            preparation_time=recipe_data.get('preparation_time'),
+            preparation_time=recipe_data.get('total_time'),
             servings=recipe_data.get('servings'),
             origin=recipe_data.get('origin'),
             ingredients=recipe_data.get('ingredients'),
@@ -140,7 +140,7 @@ class RecipeCelService:
         recipe_info['origin'] = recipe_json.get('origin')
 
         recipe_info['ingredients'] = recipe_data.get('ingredients')
-        recipe_info['processes'] = recipe_data.get('processes')
+        recipe_info['processes'] = recipe_data.get('servings')
         recipe_info['nutrition'] = recipe_data.get('nutrition')
         recipe_info['image_url'] = recipe_json.get('image_url')
 

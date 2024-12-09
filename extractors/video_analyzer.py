@@ -94,105 +94,45 @@ def get_video_frames(video_path):
 
     video.release()
     logger.info(f"Number of Frames Captured: {len(base64Frames)}")
-    return recipe_img
+    return recipe_img, base64Frames
 
 
 def process_video(video_path):
-    description = ''
-    # filename = os.path.basename(video_path)
-    logger.info(f"Processing {video_path}...")
+    try:
+        description = ''
+        # filename = os.path.basename(video_path)
+        logger.info(f"Processing {video_path}...")
+        recipe_img = ''
+        video = VideoFileClip(video_path)
 
-    video = VideoFileClip(video_path)
-    if not video.audio:
-        logger.info('No audio track found in the video.')
-        transcript = 'No Transcript available, do not mention this in the final recipe.'
-    else:
-        video_clip_path, audio_clip_path = split_video_audio(video_path)
-        if audio_clip_path:
-            transcript = extract_transcript(audio_clip_path)
-        else:
+        if not video.audio:
+            logger.info('No audio track found in the video.')
             transcript = 'No Transcript available, do not mention this in the final recipe.'
+        else:
+            video_clip_path, audio_clip_path = split_video_audio(video_path)
+            if audio_clip_path:
+                transcript = extract_transcript(audio_clip_path)
+            else:
+                transcript = 'No Transcript available, do not mention this in the final recipe.'
 
-        recipe_img = get_video_frames(video_path)
+        recipe_img, base_64_frames = get_video_frames(video_path)
 
         PROMPT_MESSAGES = [
-                {
-                    'role': 'system',
-                    'content': (
-                        'extract recipe information from video transcripts'
-                        'Extract recipe title, servings, total time in hours or minute, ingredients, and directions.'
-                        'title_process if available'
-                        '2. **Ingredients**: For each ingredient, provide:'
-                        '  - `name`: A  names of the ingredient .'
-                        '  - `quantity`: A list of floats representing the range or exact quantities (e.g., [40, 50] for "40-50g").'
-                        ' - `unit`: The primary unit for the ingredient (e.g., "g", "cups").'
-                        '   - `alternative_measurements`: A list of objects where:'
-                        '     - Each object contains a `unit` (e.g., "cups", "tbsp").'
-                        '     - Each object contains a `quantity` as a list of floats (to support ranges if needed).'
-
-                        '**Example Ingredient**:'
-                        'For "40-50g (4 cups 2 tbsp) of bread flour", the JSON structure should look like this:'
-                        '{'
-                        ' "name":  of bread flours",'
-                        '  "quantity": ['
-                        '    40, 50'
-                        '  ],'
-                        '  "unit": "g",'
-                        '   "alternative_measurements": ['
-                        '{'
-                            '  "quantity": ['
-                            '    4'
-                            '  ],'
-                            '  "unit": "cup",'
-                        '},'
-                        '  "quantity": ['
-                        '    2'
-                        '  ],'
-                        '  "unit": "tbsp",'
-                        ']'
-                        ' },'
-                        ' Ensure the response is strictly in JSON format'
-                        ' and only follows this structure:'
-
-                        '{ '
-                        "  'recipe_information': { "
-                        "    'title': 'string', "
-                        "    'servings': integer, "
-                        "    'preparation_time': 'string', "
-                        "    'description': 'string', "
-                        "    'image_url': 'string' "
-                        '  }, '
-                        "  'ingredients': [ "
-                        '    { '
-
-                        '      "name": "string" '
-                        "      'quantity': List[float], "
-                        "      'unit': 'string', "
-                        "       'alternative_measurements': ["
-                        '     { '
-                        '         "unit": "string",'
-                        '          "quantity": [float]'
-                        '      },'
-                        '],'
-                        '    } '
-                        '  ], '
-                        "  'processes': [ "
-                        '    { '
-                        "      'title_process': 'string', "
-                        "      'step_number': integer, "
-                        "      'instructions': 'string' "
-                        '    } '
-                        '  ], '
-
-                        '}'
-                        'Do not infer or add any information not explicitly stated.'
-                        'only return the result in a json format and not in markdown'
-                        "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
-                        'You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text.'
-                    )
-                },
-                {'role': 'user', 'content': f"Here is the transcript of the video {transcript}"}
-            ]
+            {
+                "role": "user",
+                'content': [
+                    f"You are a video recipe summarizer. "
+                    f"You get information from the video: recipe title, servings,  servings_unit if and only if it available, total time, ingredients, directions. You will output in simple, clear json. Never output a '''markdown identifier before you begin, just the pure formatting. You will ALWAYS supply ingredient amounts."
+                    f"Here is a full transcript of the video: {transcript}.\n"
+                    "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
+                    "These are descriptions of some of the frames from the video. Make sure to analyze the transcript and the frames holistically.",
+                    *map(lambda x: {"type": "image_url",
+                                    "image_url": {"url": f"data:image/jpeg;base64,{x}", "detail": "low"}},
+                         base_64_frames),
+                ]
+            },
+            {'role': 'user', 'content': f"Here is the transcript of the video {transcript}"}
+        ]
 
         params = {
             'model': 'gpt-4o-mini',
@@ -204,4 +144,7 @@ def process_video(video_path):
         result = client.chat.completions.create(**params)
         description = result.choices[0].message.content
 
-    return description, recipe_img
+        return description, recipe_img
+    except Exception as err:
+        logger.error(f"An error occurred while processing the video: {err}")
+        return None, None
