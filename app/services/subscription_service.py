@@ -168,6 +168,13 @@ class SubscriptionWebhookService:
                 stripe_user.customer_id = customer_id
                 stripe_user.subscription_id = subscription_id
                 db.session.commit()
+        if self.event_type == "customer.subscription.updated":
+            customer_id = self.data.get("customer")
+            subscription_id = self.data.get("id")
+            if stripe_user:
+                stripe_user.customer_id = customer_id
+                stripe_user.subscription_id = subscription_id
+                db.session.commit()
 
         elif self.event_type == "invoice.payment_succeeded":
             logger.info("user subscribe for price {}".format(price_id))
