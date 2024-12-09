@@ -172,22 +172,18 @@ class SubscriptionWebhookService:
         elif self.event_type == "invoice.payment_succeeded":
             logger.info("user subscribe for price {}".format(price_id))
             s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
-            if not s_membership and stripe_user:
-                subscription = Subscription.query.filter_by(price_id=stripe_user.price_id).first()
-                logger.info(Subscription.query.all())
-                logger.info("subscription_price: %s" % subscription)
+            if not s_membership:
+                subscription = Subscription.query.filter_by(price_id=price_id).first()
+                logger.info("subscription_price: %s" % subscription.plan_name)
                 if not subscription:
-                    raise SubscriptionException("Internal Server Error", 200)
+                    return 200
                 s_membership = SubscriptionMembership(
                     user_id=stripe_user.user_id,
                     subscription=subscription.id
                 )
-            else:
-                subscription = Subscription.query.filter_by(price_id=str(price_id)).first()
-                s_membership = SubscriptionMembership(
-                    user_id=stripe_user.user_id,
-                    subscription=subscription.id
-                )
+                db.session.add(s_membership)
+                db.session.commit()
+
             s_membership.price = price
             s_membership.latest_invoice = invoice
             s_membership.customer_id = customer_id
@@ -197,7 +193,6 @@ class SubscriptionWebhookService:
             s_membership.purchase_date = purchase_date
             s_membership.expired_at = expired_at
             s_membership.payment_frequency = payment_frequency
-            db.session.add(s_membership)
             db.session.commit()
             logger.info(f"PaymentIntent succeeded")
         elif self.event_type in  ["invoice.payment_failed", "customer.subscription.deleted"]:
