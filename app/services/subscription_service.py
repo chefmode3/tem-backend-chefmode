@@ -187,7 +187,7 @@ class SubscriptionWebhookService:
         price_id = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("id")
 
         stripe_user = StripeUserCheckoutSession.query.filter(
-            or_(session_id==session_id, customer_id==customer_id)
+            or_(session_id==session_id, customer_id==customer_id, price_id==price_id)
         ).first()
         if self.event_type == "checkout.session.completed":
             customer_id = self.data.get("customer")
