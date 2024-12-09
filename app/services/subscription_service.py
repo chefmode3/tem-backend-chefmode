@@ -168,6 +168,7 @@ class SubscriptionWebhookService:
                 stripe_user.customer_id = customer_id
                 stripe_user.subscription_id = subscription_id
                 db.session.commit()
+
         elif self.event_type == "invoice.payment_succeeded":
             s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
             if not s_membership and stripe_user:
@@ -176,6 +177,12 @@ class SubscriptionWebhookService:
                 logger.info("subscription_price: %s" % subscription)
                 if not subscription:
                     raise SubscriptionException("Internal Server Error", 200)
+                s_membership = SubscriptionMembership(
+                    user_id=stripe_user.user_id,
+                    subscription=subscription.id
+                )
+            else:
+                subscription = Subscription.query.filter_by(price_id=price_id).first()
                 s_membership = SubscriptionMembership(
                     user_id=stripe_user.user_id,
                     subscription=subscription.id
