@@ -67,8 +67,11 @@ class CallbackResource(Resource):
             )
 
             user = User.query.filter_by(email=id_info.get('email')).first()
+            access_token = create_access_token(identity=user.email)
             if user:
-                return {"access_token": credentials._id_token}, 200
+                user_data = UserRegisterSchema().dump(user)
+                user_data['access_token'] = access_token
+                return user_data, 200
 
             user = UserService.create_user(
                         email=id_info.get('email'),
@@ -78,8 +81,8 @@ class CallbackResource(Resource):
                         google_token=credentials._id_token,
                         )
             user_data = UserRegisterSchema().dump(user)
-            access_token = create_access_token(identity=user_data.email)
-            return {'result': user_data, "access_token": access_token}, 201
+            user_data['access_token'] = access_token
+            return user_data, 201
 
         except ValidationError as err:
             abort(400, description=err.messages)

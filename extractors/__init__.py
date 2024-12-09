@@ -100,17 +100,16 @@ def fetch_description(request_data):
         recipe_info['nutrition'] = nutrition_json['nutritions']
         logger.info(image_url)
         recipe_info['image_url'] = image_url
+        recipe_info['origin'] = video_url
         # logger.info(json.loads(recipe))
         final_content = {
             'content': recipe_info,
-            'origin': video_url,
-            'image_url': image_url
         }
 
         return final_content
     except Exception as e:
         logger.error(f"An error occurred while fetching the description.{e}")
-        pass
+        return None
 
 
 def remove_file(file_path_to_remove):

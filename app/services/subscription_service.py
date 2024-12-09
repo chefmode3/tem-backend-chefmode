@@ -111,12 +111,18 @@ class UserSubscriptionService:
                     }
                 ]
             )
-            stripe_user = StripeUserCheckoutSession(
-                user_id=self.user.id,
-                session_id=response.get("id", ""),
-                price_id=checkout_entity.price_id
-            )
-            db.session.add(stripe_user)
+            
+            session_id=response.get("id", "")
+            stripe_user = StripeUserCheckoutSession.query.filter_by(user_id=self.user.id).first()
+            if not stripe_user:
+                stripe_user = StripeUserCheckoutSession(
+                    user_id=self.user.id,
+                    session_id=session_id
+                )
+                db.session.add(stripe_user)
+                db.session.commit()
+            
+            stripe_user.price_id = checkout_entity.price_id
             db.session.commit()
             return response.get("client_secret")
         except StripeError as e:
@@ -162,16 +168,12 @@ class SubscriptionWebhookService:
                 stripe_user.customer_id = customer_id
                 stripe_user.subscription_id = subscription_id
                 db.session.commit()
-        elif self.event_type == "invoice.payment_succeeded":
-            s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
-            if not s_membership and stripe_user:
-                subscription = Subscription.query.filter_by(price_id=price_id).first()
-                if not subscription:
-                    raise SubscriptionException("Internal Server Error", 500)
-                s_membership = SubscriptionMembership(
-                    user_id=stripe_user.user_id,
-                    subscription=subscription.id
-                )
+        if self.event_type == "customer.subscription.updated":
+            customer_id = self.data.get("customer")
+            subscription_id = self.data.get("id")
+            s_membership = SubscriptionMembership.query.filter(
+                or_(subscription_id == subscription_id, customer_id == customer_id)
+            )
             s_membership.price = price
             s_membership.latest_invoice = invoice
             s_membership.customer_id = customer_id
@@ -181,7 +183,32 @@ class SubscriptionWebhookService:
             s_membership.purchase_date = purchase_date
             s_membership.expired_at = expired_at
             s_membership.payment_frequency = payment_frequency
-            db.session.add(s_membership)
+            db.session.commit()
+
+        elif self.event_type == "invoice.payment_succeeded":
+            logger.info("user subscribe for price {}".format(price_id))
+            s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
+            if not s_membership:
+                subscription = Subscription.query.filter_by(price_id=price_id).first()
+                logger.info("subscription_price: %s" % subscription.plan_name)
+                if not subscription:
+                    return 200
+                s_membership = SubscriptionMembership(
+                    user_id=stripe_user.user_id,
+                    subscription=subscription.id
+                )
+                db.session.add(s_membership)
+                db.session.commit()
+
+            s_membership.price = price
+            s_membership.latest_invoice = invoice
+            s_membership.customer_id = customer_id
+            s_membership.product_id = product_id
+            s_membership.subscription_id = subscription_id
+            s_membership.state = status
+            s_membership.purchase_date = purchase_date
+            s_membership.expired_at = expired_at
+            s_membership.payment_frequency = payment_frequency
             db.session.commit()
             logger.info(f"PaymentIntent succeeded")
         elif self.event_type in  ["invoice.payment_failed", "customer.subscription.deleted"]:
@@ -193,4 +220,4 @@ class SubscriptionWebhookService:
             db.session.commit()
             logger.info(f"Invoice payment failed")
         else:
-            logger.info(f"Unhandled event type")
+            logger.info("Unhandled event type {}".format(self.event_type))

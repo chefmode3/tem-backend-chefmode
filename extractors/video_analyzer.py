@@ -122,7 +122,7 @@ def process_video(video_path):
                 "role": "user",
                 'content': [
                     f"You are a video recipe summarizer. "
-                    f"You get information from the video: recipe title, servings,  servings_unit if and only if it available, total time, ingredients, directions. You will output in simple, clear json. Never output a '''markdown identifier before you begin, just the pure formatting. You will ALWAYS supply ingredient amounts."
+                    f"You get information from the video: recipe title, servings,  servings with unit if and only if it available, total time, ingredients, directions. You will output in simple, clear json. Never output a '''markdown identifier before you begin, just the pure formatting. You will ALWAYS supply ingredient amounts."
                     f"Here is a full transcript of the video: {transcript}.\n"
                     "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
                     "These are descriptions of some of the frames from the video. Make sure to analyze the transcript and the frames holistically.",

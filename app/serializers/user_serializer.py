@@ -61,3 +61,7 @@ class UserActivationSchema(Schema):
 
 class UpdateUserSchema(Schema):
     name = fields.String(required=False, validate=validate.Length(max=64))
+
+
+class DeleteUserSchema(Schema):
+    user_id = fields.String(required=True)

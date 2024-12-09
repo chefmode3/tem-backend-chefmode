@@ -25,7 +25,8 @@ from app.serializers.user_serializer import (
     PasswordResetRequestSchema,
     ResetPasswordSchema,
     UserActivationSchema,
-    UpdateUserSchema
+    UpdateUserSchema,
+    DeleteUserSchema
 )
 from app.utils.send_email import activation_or_reset_email, verify_reset_token
 
@@ -56,6 +57,8 @@ reset_password_model = convert_marshmallow_to_restx_model(auth_ns, reset_passwor
 update_user_schema = UpdateUserSchema()
 update_user_model = convert_marshmallow_to_restx_model(auth_ns, update_user_schema)
 
+delete_user_schema = DeleteUserSchema()
+
 
 @auth_ns.route('/signup')
 class SignupResource(Resource):
@@ -76,7 +79,7 @@ class SignupResource(Resource):
                         }, 200
             email = user_data.email
             name = user_data.name
-            subject = "Email Activation"
+            subject = "Welcome to Chefmode!"
             url_frontend = os.getenv('VERIFY_EMAIL_URL')
             template = 'welcome_email.html'
 
@@ -161,7 +164,7 @@ class EmailVerificationResource(Resource):
                 return {"result": "User account is already verified."}, 200
 
             name = user.name
-            subject = "Verification Email"
+            subject = "Chefmode: Email Activation"
             url_frontend = os.getenv('VERIFY_EMAIL_URL')
             template = 'welcome_email.html'
 
@@ -233,14 +236,13 @@ class PasswordResetRequestResource(Resource):
         200, "Password reset email sent", model=password_reset_request_model
     )
     @auth_ns.response(400, "Validation Error")
-    @token_required
     def post(self):
         try:
             data = password_reset_request_schema.load(request.get_json())
             email = data.get('email')
             url_frontend = os.getenv('RESET_PASSWORD_URL')
 
-            subject = 'Password Reset Request'
+            subject = 'Chefmode: Reset Password'
 
             user = UserService.get_user_by_email(email)
             if not user:
@@ -308,6 +310,29 @@ class UpdateUserResource(Resource):
             return {"message": "User updated successfully",
                     "user": user_response_schema.dump(user)
                     }, 200
+        except ValidationError as err:
+            logger.error(f'{err.messages} : status, 400')
+            return {"errors": err.messages}, 400
+        except Exception as e:
+            logger.error(f'Unexpected error: {str(e)} : status, 400')
+            return {"errors": "Unexpected error occurred"}, 400
+
+
+@auth_ns.route('/delete/<string:user_id>')
+class DeleteUserResource(Resource):
+
+    @auth_ns.response(200, "User successfully deleted")
+    @auth_ns.response(404, "User not found")
+    @auth_ns.response(400, "Validation Error")
+    @token_required
+    def delete(self, user_id):
+        """Delete user information (except password)."""
+        try:
+            user = UserService.delete_user(user_id)
+            if not user:
+                return {"message": "User not found"}, 404
+
+            return {"message": "User successfully deleted"}, 200
         except ValidationError as err:
             logger.error(f'{err.messages} : status, 400')
             return {"errors": err.messages}, 400
