@@ -170,6 +170,7 @@ class SubscriptionWebhookService:
                 db.session.commit()
 
         elif self.event_type == "invoice.payment_succeeded":
+            logger.info("user subscribe for price {}".format(price_id))
             s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
             if not s_membership and stripe_user:
                 subscription = Subscription.query.filter_by(price_id=stripe_user.price_id).first()
@@ -182,7 +183,7 @@ class SubscriptionWebhookService:
                     subscription=subscription.id
                 )
             else:
-                subscription = Subscription.query.filter_by(price_id=price_id).first()
+                subscription = Subscription.query.filter_by(price_id=str(price_id)).first()
                 s_membership = SubscriptionMembership(
                     user_id=stripe_user.user_id,
                     subscription=subscription.id
