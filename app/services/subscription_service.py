@@ -248,5 +248,5 @@ class SubscriptionWebhookService:
             db.session.commit()
             logger.info(f"Invoice payment failed")
         else:
-            self.get_checkout_session(session_id, self.event_type)
+            self.get_checkout_session(session_id)
             logger.info("Unhandled event type {}".format(self.event_type))
