@@ -154,7 +154,8 @@ class RecipeCelService:
         user = None
         if g.get('user', None):
             user = g.get('user')
-        logger.info(json.dumps(recipe_data))
+
+        logger.error(user)
 
 
         if not recipe_data['ingredients'] and not recipe_data['processes']:
@@ -170,18 +171,18 @@ class RecipeCelService:
             recipe_data.get('directions'),
             recipe_data.get('nutrition'),
             )
-        logger.info(json.dumps(recipe))
+        # logger.info(json.dumps(recipe))
 
-        #  create and store recipe
-        recipe, _ = RecipeCelService.get_or_create_recipe(recipe_data)
-        # link recipe to a user
-        if user:
-            RecipeCelService.get_or_create_user_recipe(user_id=user['id'], recipe_id=recipe.id)
-        else:
-            anonymous_user, is_exist = RecipeCelService.get_or_create_anonyme_user()
-            RecipeCelService.create_anonyme_user_recipe(user=anonymous_user, recipe=recipe)
-
-        return recipe
+        # #  create and store recipe
+        # recipe, _ = RecipeCelService.get_or_create_recipe(recipe_data)
+        # # link recipe to a user
+        # if user:
+        #     RecipeCelService.get_or_create_user_recipe(user_id=user['id'], recipe_id=recipe.id)
+        # else:
+        #     anonymous_user, is_exist = RecipeCelService.get_or_create_anonyme_user()
+        #     RecipeCelService.create_anonyme_user_recipe(user=anonymous_user, recipe=recipe)
+        #
+        # return recipe
 
     @staticmethod
     def get_or_create_anonyme_user():
