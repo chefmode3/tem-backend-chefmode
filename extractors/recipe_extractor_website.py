@@ -139,7 +139,7 @@ def scrape_and_analyze_recipe(url):
                 {
                     'role': 'system',
                     'content': (
-                        "You get information from recipe websites: recipe title, servings with unit if and only if it available, total time, ingredients, "
+                        "You get information from recipe websites: recipe, title, servings with unit if and only if it available, total time, ingredients, "
                         "directions. "
                         "You will output in simple json. You will not output any description of the recipe. "
                         "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"

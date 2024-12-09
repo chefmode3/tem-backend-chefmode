@@ -161,6 +161,17 @@ class RecipeCelService:
             logger.warning(f"Recipe from {recipe_data['origin']} has no ingredients or processes. Not saved.")
             return {'Message': 'Recipe has no ingredients or processes and was not saved.'}
 
+        recipe = (
+            recipe_data.get('title'),
+            recipe_data.get('image_url'),
+            recipe_data.get('total_time'),
+            recipe_data.get('origin'),
+            recipe_data.get('ingredients'),
+            recipe_data.get('directions'),
+            recipe_data.get('nutrition'),
+            )
+        logger.info(json.dumps(recipe))
+
         #  create and store recipe
         recipe, _ = RecipeCelService.get_or_create_recipe(recipe_data)
         # link recipe to a user
