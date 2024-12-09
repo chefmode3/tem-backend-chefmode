@@ -142,7 +142,7 @@ class SubscriptionWebhookService:
         user_checkout = stripe.checkout.Session.retrieve(session_id)
         customer_id = user_checkout.get("customer")
         subscription_id = user_checkout.get("subscription")
-        amount = user_checkout.get("amount", "")
+        amount = user_checkout.get("amount", 0)
         if user_checkout.get("status", "") == "complete" and customer_id:
             stripe_user = StripeUserCheckoutSession.query.filter(
                 or_(session_id == session_id, customer_id == customer_id)
@@ -155,6 +155,7 @@ class SubscriptionWebhookService:
                         subscription=subscription.id,
                         price=stripe_user.price_id,
                         customer_id=customer_id,
+                        state="paid",
                         subscription_id=subscription_id
                     )
                     s_membership.price=amount
