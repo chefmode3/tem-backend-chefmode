@@ -1,4 +1,5 @@
 import logging
+import os
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -135,6 +136,33 @@ class SubscriptionWebhookService:
     event_type: str
 
 
+    @staticmethod
+    def get_checkout_session(session_id) -> None:
+        stripe.api_key = os.environ['STRIPE_SECRET_KEY']
+        user_checkout = stripe.checkout.session.retrieve(session_id)
+        customer_id = user_checkout.get("customer")
+        subscription_id = user_checkout.get("subscription")
+        amount = user_checkout.get("amount", "")
+        if user_checkout.get("status", "") == "complete" and customer_id:
+            stripe_user = StripeUserCheckoutSession.query.filter(
+                or_(session_id == session_id, customer_id == customer_id)
+            ).first()
+            if stripe_user:
+                subscription = Subscription.query.filter_by(price_id=stripe_user.price_id).first()
+                if subscription:
+                    s_membership = SubscriptionMembership(
+                        user_id=stripe_user.user_id,
+                        subscription=subscription.id,
+                        price=stripe_user.price_id,
+                        customer_id=customer_id,
+                        subscription_id=subscription_id
+                    )
+                    s_membership.price=amount
+                    db.session.add(s_membership)
+                    db.session.commit()
+        return user_checkout
+
+
     def execute(self):
         session_id = self.data.get("id")
         subscription_id = self.data.get("subscription")
@@ -220,4 +248,5 @@ class SubscriptionWebhookService:
             db.session.commit()
             logger.info(f"Invoice payment failed")
         else:
+            self.get_checkout_session(session_id)
             logger.info("Unhandled event type {}".format(self.event_type))
