@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import re
+from fractions import Fraction
 
 from app.extensions import db
 from app.models.recipe import Recipe
@@ -24,39 +26,11 @@ class RecipeService:
             return recipe
 
         serving = int(serving)
-        ingredient_pre_serving = []
+        old_serving = recipe.servings
 
-        for ingredient in recipe.ingredients:
-            quantities = ingredient.get('quantity', [])
-            alternative_measurements = ingredient.get('alternative_measurements', [])
+        ingredients = recipe.ingredients
 
-            updated_ingredient = {
-                'name': ingredient['name'],
-                'quantity': [],
-                'unit': ingredient['unit'],
-                'alternative_measurements': []
-            }
-
-            # Adjust the main quantities
-            for qty in quantities:
-                new_quantity = (serving * qty) / recipe.servings
-                updated_ingredient['quantity'].append(round(new_quantity, 2))
-
-            # Adjust the alternative measurements
-            for alt_measure in alternative_measurements:
-                alt_quantities = alt_measure.get('quantity', [])
-                new_alt_measure = {
-                    'unit': alt_measure['unit'],
-                    'quantity': []
-                }
-                for alt_qty in alt_quantities:
-                    new_alt_quantity = (serving * alt_qty) / recipe.servings
-                    new_alt_measure['quantity'].append(round(new_alt_quantity, 2))
-                updated_ingredient['alternative_measurements'].append(new_alt_measure)
-
-            ingredient_pre_serving.append(updated_ingredient)
-
-        recipe.ingredients = ingredient_pre_serving
+        recipe.ingredients = adjust_ingredients(ingredients, serving, old_serving)
         return recipe
 
     @staticmethod
@@ -234,3 +208,33 @@ class RecipeService:
 
         if origin_recipe:
             return origin_recipe
+        return None
+
+
+def adjust_ingredients(ingredients, serving_factor, original_serving):
+    updated_ingredients = []
+
+    for line in ingredients:
+        # find all quantity and also fractions in the line
+        matches = re.findall(r'\d+\s*/\s*\d+|\d+', line)
+        if matches:
+            updated_line = line
+            for match in matches:
+                # Convertir en fraction ou entier
+                if '/' in match:
+                    original_value = Fraction(match)
+                else:
+                    original_value = int(match)
+
+                # Ajuster la quantité
+                adjusted_value = (original_value * serving_factor) / original_serving
+                if not type(adjusted_value) == Fraction:
+                    adjusted_value = int(adjusted_value)
+
+                # Remplacer dans la ligne d'ingrédient
+                updated_line = updated_line.replace(str(match), str(adjusted_value))
+            updated_ingredients.append(updated_line)
+        else:
+            updated_ingredients.append(line)
+
+    return updated_ingredients
