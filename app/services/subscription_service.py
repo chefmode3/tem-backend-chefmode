@@ -172,7 +172,7 @@ class SubscriptionWebhookService:
             customer_id = self.data.get("customer")
             subscription_id = self.data.get("id")
             s_membership = SubscriptionMembership.query.filter(
-                or_(session_id == session_id, customer_id == customer_id)
+                or_(subscription_id == subscription_id, customer_id == customer_id)
             )
             s_membership.price = price
             s_membership.latest_invoice = invoice
