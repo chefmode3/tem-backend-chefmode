@@ -18,7 +18,7 @@ class Recipe(db.Model):
     created_at = db.Column(DateTime, default=datetime.utcnow, nullable=False)
 
     preparation_time = db.Column(db.String(255), nullable=True)
-    description = db.Column(db.Text, nullable=True)
+    unit_serving = db.Column(db.String(255), nullable=True)
     image_url = db.Column(db.String(256), nullable=True)
 
     ingredients = db.Column(db.JSON, nullable=True)

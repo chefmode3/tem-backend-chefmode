@@ -118,8 +118,8 @@ def scrape_and_analyze_recipe(url):
     print(f"Token Count: {token_count}")
 
     # Check if token count is below 1000
-    if token_count < 1000:
-        raise ValueError('The content has fewer than 1,000 tokens, which does not meet the minimum requirement.')
+    # if token_count < 1000:
+    #     raise ValueError('The content has fewer than 1,000 tokens, which does not meet the minimum requirement.')
 
     # Limit body content to the first 150,000 characters if it exceeds this character count
     if len(body_content) > 50000:
@@ -139,77 +139,26 @@ def scrape_and_analyze_recipe(url):
                 {
                     'role': 'system',
                     'content': (
-                        'Extract recipe title, servings, total time in hours or minute, ingredients, and directions.'
-                        'title_process if available'
-                        '2. **Ingredients**: For each ingredient, provide:'
-                        '  - `name`: A  names of the ingredient .'
-                        '  - `quantity`: A list of floats representing the range or exact quantities (e.g., [40, 50] for "40-50g").'
-                        ' - `unit`: The primary unit for the ingredient (e.g., "g", "cups").'
-                        '   - `alternative_measurements`: A list of objects where:'
-                        '     - Each object contains a `unit` (e.g., "cups", "tbsp").'
-                        '     - Each object contains a `quantity` as a list of floats (to support ranges if needed).'
-
-                        '**Example Ingredient**:'
-                        'For "40-50g (4 cups 2 tbsp) of bread flour", the JSON structure should look like this:'
-                        '{'
-                        ' "name":  of bread flours",'
-                        '  "quantity": ['
-                        '    40, 50'
-                        '  ],'
-                        '  "unit": "g",'
-                        '   "alternative_measurements": ['
-                        '{'
-                            '  "quantity": ['
-                            '    4'
-                            '  ],'
-                            '  "unit": "cup",'
-                        '},'
-                        '  "quantity": ['
-                        '    2'
-                        '  ],'
-                        '  "unit": "tbsp",'
-                        ']'
-                        ' },'
-                        ' Ensure the response is strictly in JSON format'
-                        ' and only follows this structure:'
-
-                        '{ '
-                        "  'recipe_information': { "
-                        "    'title': 'string', "
-                        "    'servings': integer, "
-                        "    'preparation_time': 'string', "
-                        "    'description': 'string', "
-                        '  }, '
-                        "  'ingredients': [ "
-                        '    { '
-
-                        '      "name": "string" '
-                        "      'quantity': List[float], "
-                        "      'unit': 'string', "
-                        "       'alternative_measurements': ["
-                        '       { '
-                        '         "unit": "string",'
-                        '          "quantity": [float]'
-                        '       },'
-                        '       ],'
-                        '    } '
-                        '  ], '
-                        "  'processes': [ "
-                        '    { '
-                        "      'title_process': 'string', "
-                        "      'step_number': integer, "
-                        "      'instructions': 'string' "
-                        '    } '
-                        '  ], '
-
-                        '}'
-                        'Do not infer or add any information not explicitly stated.'
-                            'only return the result in a json format and not in markdown'
-                            "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
-                            'You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text.'
+                        "You get information from recipe websites: recipe, title, servings with unit if and only if it available, total time, ingredients, "
+                        "directions. "
+                        "For each recipe described in the text, retrieve ONLY the "
+                        "following fields:"
+                        "title: (The recipe's name),"
+                        "servings: (Number of servings, if stated),"
+                        
+                        "total_time: (Total preparation and cooking time as a single string),"
+                        "ingredients: (Each ingredient should a single line for it),"
+                        "directions: (A list of steps for making the recipe, numbered or as separate entries, exactly as described in the order they appear in the video)."
+                        "No nested objects other than these ones."
+                        "Never output a '''markdown identifier before you begin and return the value in object format that can easily convert into the json"
+                        "You will output in simple json. You will not output any description of the recipe. "
+                        "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
+                        "You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text."
                         )
                 },
-                {'role': 'user', 'content': f"Title: {title}\nURL: {url}\n\n{body_content}"}
+                {"role": "user", "content": f"Title: {title}\nContent: {body_content}\n\n"
+                                            f"Never output a '''markdown identifier before you begin, just the pure "
+                                            f"formatting."}
             ]
         )
         end = time.time()
@@ -220,14 +169,13 @@ def scrape_and_analyze_recipe(url):
         s3_file_name = f'{uuid.uuid4()}_image.jpg'
         s3_url = save_image_to_s3_from_url(main_image_url, s3_file_name)
         logger.info(f"s3_image: {s3_url}")
+        return recipe_info, got_image, s3_url
     except Exception as e:
-        logger.error(f"AI analysis failed: {e}")
-        recipe_info = None
-
-    return recipe_info, got_image, s3_url
+        logger.error(f"An error occurred while processing the recipe analysis failed: {e}")
+    return None, False, None
 
 
-def analyse_nutritions_base_ingredient(ingredient):
+def analyse_nutrition_base_ingredient(ingredient):
     try:
         start = time.time()
         ai_response = client.chat.completions.create(

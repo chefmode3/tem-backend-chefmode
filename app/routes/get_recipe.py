@@ -68,26 +68,31 @@ class RecipeScrapPost(Resource):
         except Exception as e:
             abort(400, description=f"Invalid task ID: {str(e)}")
 
-        if res.state == 'PENDING':
-            return {'status': 'PENDING'}, 202
-        elif res.state == 'SUCCESS':
-            result: dict = res.result
+        try:
+            if res.state == 'PENDING':
+                return {'status': 'PENDING'}, 202
+            elif res.state == 'SUCCESS':
+                result: dict = res.result
 
-            content = result.get('result')
-            find = result.get('find')
-            if content.get('error'):
-                return content, content.pop('status')
+                content = result.get('result')
 
-            if not find:
-                logger.error('test of saving in database')
-                content = RecipeCelService.convert_and_store_recipe(content)
-                content = RecipeSerializer().dump(content)
-            app_settings = os.getenv('APP_SETTINGS')
-            if app_settings == 'app.config.ProductionConfig':
-                send_slack_notification_recipe(content.get('origin'))
-            return content, 200
+                logger.info(content)
+                find = result.get('find')
+                if content.get('error'):
+                    return content, content.pop('status')
 
-        elif res.state == 'FAILURE':
-            return {'status': 'FAILURE', 'message': str(res.result)}, 400
-        else:
-            return {'status': res.state}, 202
+                if not find:
+                    # logger.error('test of saving in database')
+                    content = RecipeCelService.convert_and_store_recipe(content)
+                    content = RecipeSerializer().dump(content)
+                app_settings = os.getenv('APP_SETTINGS')
+                if app_settings == 'app.config.ProductionConfig':
+                    send_slack_notification_recipe(content.get('origin'))
+                return content, 200
+
+            elif res.state == 'FAILURE':
+                return {'status': 'FAILURE', 'message': str(res.result)}, 400
+            else:
+                return {'status': res.state}, 202
+        except Exception as e:
+            abort(400, description=f"unpexted request occured")
