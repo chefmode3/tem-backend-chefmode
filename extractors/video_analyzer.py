@@ -121,7 +121,18 @@ def process_video(video_path):
             {
                 "role": "user",
                 'content': [
-                    f"You are a video recipe summarizer. "
+                     "Extract recipe information from video transcripts in a consistent, structured format. For each recipe described in the video, retrieve ONLY the "
+                        "following fields:"
+                        "title: (The recipe's name),"
+                        "servings: (Number of servings, if stated),"
+                        
+                        "total_time: (Total preparation and cooking time as a single string),"
+                        "ingredients: (Each ingredient should a single line for it),"
+                        "directions: (A list of steps for making the recipe, numbered or as separate entries, exactly as described in the order they appear in the video)."
+                        "No nested objects other than these ones."
+                        "Never output a '''markdown identifier before you begin and return the value in object format that can easily convert into the json"
+                        "Provide this data in the same order and structure for each recipe without additional comments, descriptions, or variations.  maintain the structure."
+
                     f"You get information from the video: recipe, title, servings,  servings with unit if and only if it available, total time, ingredients, directions. You will output in simple, clear json. Never output a '''markdown identifier before you begin, just the pure formatting. You will ALWAYS supply ingredient amounts."
                     f"Here is a full transcript of the video: {transcript}.\n"
                     "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"

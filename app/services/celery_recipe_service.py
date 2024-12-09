@@ -159,7 +159,7 @@ class RecipeCelService:
 
         if not recipe_data['ingredients'] and not recipe_data['processes']:
             logger.warning(f"Recipe from {recipe_data['origin']} has no ingredients or processes. Not saved.")
-            return {'Message': 'Recipe has no ingredients or processes and was not saved.'}
+            return {'error': 'Recipe has no ingredients or processes and was not saved.'}
 
         recipe = (
             recipe_data.get('title'),

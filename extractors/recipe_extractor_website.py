@@ -141,6 +141,16 @@ def scrape_and_analyze_recipe(url):
                     'content': (
                         "You get information from recipe websites: recipe, title, servings with unit if and only if it available, total time, ingredients, "
                         "directions. "
+                        "For each recipe described in the text, retrieve ONLY the "
+                        "following fields:"
+                        "title: (The recipe's name),"
+                        "servings: (Number of servings, if stated),"
+                        
+                        "total_time: (Total preparation and cooking time as a single string),"
+                        "ingredients: (Each ingredient should a single line for it),"
+                        "directions: (A list of steps for making the recipe, numbered or as separate entries, exactly as described in the order they appear in the video)."
+                        "No nested objects other than these ones."
+                        "Never output a '''markdown identifier before you begin and return the value in object format that can easily convert into the json"
                         "You will output in simple json. You will not output any description of the recipe. "
                         "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
                         "You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text."
