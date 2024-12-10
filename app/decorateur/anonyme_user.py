@@ -69,29 +69,39 @@ def track_anonymous_requests(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         try:
-            # Retrieve the user from the global context
-            user = g.get('user', None)
+            # Call the decorated function and get the response
+            response = f(*args, **kwargs)
 
-            # Ensure the user exists and has a request_count attribute
-            if not user:
-                Logger.error('No user found in global context')
-                return f(*args, **kwargs)
+            # Determine the status code
+            if isinstance(response, tuple) and len(response) == 2:
+                status_code = response[1]
+            else:
+                status_code = getattr(response, 'status_code', 200)  # Default to 200 if not a tuple
 
-            # Ensure the user has a request_count
-            if not hasattr(user, 'request_count') or user.request_count is None:
-                Logger.error('User has no request_count attribute or it is None')
-                return f(*args, **kwargs)
+            # Check if the response indicates success (HTTP 200-299)
+            if 200 <= status_code < 300:
+                # Retrieve the user from the global context
+                user = g.get('user', None)
 
-            # Increment the request count
-            updated_user = AnonymeUserService.increment_request_count(user.id)
-            Logger.info(f"Request count for user {user.id}: {updated_user.request_count}")
+                # Ensure the user exists and has a request_count attribute
+                if not user:
+                    Logger.error('No user found in global context')
+                    return response  # Return original response
 
-            # Check if the request limit is exceeded
-            if updated_user.request_count >= 6:
-                Logger.warning(f"Request limit reached for user {user.id}")
-                return {'error': 'Maximum free requests reached. Please register.'}, 403
+                if not hasattr(user, 'request_count') or user.request_count is None:
+                    Logger.error('User has no request_count attribute or it is None')
+                    return response  # Return original response
 
-            return f(*args, **kwargs)
+                # Increment the request count
+                updated_user = AnonymeUserService.increment_request_count(user.id)
+                Logger.info(f"Request count for user {user.id}: {updated_user.request_count}")
+
+                # Check if the request limit is exceeded
+                if updated_user.request_count >= 6:
+                    Logger.warning(f"Request limit reached for user {user.id}")
+                    return {'error': 'Maximum free requests reached. Please register.'}, 403
+
+            return response
 
         except Exception as err:
             Logger.error(f"Error in track_anonymous_requests: {err}")
