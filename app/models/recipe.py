@@ -21,6 +21,8 @@ class Recipe(db.Model):
     description = db.Column(db.Text, nullable=True)
     image_url = db.Column(db.String(512), nullable=True)
 
+    unit_serving = db.Column(db.String(255), nullable=True)
+
     ingredients = db.Column(db.JSON, nullable=True)
     processes = db.Column(db.JSON, nullable=True)
     nutritions = db.Column(db.JSON, nullable=True)

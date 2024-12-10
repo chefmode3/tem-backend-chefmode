@@ -6,11 +6,12 @@ import os
 import time
 import uuid
 
+
 from app.utils.s3_storage import upload_to_s3
 from extractors.facebook import download_facebook_video
 from extractors.instagram import download_instagram_video
 from extractors.new_youtube import download_youtube
-from extractors.recipe_extractor_website import analyse_nutritions_base_ingredient
+from extractors.recipe_extractor_website import analyse_nutrition_base_ingredient
 from extractors.recipe_extractor_website import scrape_and_analyze_recipe
 from extractors.tiktok import download_tiktok
 from extractors.video_analyzer import process_video
@@ -76,7 +77,7 @@ def fetch_description(request_data):
             # Wait for the download to complete
             time.sleep(SLEEP_TIME)
             if not video_url_with_audio:
-                return {'error': 'video not found ', 'status': 404}
+                return {'error': 'video recipe not found ', 'status': 404}
             # Process the video
             recipe, image_url_to_store = retry_process_video(video_url_with_audio)
             s3_file_name = f'{uuid.uuid4()}_image.jpg'
@@ -92,23 +93,23 @@ def fetch_description(request_data):
             return {'error': 'recipe not found', 'status': 404}
 
         recipe_info = json.loads(recipe)
-        nutritions = analyse_nutritions_base_ingredient(recipe)
-        nutritions_json = json.loads(nutritions)
-        logger.info(nutritions_json['nutritions'])
-        recipe_info['nutrition'] = nutritions_json['nutritions']
+
+        nutrition = analyse_nutrition_base_ingredient(recipe)
+        nutrition_json = json.loads(nutrition)
+        logger.info(nutrition_json['nutritions'])
+        recipe_info['nutrition'] = nutrition_json['nutritions']
         logger.info(image_url)
         recipe_info['image_url'] = image_url
+        recipe_info['origin'] = video_url
         # logger.info(json.loads(recipe))
         final_content = {
             'content': recipe_info,
-            'origin': video_url,
-            'image_url': image_url
         }
 
         return final_content
     except Exception as e:
         logger.error(f"An error occurred while fetching the description.{e}")
-        pass
+        return None
 
 
 def remove_file(file_path_to_remove):

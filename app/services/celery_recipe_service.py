@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import logging
+import re
 
 from flask import g
 
@@ -56,13 +58,14 @@ class RecipeCelService:
         Vérifie si une recette existe déjà, sinon la crée.
         Retourne un tuple (recipe, created) où created est True si une nouvelle recette a été créée.
         """
+        servings_count, servings_unit = RecipeCelService.split_serving(recipe_data.get('servings'))
         # Recherche basée sur le titre et d'autres critères pertinents
         existing_recipe = Recipe.query.filter_by(
             title=recipe_data.get('title'),
             origin=recipe_data.get('origin'),
             preparation_time=str(recipe_data.get('preparation_time')),
-            servings=recipe_data.get('servings'),
-            description=recipe_data.get('description'),
+            servings=servings_count,
+            unit_serving=servings_unit,
         ).first()
 
         if existing_recipe:
@@ -70,17 +73,33 @@ class RecipeCelService:
         return RecipeCelService.create_recipe(recipe_data), True
 
     @staticmethod
+    def split_serving(serving: str) -> tuple[int, str]:
+        """
+        Split the serving string into the count and unit.
+        """
+
+        match = re.match(r'(\d+)\s*(.*)', serving)
+        if match:
+            servings_count = int(match.group(1))
+            servings_unit = str(match.group(2).strip())
+        else:
+            servings_count = 1
+            servings_unit = None
+        return servings_count, servings_unit
+
+    @staticmethod
     def create_recipe(recipe_data: dict, ingredients_data: dict = None, processes_data: dict = None) -> Recipe:
 
+        servings_count, servings_unit = RecipeCelService.split_serving(recipe_data.get('servings'))
         recipe = Recipe(
             title=recipe_data.get('title'),
-            description=recipe_data.get('description'),
             image_url=recipe_data.get('image_url'),
-            preparation_time=recipe_data.get('preparation_time'),
-            servings=recipe_data.get('servings'),
+            preparation_time=recipe_data.get('total_time'),
+            servings=servings_count,
+            unit_serving=servings_unit,
             origin=recipe_data.get('origin'),
             ingredients=recipe_data.get('ingredients'),
-            processes=recipe_data.get('processes'),
+            processes=recipe_data.get('directions'),
             nutritions=recipe_data.get('nutrition'),
         )
         db.session.add(recipe)
@@ -135,34 +154,33 @@ class RecipeCelService:
         user = None
         if g.get('user', None):
             user = g.get('user')
+        logger.info(json.dumps(recipe_data))
 
-        recipe_info = recipe_data.get('recipe_information')
-        recipe_info['origin'] = recipe_json.get('origin')
 
-        recipe_info['ingredients'] = recipe_data.get('ingredients')
-        recipe_info['processes'] = recipe_data.get('processes')
-        recipe_info['nutrition'] = recipe_data.get('nutrition')
-        recipe_info['image_url'] = recipe_json.get('image_url')
+        if not recipe_data['ingredients'] and not recipe_data['processes']:
+            logger.warning(f"Recipe from {recipe_data['origin']} has no ingredients or processes. Not saved.")
+            return {'error': 'Recipe has no ingredients or processes and was not saved.'}
 
-        if not recipe_info['ingredients'] and not recipe_info['processes']:
-            logger.warning(f"Recipe from {recipe_info['origin']} has no ingredients or processes. Not saved.")
-            return {'Message': 'Recipe has no ingredients or processes and was not saved.'}
+        recipe = (
+            recipe_data.get('title'),
+            recipe_data.get('image_url'),
+            recipe_data.get('total_time'),
+            recipe_data.get('origin'),
+            recipe_data.get('ingredients'),
+            recipe_data.get('directions'),
+            recipe_data.get('nutrition'),
+            )
+        logger.info(json.dumps(recipe))
 
-        # create and store recipe
-        recipe, _ = RecipeCelService.get_or_create_recipe(recipe_info)
+        #  create and store recipe
+        recipe, _ = RecipeCelService.get_or_create_recipe(recipe_data)
+        # link recipe to a user
         if user:
             RecipeCelService.get_or_create_user_recipe(user_id=user['id'], recipe_id=recipe.id)
         else:
             anonymous_user, is_exist = RecipeCelService.get_or_create_anonyme_user()
             RecipeCelService.create_anonyme_user_recipe(user=anonymous_user, recipe=recipe)
 
-        # # # add the  ingrédients
-        # for ingredient in ingredients_data:
-        #     RecipeCelService.create_ingredient(ingredient, recipe)
-        # #
-        # # # add step to recipe
-        # for process in processes_data:
-        #     RecipeCelService.create_process(process, recipe)
         return recipe
 
     @staticmethod

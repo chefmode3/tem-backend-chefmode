@@ -7,6 +7,7 @@ import requests
 from flask import abort
 from flask import request
 from flask import session
+from flask_jwt_extended import create_access_token
 from flask_restx import Namespace
 from flask_restx import Resource
 from google.oauth2 import id_token
@@ -39,14 +40,6 @@ class LoginResource(Resource):
         return {'authorization_url': authorization_url}
 
 
-@auth_google_ns.route('/logout_google')
-class LogoutResource(Resource):
-
-    def get(self):
-        session.clear()
-        return {'message': 'Logged out successfully'}
-
-
 @auth_google_ns.route('/callback')
 class CallbackResource(Resource):
 
@@ -74,9 +67,10 @@ class CallbackResource(Resource):
             )
 
             user = User.query.filter_by(email=id_info.get('email')).first()
+            access_token = create_access_token(identity=user.email)
             if user:
                 user_data = UserRegisterSchema().dump(user)
-                user_data['access_token'] = credentials._id_token
+                user_data['access_token'] = access_token
                 return user_data, 200
 
             user = UserService.create_user(
@@ -87,7 +81,7 @@ class CallbackResource(Resource):
                         google_token=credentials._id_token,
                         )
             user_data = UserRegisterSchema().dump(user)
-            user_data['access_token'] = credentials._id_token
+            user_data['access_token'] = access_token
             return user_data, 201
 
         except ValidationError as err:

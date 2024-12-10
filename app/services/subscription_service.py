@@ -1,4 +1,5 @@
 import logging
+import os
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -111,12 +112,18 @@ class UserSubscriptionService:
                     }
                 ]
             )
-            stripe_user = StripeUserCheckoutSession(
-                user_id=self.user.id,
-                session_id=response.get("id", ""),
-                price_id=checkout_entity.price_id
-            )
-            db.session.add(stripe_user)
+            
+            session_id=response.get("id", "")
+            stripe_user = StripeUserCheckoutSession.query.filter_by(user_id=self.user.id).first()
+            if not stripe_user:
+                stripe_user = StripeUserCheckoutSession(
+                    user_id=self.user.id,
+                    session_id=session_id
+                )
+                db.session.add(stripe_user)
+                db.session.commit()
+            
+            stripe_user.price_id = checkout_entity.price_id
             db.session.commit()
             return response.get("client_secret")
         except StripeError as e:
@@ -129,62 +136,142 @@ class SubscriptionWebhookService:
     event_type: str
 
 
-    def execute(self):
-        session_id = self.data.get("id")
-        subscription_id = self.data.get("subscription")
-        customer_id = self.data.get("customer")
-        price = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("unit_amount", ""),
-        status = self.data.get("status")
-        invoice = self.data.get("lines", {}).get("data", [{}])[0].get("invoice", "")
-        purchase_date = (
-            datetime.fromtimestamp(self.data.get("period_start"))
-            if self.data.get("period_start") else None
-        )
-        expired_at = (
-            datetime.fromtimestamp(self.data.get("period_end"))
-            if self.data.get("period_end") else None
-        )
-        payment_frequency = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("recurring", {}).get("interval", ""),
-        cancelled_at = (
-            datetime.fromtimestamp(self.data.get("canceled_at"))
-            if self.data.get("canceled_at") else None
-        )
-        product_id = self.data.get("lines", {}).get("data", [{}])[0].get("plan", {}).get("product")
-        price_id = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("id")
+    def get_checkout_session(self, session_id) -> None:
+        if "completed" in self.event_type:
+            stripe.api_key = os.environ['STRIPE_SECRET_KEY']
+            user_checkout = stripe.checkout.Session.retrieve(session_id)
+            customer_id = user_checkout.get("customer")
+            subscription_id = user_checkout.get("subscription")
+            amount = user_checkout.get("amount", 0)
+            if user_checkout.get("status", "") == "complete" and customer_id:
+                stripe_user = StripeUserCheckoutSession.query.filter(
+                    or_(session_id == session_id, customer_id == customer_id)
+                ).first()
+                if stripe_user:
+                    subscription = Subscription.query.filter_by(price_id=stripe_user.price_id).first()
+                    if subscription:
+                        s_membership = SubscriptionMembership(
+                            user_id=stripe_user.user_id,
+                            subscription=subscription.id,
+                            price=stripe_user.price_id,
+                            customer_id=customer_id,
+                            state="paid",
+                            subscription_id=subscription_id
+                        )
+                        s_membership.price=amount
+                        db.session.add(s_membership)
+                        db.session.commit()
 
-        stripe_user = StripeUserCheckoutSession.query.filter(
-            or_(session_id==session_id, customer_id==customer_id)
-        ).first()
-        if self.event_type == "checkout.session.completed":
-            customer_id = self.data.get("customer")
-            subscription_id = self.data.get("subscription")
-            if stripe_user:
-                stripe_user.customer_id = customer_id
-                stripe_user.subscription_id = subscription_id
-                db.session.commit()
-        elif self.event_type == "invoice.payment_succeeded":
-            s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
-            if not s_membership and stripe_user:
-                subscription = Subscription.query.filter_by(price_id=price_id).first()
-                if not subscription:
-                    raise SubscriptionException("Internal Server Error", 500)
+    def handle_updated_customer(self):
+        logger.info("updated customer subscription")
+        customer_id = self.data.get("customer")
+        subscription_id = self.data.get("id")
+        amount = self.data.get("items", {}).get("data", [{}])[0].get("amount", 0)
+        s_membership = SubscriptionMembership.query.filter(
+            or_(subscription_id == subscription_id, customer_id == customer_id)
+        )
+        if not s_membership:
+            stripe_user = StripeUserCheckoutSession.query.filter(
+                or_(subscription_id == subscription_id, customer_id == customer_id)
+            ).first()
+            subscription = Subscription.query.filter_by(price_id=stripe_user.price_id).first()
+            if subscription and stripe_user:
                 s_membership = SubscriptionMembership(
                     user_id=stripe_user.user_id,
                     subscription=subscription.id
                 )
-            s_membership.price = price
-            s_membership.latest_invoice = invoice
-            s_membership.customer_id = customer_id
-            s_membership.product_id = product_id
-            s_membership.subscription_id = subscription_id
-            s_membership.state = status
-            s_membership.purchase_date = purchase_date
-            s_membership.expired_at = expired_at
-            s_membership.payment_frequency = payment_frequency
+            else:
+                return 200
+
+        s_membership.price = amount
+        s_membership.latest_invoice = self.data.get("in_1QUJIWFTd6Kcyq7qstFyalAK")
+        s_membership.customer_id = customer_id
+        s_membership.product_id = self.data.get("items", {}).get("data", [{}])[0].get("plan", {}).get("subscription_id")
+        s_membership.subscription_id = subscription_id
+        s_membership.state = "paid"
+        s_membership.purchase_date =  (
+            datetime.fromtimestamp(self.data.get("current_period_start"))
+            if self.data.get("current_period_start") else None
+        )
+        s_membership.expired_at = (
+            datetime.fromtimestamp(self.data.get("current_period_end"))
+            if self.data.get("current_period_end") else None
+        )
+        s_membership.payment_frequency = self.data.get("items", {}).get("data", [{}])[0].get("plan", {}).get("interval")
+        db.session.commit()
+        logger.info("Customer updated successfully")
+
+    def handle_payment_success(self):
+        subscription_id = self.data.get("subscription")
+        customer_id = self.data.get("customer")
+        price_id = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("id")
+        logger.info("user subscribe for price {}".format(price_id))
+        s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
+        if not s_membership:
+            stripe_user = StripeUserCheckoutSession.query.filter(
+                or_(subscription_id==subscription_id, customer_id==customer_id, price_id==price_id)
+            ).first()
+            subscription = Subscription.query.filter_by(price_id=price_id).first()
+            logger.info("subscription_price: %s" % subscription.plan_name)
+            if not subscription:
+                return 200
+            s_membership = SubscriptionMembership(
+                user_id=stripe_user.user_id,
+                subscription=subscription.id
+            )
             db.session.add(s_membership)
             db.session.commit()
-            logger.info(f"PaymentIntent succeeded")
+
+        s_membership.price = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("unit_amount", "")
+        s_membership.latest_invoice = self.data.get("lines", {}).get("data", [{}])[0].get("invoice", "")
+        s_membership.customer_id = customer_id
+        s_membership.product_id = self.data.get("lines", {}).get("data", [{}])[0].get("plan", {}).get("product")
+        s_membership.subscription_id = subscription_id
+        s_membership.state = self.data.get("status")
+        s_membership.purchase_date = (
+            datetime.fromtimestamp(self.data.get("period_start"))
+            if self.data.get("period_start") else None
+        )
+        s_membership.expired_at = (
+            datetime.fromtimestamp(self.data.get("period_end"))
+            if self.data.get("period_end") else None
+        )
+        s_membership.payment_frequency = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("recurring", {}).get("interval", ""),
+        db.session.commit()
+        logger.info(f"PaymentIntent succeeded")
+
+    def handle_checkout_completed(self):
+        logger.info(f"handle_checkout_completed")
+        session_id = self.data.get("id")
+        customer_id = self.data.get("customer")
+        subscription_id = self.data.get("subscription")
+        stripe_user = StripeUserCheckoutSession.query.filter(
+            or_(session_id == session_id, customer_id == customer_id)
+        ).first()
+        if stripe_user:
+            stripe_user.customer_id = customer_id
+            stripe_user.subscription_id = subscription_id
+        else:
+            stripe_user = StripeUserCheckoutSession(
+                session_id=session_id,
+                customer_id=customer_id,
+                subscription_id=subscription_id,
+            )
+            db.session.add(stripe_user)
+        db.session.commit()
+        logger.info("Checkout completed")
+
+    def execute(self):
+        if self.event_type == "checkout.session.completed":
+            self.handle_checkout_completed()
+        if self.event_type == "customer.subscription.updated":
+            self.handle_updated_customer()
+        elif self.event_type == "invoice.payment_succeeded":
+            self.handle_payment_success()
         elif self.event_type in  ["invoice.payment_failed", "customer.subscription.deleted"]:
+            status = self.data.get("status")
+            cancelled_at = self.data.get("date")
+            customer_id = self.data.get("customer")
             s_membership = SubscriptionMembership.query.filter_by(customer_id=customer_id).first()
             if not s_membership:
                 raise SubscriptionException("Internal Server Error", 400)
@@ -193,4 +280,6 @@ class SubscriptionWebhookService:
             db.session.commit()
             logger.info(f"Invoice payment failed")
         else:
-            logger.info(f"Unhandled event type")
+            session_id = self.data["id"]
+            self.get_checkout_session(session_id)
+            logger.info("Unhandled event type {}".format(self.event_type))
