@@ -165,6 +165,8 @@ class SubscriptionWebhookService:
 
     def execute(self):
         session_id = self.data.get("id")
+        logger.info(self.event_type)
+        logger.info("====================================")
         logger.info(self.data)
         subscription_id = self.data.get("subscription")
         customer_id = self.data.get("customer")
