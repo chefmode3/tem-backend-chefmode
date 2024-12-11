@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 from flask import abort
 from flask_jwt_extended import get_jwt_identity
@@ -122,12 +123,18 @@ class UserService:
     @staticmethod
     def delete_user(user_id):
         """Deletes a user from the database."""
-        user = User.query.get(user_id)
-        if not user:
-            return None
-        user.deleted = True
-        db.session.commit()
-        return {"message": "User deleted successfully"}
+        try:
+            user = User.query.get(user_id)
+            if not user:
+                return None
+            user.deleted = True
+            user.activate = False
+            user.email = f'{user.id}{user.email}{datetime.utcnow().strftime("%Y%m%d%H%M%S")}'
+            db.session.commit()
+            return {"message": "User deleted successfully"}
+        except Exception as e:
+            db.session.rollback()
+            return {"error": "An error occurred while deleting the user", "details": str(e)}, 400
 
     @staticmethod
     def change_password(user_id, old_password, new_password):
