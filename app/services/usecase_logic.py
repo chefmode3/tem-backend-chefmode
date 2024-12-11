@@ -228,8 +228,8 @@ def adjust_ingredients(ingredients, serving_factor, original_serving):
 
                 # Ajuster la quantité
                 adjusted_value = (original_value * serving_factor) / original_serving
-                if not type(adjusted_value) == Fraction:
-                    adjusted_value = int(adjusted_value)
+                # if not (type(adjusted_value) == Fraction):
+                #     adjusted_value = int(adjusted_value)
 
                 # Remplacer dans la ligne d'ingrédient
                 updated_line = updated_line.replace(str(match), str(adjusted_value))
