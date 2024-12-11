@@ -134,7 +134,7 @@ class UserService:
             return {"message": "User deleted successfully"}
         except Exception as e:
             db.session.rollback()
-            return {"error": "An error occurred while archiving the user", "details": str(e)}, 400
+            return {"error": "An error occurred while deleting the user", "details": str(e)}, 400
 
     @staticmethod
     def change_password(user_id, old_password, new_password):
