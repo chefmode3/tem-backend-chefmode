@@ -135,33 +135,6 @@ class SubscriptionWebhookService:
     data: dict
     event_type: str
 
-
-    def get_checkout_session(self, session_id) -> None:
-        if "completed" in self.event_type:
-            stripe.api_key = os.environ['STRIPE_SECRET_KEY']
-            user_checkout = stripe.checkout.Session.retrieve(session_id)
-            customer_id = user_checkout.get("customer")
-            subscription_id = user_checkout.get("subscription")
-            amount = user_checkout.get("amount", 0)
-            if user_checkout.get("status", "") == "complete" and customer_id:
-                stripe_user = StripeUserCheckoutSession.query.filter(
-                    or_(session_id == session_id, customer_id == customer_id)
-                ).first()
-                if stripe_user:
-                    subscription = Subscription.query.filter_by(price_id=stripe_user.price_id).first()
-                    if subscription:
-                        s_membership = SubscriptionMembership(
-                            user_id=stripe_user.user_id,
-                            subscription=subscription.id,
-                            price=stripe_user.price_id,
-                            customer_id=customer_id,
-                            state="paid",
-                            subscription_id=subscription_id
-                        )
-                        s_membership.price=amount
-                        db.session.add(s_membership)
-                        db.session.commit()
-
     def handle_updated_customer(self):
         logger.info("updated customer subscription")
         customer_id = self.data.get("customer")
@@ -278,5 +251,4 @@ class SubscriptionWebhookService:
             logger.info(f"Invoice payment failed")
         else:
             session_id = self.data["id"]
-            self.get_checkout_session(session_id)
             logger.info("Unhandled event type {}".format(self.event_type))
