@@ -214,6 +214,7 @@ class SubscriptionWebhookService:
             subscription = Subscription.query.filter_by(price_id=price_id).first()
             logger.info("subscription_price: %s" % subscription.plan_name)
             if not subscription:
+                logger.info("No subscription found for price id %s" % price_id)
                 return 200
             s_membership = SubscriptionMembership(
                 user_id=stripe_user.user_id,
@@ -245,20 +246,11 @@ class SubscriptionWebhookService:
         session_id = self.data.get("id")
         customer_id = self.data.get("customer")
         subscription_id = self.data.get("subscription")
-        stripe_user = StripeUserCheckoutSession.query.filter(
-            or_(session_id == session_id, customer_id == customer_id)
-        ).first()
+        stripe_user = StripeUserCheckoutSession.query.filter_by(session_id=session_id).first()
         if stripe_user:
             stripe_user.customer_id = customer_id
             stripe_user.subscription_id = subscription_id
-        else:
-            stripe_user = StripeUserCheckoutSession(
-                session_id=session_id,
-                customer_id=customer_id,
-                subscription_id=subscription_id,
-            )
-            db.session.add(stripe_user)
-        db.session.commit()
+            db.session.commit()
         logger.info("Checkout completed")
 
     def execute(self):
