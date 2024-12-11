@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import re
+from fractions import Fraction
 
 from app.extensions import db
 from app.models.recipe import Recipe
@@ -24,39 +26,11 @@ class RecipeService:
             return recipe
 
         serving = int(serving)
-        ingredient_pre_serving = []
+        old_serving = recipe.servings
 
-        for ingredient in recipe.ingredients:
-            quantities = ingredient.get('quantity', [])
-            alternative_measurements = ingredient.get('alternative_measurements', [])
+        ingredients = recipe.ingredients
 
-            updated_ingredient = {
-                'name': ingredient['name'],
-                'quantity': [],
-                'unit': ingredient['unit'],
-                'alternative_measurements': []
-            }
-
-            # Adjust the main quantities
-            for qty in quantities:
-                new_quantity = (serving * qty) / recipe.servings
-                updated_ingredient['quantity'].append(round(new_quantity, 2))
-
-            # Adjust the alternative measurements
-            for alt_measure in alternative_measurements:
-                alt_quantities = alt_measure.get('quantity', [])
-                new_alt_measure = {
-                    'unit': alt_measure['unit'],
-                    'quantity': []
-                }
-                for alt_qty in alt_quantities:
-                    new_alt_quantity = (serving * alt_qty) / recipe.servings
-                    new_alt_measure['quantity'].append(round(new_alt_quantity, 2))
-                updated_ingredient['alternative_measurements'].append(new_alt_measure)
-
-            ingredient_pre_serving.append(updated_ingredient)
-
-        recipe.ingredients = ingredient_pre_serving
+        recipe.ingredients = adjust_ingredients(ingredients, serving, old_serving)
         return recipe
 
     @staticmethod
@@ -234,3 +208,49 @@ class RecipeService:
 
         if origin_recipe:
             return origin_recipe
+        return None
+
+
+def adjust_ingredients(ingredients, serving_factor, original_serving):
+    updated_ingredients = []
+
+    # Calcul du facteur d'ajustement sous forme de Fraction
+    scaling_factor = Fraction(serving_factor, original_serving)
+
+    for line in ingredients:
+        # Trouver toutes les quantités (entiers et fractions) dans la ligne
+        matches = re.findall(r'\d+\s+\d+/\d+|\d+/\d+|\d+', line)
+        if matches:
+            updated_line = line
+            for match in matches:
+                # Convertir le match en Fraction
+                if ' ' in match:  # Nombre mixte (ex : "2 1/2")
+                    whole_part, fraction_part = match.split()
+                    original_value = Fraction(int(whole_part)) + Fraction(fraction_part)
+                elif '/' in match:  # Fraction simple (ex : "1/2")
+                    original_value = Fraction(match)
+                else:  # Entier (ex : "4")
+                    original_value = Fraction(int(match))
+
+                # Ajuster la valeur selon le facteur de mise à l'échelle
+                adjusted_value = original_value * scaling_factor
+
+                # Convertir en format mixte ou garder le format Fraction
+                if adjusted_value.denominator == 1:  # Si c'est un entier
+                    adjusted_value_str = str(adjusted_value.numerator)
+                elif adjusted_value.numerator > adjusted_value.denominator:  # Nombre mixte
+                    whole_part = adjusted_value.numerator // adjusted_value.denominator
+                    fractional_part = Fraction(adjusted_value.numerator % adjusted_value.denominator, adjusted_value.denominator)
+                    adjusted_value_str = f"{whole_part} {fractional_part}"
+                else:  # Fraction propre
+                    adjusted_value_str = str(adjusted_value)
+
+                # Remplacer dans la ligne d'ingrédient
+                updated_line = updated_line.replace(match, adjusted_value_str, 1)
+
+            updated_ingredients.append(updated_line)
+        else:
+            # Si aucune quantité n'est trouvée, ajouter la ligne telle quelle
+            updated_ingredients.append(line)
+
+    return updated_ingredients
