@@ -3,8 +3,10 @@ from __future__ import annotations
 from celery import shared_task
 from celery.exceptions import MaxRetriesExceededError
 from celery.utils.log import get_task_logger
+from flask import g
 
 from app.serializers.recipe_serializer import RecipeSerializer
+from app.services import RecipeCelService
 from app.services.usecase_logic import RecipeService
 from extractors import fetch_description
 
@@ -27,11 +29,17 @@ def call_fetch_description(self, data):
         existing_data = data.get('video_url')
         description_result = RecipeService.get_recipe_by_origin(origin=existing_data)
         if description_result:
+            recipe_id = description_result.id
+            if g.get('user'):
+                user = g.get('user')
+                RecipeCelService.get_or_create_user_recipe(user_id=user['id'], recipe_id=recipe_id)
+
             return {
                 'status': 'success',
                 'find': True,
                 'result': RecipeSerializer().dump(description_result)
-                }
+            }
+
         description_result = fetch_description(data)
 
         return {
