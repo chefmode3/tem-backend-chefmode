@@ -221,9 +221,9 @@ class SubscriptionWebhookService:
                 subscription=subscription.id
             )
             db.session.add(s_membership)
-            db.session.commit()
+            logger.info("subscription membership created successfully %s" % s_membership.id)
 
-        s_membership.price = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("unit_amount", "")
+        s_membership.price = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("unit_amount", 0)
         s_membership.latest_invoice = self.data.get("lines", {}).get("data", [{}])[0].get("invoice", "")
         s_membership.customer_id = customer_id
         s_membership.product_id = self.data.get("lines", {}).get("data", [{}])[0].get("plan", {}).get("product")
@@ -237,9 +237,9 @@ class SubscriptionWebhookService:
             datetime.fromtimestamp(self.data.get("period_end"))
             if self.data.get("period_end") else None
         )
-        s_membership.payment_frequency = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("recurring", {}).get("interval", ""),
-        db.session.commit()
+        s_membership.payment_frequency = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("recurring", {}).get("interval", "")
         logger.info(f"PaymentIntent succeeded")
+        db.session.commit()
 
     def handle_checkout_completed(self):
         logger.info(f"handle_checkout_completed")
