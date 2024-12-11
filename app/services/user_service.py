@@ -129,7 +129,7 @@ class UserService:
                 return None
             user.deleted = True
             user.activate = False
-            user.email = f'{user.id}{user.email}{datetime.utcnow().strftime('%Y%m%d%H%M%S')}'
+            user.email = f'{user.id}{user.email}{datetime.utcnow().strftime("%Y%m%d%H%M%S")}'
             db.session.commit()
             return {"message": "User deleted successfully"}
         except Exception as e:
