@@ -95,4 +95,5 @@ class RecipeScrapPost(Resource):
             else:
                 return {'status': res.state}, 202
         except Exception as e:
+            logger.error(f"unpexted request occured {e}, 500")
             abort(400, description=f"unpexted request occured")
