@@ -206,17 +206,16 @@ class SubscriptionWebhookService:
         customer_id = self.data.get("customer")
         price_id = self.data.get("lines", {}).get("data", [{}])[0].get("price", {}).get("id")
         logger.info("user subscribe for price {}".format(price_id))
-        stripe_user = StripeUserCheckoutSession.query.filter(
-            or_(subscription_id == subscription_id, customer_id == customer_id)
-        ).first()
+        stripe_user = StripeUserCheckoutSession.query.filter_by(customer_id=customer_id, price_id=price_id).first()
+        if not stripe_user:
+            # implementation get user subscription base on customer id
+            logger.info("customer {} not found".format(customer_id))
+            return 200
         logger.info("Stripe user {}".format(stripe_user))
         s_membership = SubscriptionMembership.query.filter_by(user_id=stripe_user.user_id).first()
         logger.info("Stripe membership {}".format(s_membership))
         if not s_membership:
-            stripe_user = StripeUserCheckoutSession.query.filter(
-                or_(subscription_id==subscription_id, customer_id==customer_id),
-                price_id=price_id
-            ).first()
+            stripe_user = StripeUserCheckoutSession.query.filter_by(customer_id=customer_id, price_id=price_id).first()
             subscription = Subscription.query.filter_by(price_id=price_id).first()
             logger.info("subscription_price: %s" % subscription.plan_name)
             if not subscription:
