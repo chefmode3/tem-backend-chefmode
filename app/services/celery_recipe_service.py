@@ -14,6 +14,7 @@ from app.models import Process
 from app.models import Recipe
 from app.models import UserRecipe
 from app.models.nutrition import Nutrition
+from flask import request
 
 logger = logging.getLogger(__name__)
 
@@ -151,12 +152,10 @@ class RecipeCelService:
     def convert_and_store_recipe(recipe_json: dict):
         # Extraire data from JSON
         recipe_data = recipe_json.get('content')
-        user = None
-        if g.get('user', None):
-            user = g.get('user')
+        user = g.get('user', None)
+        logger.error(f"recipe data: {recipe_data}")
 
-        logger.error(user)
-
+        logger.error(f"user accel: {user}")
 
         if not recipe_data['ingredients'] and not recipe_data['processes']:
             logger.warning(f"Recipe from {recipe_data['origin']} has no ingredients or processes. Not saved.")
@@ -186,7 +185,7 @@ class RecipeCelService:
 
     @staticmethod
     def get_or_create_anonyme_user():
-        user_id = 'user1234'
+        user_id = request.headers.get('X-Client-UUID')
         existing_user = AnonymousUser.query.filter_by(
             identifier=user_id,
         ).first()

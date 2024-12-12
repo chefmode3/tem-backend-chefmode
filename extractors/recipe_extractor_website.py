@@ -147,8 +147,8 @@ def scrape_and_analyze_recipe(url):
                         "servings: (Number of servings, if stated),"
                         
                         "total_time: (Total preparation and cooking time as a single string),"
-                        "ingredients: (Each ingredient should a single line for it),"
-                        "directions: (A list of steps for making the recipe, numbered or as separate entries, exactly as described in the order they appear in the video)."
+                        "ingredients: For each ingredient, add it to a list with each ingredient on a separate line. If a title is available for the ingredients (e.g., 'Ingredients' or any similar title), add it as a new object at the beginning of the list."
+                        "directions: Add each step of the preparation as separate entries in a list, in the exact order described in the text. If a title is available for the directions (e.g., 'Directions' or any similar title), add it as a new object at the beginning of the list."
                         "No nested objects other than these ones."
                         "Never output a '''markdown identifier before you begin and return the value in object format that can easily convert into the json"
                         "You will output in simple json. You will not output any description of the recipe. "

@@ -27,6 +27,7 @@ def call_fetch_description(self, data):
         existing_data = data.get('video_url')
         description_result = RecipeService.get_recipe_by_origin(origin=existing_data)
         if description_result:
+
             return {
                 'status': 'success',
                 'find': True,
