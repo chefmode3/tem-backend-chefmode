@@ -24,19 +24,23 @@ class SaveMailResource(Resource):
     @maillist_ns.response(400, 'Validation Error')
     def post(self):
 
-        data = maillistP_schema.load(request.get_json())
         try:
-            email = data['email']
+            data = maillistP_schema.load(request.get_json())
+            email = data.get('email')
             if not email:
+                logger.warning("Email field is missing.")
                 return {'error': 'Email is required'}, 400
-            mail_data = MailService.save_mail(email)
-            if mail_data is None:
-                return {'error': 'Email already exists'}, 400
+
+            mail_data, created = MailService.save_mail(email)
+            if not created:
+                return {'error': 'Email already exists or invalid'}, 400
+
             return MailListSerializerResponse().dump(mail_data), 201
 
         except ValidationError as err:
             logger.error(f"Validation error occurred: {str(err)}")
             return {'errors': err.messages}, 400
+
         except Exception as e:
-            logger.error(f"An unexpected error occurred: {str(e)}")
+            logger.exception("An unexpected error occurred.")
             return {'error': 'An unexpected error occurred', 'details': str(e)}, 400
