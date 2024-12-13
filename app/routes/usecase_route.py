@@ -64,6 +64,8 @@ class GetRecipeResource(Resource):
             serving = request.args.get('serving', type=int)
             recipe_id = request.args.get('recipe_id', type=str)
             recipe = RecipeService.get_recipe_by_id(recipe_id, serving)
+            if serving:
+                recipe.servings = serving
             return RecipeSerializer().dump(recipe), 200
 
         except Exception as e:
