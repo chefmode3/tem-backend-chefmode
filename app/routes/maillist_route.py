@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 @maillist_ns.route('/save')
 class SaveMailResource(Resource):
     @maillist_ns.expect(maillistP_schema_response)
-    @maillist_ns.response(201, 'Email successfully sent')
+    @maillist_ns.response(201, 'Email successfully save')
     @maillist_ns.response(400, 'Validation Error')
     def post(self):
 
