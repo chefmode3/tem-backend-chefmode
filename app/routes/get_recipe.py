@@ -76,7 +76,7 @@ class RecipeScrapPost(Resource):
 
                 content = result.get('result')
 
-                logger.info(content)
+                # logger.info(content)
                 find = result.get('find')
                 if content.get('error'):
                     return content, content.pop('status')
