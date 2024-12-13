@@ -14,6 +14,7 @@ from app.extensions import mail
 from app.extensions import migrate
 from app.routes.get_recipe import recipe_ns as recipe_name_space
 from app.routes.login_ressource import auth_google_ns
+from app.routes.maillist_route import maillist_ns
 from app.routes.main_routes import auth_ns
 from app.routes.subscription_route import subscription_ns
 from app.routes.usecase_route import recipe_ns
@@ -64,6 +65,7 @@ def create_app(script_info=None):
     api.add_namespace(recipe_ns, path='/recipe')
     api.add_namespace(recipe_name_space, path='/recipe')
     api.add_namespace(subscription_ns, path="/payment")
+    api.add_namespace(maillist_ns, path='/save-mail')
 
     # cli
     cli.register(app)
