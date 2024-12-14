@@ -16,6 +16,8 @@ from app.models import UserRecipe
 from app.models.nutrition import Nutrition
 from flask import request
 
+from app.services import RecipeService
+
 logger = logging.getLogger(__name__)
 
 
@@ -61,14 +63,8 @@ class RecipeCelService:
         """
         servings_count, servings_unit = RecipeCelService.split_serving(recipe_data.get('servings'))
         # Recherche basée sur le titre et d'autres critères pertinents
-        existing_recipe = Recipe.query.filter_by(
-            title=recipe_data.get('title'),
-            origin=recipe_data.get('origin'),
-            preparation_time=str(recipe_data.get('total_time')),
-            servings=servings_count,
-            unit_serving=servings_unit,
-        ).first()
-        logger.error(f"user accel: {existing_recipe}")
+        existing_recipe = RecipeService.get_recipe_by_origin(origin=recipe_data.get('origin'),)
+        logger.error(f"user recipe: {existing_recipe}")
         if existing_recipe:
             return existing_recipe, False
         return RecipeCelService.create_recipe(recipe_data), True

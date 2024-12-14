@@ -205,7 +205,7 @@ class RecipeService:
         get the origin to avoid duplication in the database
         """
         origin_recipe = Recipe.query.filter_by(origin=origin).first()
-
+        logger.error(f'video url: {origin}')
         if origin_recipe:
             return origin_recipe
         return None

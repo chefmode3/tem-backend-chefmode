@@ -11,7 +11,7 @@ from extractors import fetch_description
 logger = get_task_logger(__name__)
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=5)
+@shared_task(bind=True, max_retries=5, default_retry_delay=5)
 def call_fetch_description(self, data):
     """
     Celery task to fetch description asynchronously
@@ -47,5 +47,5 @@ def call_fetch_description(self, data):
         try:
             # Retry the task
             self.retry(exc=exc)
-        except MaxRetriesExceededError:
-            return {'error': f"Error in fetch_description task: {str(exc)}"}
+        except MaxRetriesExceededError as mascExs:
+            return {'error': f"Error in fetch_description task: {str(exc)} after retrying {str(mascExs)}"}
