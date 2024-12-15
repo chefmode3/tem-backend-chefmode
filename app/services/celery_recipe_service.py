@@ -14,6 +14,9 @@ from app.models import Process
 from app.models import Recipe
 from app.models import UserRecipe
 from app.models.nutrition import Nutrition
+from flask import request
+
+from app.services import RecipeService
 
 logger = logging.getLogger(__name__)
 
@@ -60,14 +63,8 @@ class RecipeCelService:
         """
         servings_count, servings_unit = RecipeCelService.split_serving(recipe_data.get('servings'))
         # Recherche basée sur le titre et d'autres critères pertinents
-        existing_recipe = Recipe.query.filter_by(
-            title=recipe_data.get('title'),
-            origin=recipe_data.get('origin'),
-            preparation_time=str(recipe_data.get('preparation_time')),
-            servings=servings_count,
-            unit_serving=servings_unit,
-        ).first()
-
+        existing_recipe = RecipeService.get_recipe_by_origin(origin=recipe_data.get('origin'),)
+        logger.error(f"user recipe: {existing_recipe}")
         if existing_recipe:
             return existing_recipe, False
         return RecipeCelService.create_recipe(recipe_data), True
@@ -77,6 +74,8 @@ class RecipeCelService:
         """
         Split the serving string into the count and unit.
         """
+        if not serving:
+            return 1, ''
 
         match = re.match(r'(\d+)\s*(.*)', serving)
         if match:
@@ -151,42 +150,35 @@ class RecipeCelService:
     def convert_and_store_recipe(recipe_json: dict):
         # Extraire data from JSON
         recipe_data = recipe_json.get('content')
-        user = None
-        if g.get('user', None):
-            user = g.get('user')
+        user = g.get('user', None)
+        logger.error(f"recipe data: {recipe_data}")
 
-        logger.error(user)
+        # logger.error(f"user accel: {user}")
 
-
-        if not recipe_data['ingredients'] and not recipe_data['processes']:
-            logger.warning(f"Recipe from {recipe_data['origin']} has no ingredients or processes. Not saved.")
+        if not recipe_data.get('ingredients') and not recipe_data.get('directions'):
+            logger.warning(f"Recipe from {recipe_data.get('origin')} has no ingredients or processes. Not saved.")
             return {'error': 'Recipe has no ingredients or processes and was not saved.'}
+        logger.error(f"user accel: {user}")
 
-        recipe = (
-            recipe_data.get('title'),
-            recipe_data.get('image_url'),
-            recipe_data.get('total_time'),
-            recipe_data.get('origin'),
-            recipe_data.get('ingredients'),
-            recipe_data.get('directions'),
-            recipe_data.get('nutrition'),
-            )
         # logger.info(json.dumps(recipe))
 
         #  create and store recipe
         recipe, _ = RecipeCelService.get_or_create_recipe(recipe_data)
         # link recipe to a user
+        logger.error(f"user accel lok: {user}")
         if user:
+            logger.error(f"user accel s: {user}")
             RecipeCelService.get_or_create_user_recipe(user_id=user['id'], recipe_id=recipe.id)
         else:
+            logger.error(f"user accel a: {user}")
             anonymous_user, is_exist = RecipeCelService.get_or_create_anonyme_user()
             RecipeCelService.create_anonyme_user_recipe(user=anonymous_user, recipe=recipe)
-
+        logger.error(f"user accel: {user}")
         return recipe
 
     @staticmethod
     def get_or_create_anonyme_user():
-        user_id = 'user1234'
+        user_id = request.headers.get('X-Client-UUID')
         existing_user = AnonymousUser.query.filter_by(
             identifier=user_id,
         ).first()

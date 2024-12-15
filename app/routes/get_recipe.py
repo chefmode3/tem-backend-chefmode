@@ -76,11 +76,11 @@ class RecipeScrapPost(Resource):
 
                 content = result.get('result')
 
-                logger.info(content)
+                # logger.info(content)
                 find = result.get('find')
                 if content.get('error'):
                     return content, content.pop('status')
-
+                logger.error(find)
                 if not find:
                     # logger.error('test of saving in database')
                     content = RecipeCelService.convert_and_store_recipe(content)
