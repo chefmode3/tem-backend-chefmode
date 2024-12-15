@@ -28,9 +28,20 @@ class RecipeService:
         serving = int(serving)
         old_serving = recipe.servings
 
-        ingredients = recipe.ingredients
+        old_ingredients = recipe.ingredients
+        new_ingredients = []
+        
+        for ingredient in old_ingredients:
+            title_of_ingredient = ingredient.get('title_of_ingredient')
+            list_ = ingredient.get('list')
+            new_list = adjust_ingredients(list_, serving, old_serving)
+            
+            new_ingredients.append({
+                'title_of_ingredient': title_of_ingredient,
+                'list': new_list
+            })
 
-        recipe.ingredients = adjust_ingredients(ingredients, serving, old_serving)
+        recipe.ingredients = new_ingredients
         return recipe
 
     @staticmethod
