@@ -36,9 +36,7 @@ class AnonymeUserService:
     def increment_request_count(user_id):
         anonymous_user = AnonymousUser.query.get(user_id)
         if anonymous_user:
-            count = anonymous_user.request_count
-            count += 1
-            anonymous_user.request_count = count
+            anonymous_user.request_count += 1
             db.session.commit()
         return anonymous_user
 
