@@ -139,6 +139,7 @@ class GetMyRecipesResource(Resource):
             return {'error': 'An unexpected error occurred'}, 400
 
 
+
 @recipe_ns.route('/flag_recipe')
 class FlagRecipeResource(Resource):
     @jwt_required()

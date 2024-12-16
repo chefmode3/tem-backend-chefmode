@@ -1,3 +1,5 @@
+from flask import request
+
 from app.models import AnonymousUser
 from app.extensions import db
 
@@ -42,3 +44,13 @@ class AnonymeUserService:
             db.session.commit()
         return anonymous_user
 
+    @staticmethod
+    def decrease_request_count():
+        user_id = request.headers.get('X-Client-UUID')
+        anonymous_user = AnonymousUser.query.get(user_id)
+        if anonymous_user:
+            count = anonymous_user.request_count
+            count -= 1
+            anonymous_user.request_count = count
+            db.session.commit()
+        return anonymous_user

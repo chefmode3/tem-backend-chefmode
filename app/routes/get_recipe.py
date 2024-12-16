@@ -16,7 +16,7 @@ from app.serializers.recipe_serializer import LinkRecipeSchema
 from app.serializers.recipe_serializer import RecipeSerializer
 from app.serializers.recipe_serializer import TaskIdSchema
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
-from app.services import RecipeCelService
+from app.services import RecipeCelService, AnonymeUserService
 from app.task.fetch_desciption import call_fetch_description
 from app.utils.slack_hool import send_slack_notification_recipe
 
@@ -56,6 +56,8 @@ class RecipeScrap(Resource):
 class RecipeScrapPost(Resource):
     @recipe_ns.response(200, 'Recipe fetched successfully', model=link_recipe_model)
     @recipe_ns.response(404, 'Recipe not found')
+    @load_or_create_anonymous_user
+    @track_anonymous_requests
     def get(self, task_id):
         try:
 
@@ -91,9 +93,10 @@ class RecipeScrapPost(Resource):
                 return content, 200
 
             elif res.state == 'FAILURE':
+                AnonymeUserService.decrease_request_count()
                 return {'status': 'FAILURE', 'message': str(res.result)}, 400
             else:
                 return {'status': res.state}, 202
         except Exception as e:
-            logger.error(f"unpexted request occured {e}, 500")
-            abort(400, description=f"unpexted request occured")
+            logger.error(f"Unexpected request occurred {e}, 400")
+            abort(400, description=f"Unexpected request occurred")
