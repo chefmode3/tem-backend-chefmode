@@ -81,21 +81,7 @@ class RecipeService:
             'pages': pagination.pages,
             'current_page': pagination.page,
             'page_size': pagination.per_page,
-            'data': [
-                {
-                    'id': recipe.id,
-                    'title': recipe.title,
-                    'origin': recipe.origin,
-                    'servings': recipe.servings,
-                    'created_at': recipe.created_at,
-                    'preparation_time': recipe.preparation_time,
-                    'description': recipe.description,
-                    'image_url': recipe.image_url,
-                    'ingredients': recipe.ingredients,
-                    'processes': recipe.processes,
-                }
-                for recipe in pagination.items
-            ]
+            'data': [recipe for recipe in pagination.items]
         }
 
     @staticmethod
@@ -152,21 +138,7 @@ class RecipeService:
                 'pages': pagination.pages,
                 'current_page': pagination.page,
                 'page_size': pagination.per_page,
-                'data': [
-                    {
-                        'id': recipe.id,
-                        'title': recipe.title,
-                        'origin': recipe.origin,
-                        'servings': recipe.servings,
-                        'created_at': recipe.created_at,
-                        'preparation_time': recipe.preparation_time,
-                        'description': recipe.description,
-                        'image_url': recipe.image_url,
-                        'ingredients': recipe.ingredients,
-                        'processes': recipe.processes,
-                    }
-                    for recipe in pagination.items
-                ]
+                'data': [recipe for recipe in pagination.items]
             }
         except Exception as e:
             logger.error(f"Database error occurred: {str(e)}")
