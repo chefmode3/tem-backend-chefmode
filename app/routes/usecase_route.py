@@ -40,8 +40,9 @@ nutrition_response_model = convert_marshmallow_to_restx_model(recipe_ns, Nutriti
 
 @recipe_ns.route('/get_recipe_by_id')
 class GetRecipeResource(Resource):
-    @track_anonymous_requests
     @load_or_create_anonymous_user
+    @track_anonymous_requests
+
     @recipe_ns.doc(params={
         'recipe_id': {'description': 'The ID of the recipe to fetch',
                       'required': True,
@@ -63,7 +64,11 @@ class GetRecipeResource(Resource):
         try:
             serving = request.args.get('serving', type=int)
             recipe_id = request.args.get('recipe_id', type=str)
+
             recipe = RecipeService.get_recipe_by_id(recipe_id, serving)
+            logger.error('position 1')
+            if not  recipe:
+                return  {"error": "recipe not found "}
             if serving:
                 recipe.servings = serving
             return RecipeSerializer().dump(recipe), 200

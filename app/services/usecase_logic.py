@@ -26,11 +26,26 @@ class RecipeService:
             return recipe
 
         serving = int(serving)
+        unit_serving = recipe.unit_serving
+        match = re.search(r'(\d+)\s*(.*)', unit_serving)
+        if match:
+            servings_count = int(match.group(1))
+            start_position = match.start(1)
+            end_position = match.end(1)
+            logger.info(f"unit_serving {unit_serving} to {servings_count} at position {start_position} {end_position}")
+
+            # Extract the new value based on the position
+            old_value = unit_serving[start_position:end_position]
+            new_value = str(servings_count - serving)
+            servings_unit = str(match.group(2).strip())
+            recipe.unit_serving = f"{servings_unit} {new_value}"
+            logger.info(f"unit_serving: {servings_unit} {old_value} to {new_value}")
         old_serving = recipe.servings
 
         ingredients = recipe.ingredients
 
-        recipe.ingredients = adjust_ingredients(ingredients, serving, old_serving)
+        # recipe.ingredients = adjust_ingredients(ingredients, serving, old_serving)
+        logger.error('position123')
         return recipe
 
     @staticmethod

@@ -17,6 +17,7 @@ from app.models.nutrition import Nutrition
 from flask import request
 
 from app.services import RecipeService
+from app.utils.utils import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -150,12 +151,12 @@ class RecipeCelService:
     def convert_and_store_recipe(recipe_json: dict):
         # Extraire data from JSON
         recipe_data = recipe_json.get('content')
-        user = g.get('user', None)
-        logger.error(f"recipe data: {recipe_data}")
+        user, is_authenticated = get_current_user()
+        logger.error(f"recipe data: {not recipe_data.get('ingredients') or not recipe_data.get('directions') or not recipe_data.get('title')}")
 
-        # logger.error(f"user accel: {user}")
+        logger.error(f"user accel: {user}")
 
-        if not recipe_data.get('ingredients') and not recipe_data.get('directions'):
+        if not recipe_data.get('ingredients') or not recipe_data.get('directions') or not recipe_data.get('title'):
             logger.warning(f"Recipe from {recipe_data.get('origin')} has no ingredients or processes. Not saved.")
             return {'error': 'Recipe has no ingredients or processes and was not saved.'}
         logger.error(f"user accel: {user}")
@@ -165,22 +166,26 @@ class RecipeCelService:
         #  create and store recipe
         recipe, _ = RecipeCelService.get_or_create_recipe(recipe_data)
         # link recipe to a user
-        logger.error(f"user accel lok: {user}")
-        if user:
-            logger.error(f"user accel s: {user}")
-            RecipeCelService.get_or_create_user_recipe(user_id=user['id'], recipe_id=recipe.id)
+        # logger.error(f"user accel lok: {user}")
+        if is_authenticated:
+            # logger.error(f"user accel s: {user}")
+            RecipeCelService.get_or_create_user_recipe(user_id=user.id, recipe_id=recipe.id)
         else:
-            logger.error(f"user accel a: {user}")
-            anonymous_user, is_exist = RecipeCelService.get_or_create_anonyme_user()
+            # logger.error(f"user accel a: {user}")
+            if user:
+                anonymous_user, is_exist = RecipeCelService.get_or_create_anonyme_user(user.id)
+            else:
+                anonymous_user, is_exist = RecipeCelService.get_or_create_anonyme_user(None)
             RecipeCelService.create_anonyme_user_recipe(user=anonymous_user, recipe=recipe)
-        logger.error(f"user accel: {user}")
+        # logger.error(f"user accel: {user}")
         return recipe
 
     @staticmethod
-    def get_or_create_anonyme_user():
-        user_id = request.headers.get('X-Client-UUID')
+    def get_or_create_anonyme_user(user_id: str) -> tuple[AnonymousUser, bool]:
+        if not user_id:
+            user_id = request.headers.get('X-Client-UUID')
         existing_user = AnonymousUser.query.filter_by(
-            identifier=user_id,
+            id=user_id,
         ).first()
 
         if existing_user:
@@ -220,7 +225,7 @@ class RecipeCelService:
     @staticmethod
     def get_or_create_anonyme_user_recipe(recipe_data: dict) -> tuple[Recipe, bool]:
         """
-        check if the recipe already or create it .
+        check if the recipe already or create it.
         Return a tuple (recipe, created).
         """
         # Recherche basée sur le titre et d'autres critères pertinents

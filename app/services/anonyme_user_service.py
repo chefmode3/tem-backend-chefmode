@@ -1,5 +1,6 @@
 from app.models import AnonymousUser
 from app.extensions import db
+from utils.common import logger
 
 
 class AnonymeUserService:
@@ -15,11 +16,21 @@ class AnonymeUserService:
 
     @staticmethod
     def get_anonymous_user_by_id(user_id):
-        """Retrieves a anonymous_user by their ID."""
-        anonymous_user = AnonymousUser.query.get(user_id)
-        # if not anonymous_user:
-        #    return AnonymeUserService.create_anonymous_user()
-        return anonymous_user
+        """Retrieves an anonymous user by their ID."""
+        if user_id is None:
+            return None
+
+        try:
+            # Optional: Validate UUID format if needed
+            import uuid
+            uuid.UUID(str(user_id))
+
+            anonymous_user = AnonymousUser.query.filter(AnonymousUser.id == str(user_id)).first()
+            return anonymous_user
+        except (ValueError, TypeError):
+            # Log invalid UUID or handle appropriately
+            logger.warning(f"Invalid UUID format: {user_id}")
+            return None
 
     @staticmethod
     def delete_user(user_id):
@@ -37,6 +48,14 @@ class AnonymeUserService:
         anonymous_user = AnonymousUser.query.get(user_id)
         if anonymous_user:
             anonymous_user.request_count += 1
+            db.session.commit()
+        return anonymous_user
+
+    @staticmethod
+    def decrement_request_count(user_id):
+        anonymous_user = AnonymousUser.query.get(user_id)
+        if anonymous_user:
+            anonymous_user.request_count -= 1
             db.session.commit()
         return anonymous_user
 
