@@ -142,7 +142,7 @@ def scrape_and_analyze_recipe(url):
     # Make a request to the given URL with retries and user-agent spoofing
     response , status = get_website_content(url)
     if status != 200:
-        return None, False, None
+        response = get_website_content_v2(url)
 
     # Parse the HTML content
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -200,12 +200,12 @@ def scrape_and_analyze_recipe(url):
         logger.error(f"OpenAI took {end - start} seconds")
 
         recipe_info = ai_response.choices[0].message.content
-        # logger.error(recipe_info)
+        logger.error(recipe_info)
         recipe_info = group_markdown_to_json(recipe_info)
-        # logger.error(recipe_info)
+        logger.error(recipe_info)
         s3_file_name = f'{uuid.uuid4()}_image.jpg'
         s3_url = save_image_to_s3_from_url(main_image_url, s3_file_name)
-        # logger.info(f"s3_image: {s3_url}")
+        logger.info(f"s3_image: {s3_url}")
         return recipe_info, got_image, s3_url
     except Exception as e:
         logger.error(f"An error occurred while processing the recipe analysis failed: {e}")
