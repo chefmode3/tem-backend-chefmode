@@ -7,8 +7,6 @@ from fractions import Fraction
 from app.extensions import db
 from app.models.recipe import Recipe
 from app.models.user import UserRecipe
-from app.utils.utils import replace_int_unit_serving
-
 # from sqlalchemy.exc import SQLAlchemyError
 
 logger = logging.getLogger(__name__)
@@ -28,6 +26,10 @@ class RecipeService:
             return recipe
 
         serving = int(serving)
+        old_serving = recipe.servings
+
+        old_ingredients = recipe.ingredients
+        new_ingredients = []
         unit_serving = recipe.unit_serving
         match = re.search(r'(\d+)\s*(.*)', unit_serving)
         if match:
@@ -39,12 +41,18 @@ class RecipeService:
             update_string = unit_serving.replace(str(servings_count), str(new_value), 1)
             # logger.error(update_string)
             recipe.unit_serving = update_string
-        old_serving = recipe.servings
 
-        ingredients = recipe.ingredients
+        for ingredient in old_ingredients:
+            title_of_ingredient = ingredient.get('title_of_ingredient')
+            list_ = ingredient.get('list')
+            new_list = adjust_ingredients(list_, serving, old_serving)
+            
+            new_ingredients.append({
+                'title_of_ingredient': title_of_ingredient,
+                'list': new_list
+            })
 
-        # recipe.ingredients = adjust_ingredients(ingredients, serving, old_serving)
-
+        recipe.ingredients = new_ingredients
         return recipe
 
     @staticmethod
