@@ -161,10 +161,10 @@ class RecipeCelService:
             logger.warning(f"Recipe from {recipe_data.get('origin')} has no valid ingredients. Not saved.")
             return {'error': 'Recipe has no valid ingredients and was not saved.'}
 
-        processes = recipe_data.get('processes', [])
-        if not processes or all(not process.get('list') for process in processes):
-            logger.warning(f"Recipe from {recipe_data.get('origin')} has no valid processes. Not saved.")
-            return {'error': 'Recipe has no valid processes and was not saved.'}
+        directions = recipe_data.get('directions', [])
+        if not directions or all(not direction.get('list') for direction in directions):
+            logger.warning(f"Recipe from {recipe_data.get('origin')} has no valid directions. Not saved.")
+            return {'error': 'Recipe has no valid directions and was not saved.'}
         logger.error(f"user accel: {user}")
 
         # logger.info(json.dumps(recipe))
