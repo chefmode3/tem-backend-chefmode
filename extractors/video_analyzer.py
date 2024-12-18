@@ -118,30 +118,26 @@ def process_video(video_path):
 
         recipe_img, base_64_frames = get_video_frames(video_path)
 
-        PROMPT_MESSAGES = [
+        prompt_messages = [
             {
                 "role": "user",
-                'content': [
-
+                "content": [
                     f"You are a video recipe summarizer. "
-                f"You get information from the video: recipe title, servings, total time, ingredients, directions."
-                    f" You will output in simple, clear markdown. Never output a '''markdown identifier before you begin, just the pure formatting. You will ALWAYS supply ingredient amounts."
-                f"Here is a full transcript of the video: {transcript}.\n"
-                "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
-                "These are descriptions of some of the frames from the video. Make sure to analyze the transcript and the frames holistically.",
+                    f"You get information from the video: recipe title, servings, total time, ingredients, directions. You will output in simple, clear markdown. Never output a '''markdown identifier before you begin, just the pure formatting. You will ALWAYS supply ingredient amounts."
+                    f"Here is a full transcript of the video: {transcript}.\n"
+                    "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
+                    "These are descriptions of some of the frames from the video. Make sure to analyze the transcript and the frames holistically.",
                     *map(lambda x: {"type": "image_url",
                                     "image_url": {"url": f"data:image/jpeg;base64,{x}", "detail": "low"}},
                          base_64_frames),
-                ]
+                ],
             },
-            {'role': 'user', 'content': f"Here is the transcript of the video {transcript}"}
         ]
 
         params = {
             'model': 'gpt-4o-mini',
-            'messages': PROMPT_MESSAGES,
+            'messages': prompt_messages,
             'max_tokens': 2000,
-            'response_format': {'type': 'json_object'}
         }
 
         result = client.chat.completions.create(**params)

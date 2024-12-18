@@ -73,7 +73,7 @@ class RecipeScrapPost(Resource):
             res = AsyncResult(task_id)
         except Exception as e:
             abort(400, description=f"Invalid task ID: {str(e)}")
-        logger.error("eee")
+        # logger.error("eee")
         try:
             if res.state == 'PENDING':
                 return {'status': 'PENDING'}, 202
@@ -81,7 +81,7 @@ class RecipeScrapPost(Resource):
                 result: dict = res.result
 
                 content = result.get('result')
-                logger.error("eee12")
+                # logger.error("eee12")
                 # logger.info(content)
                 find = result.get('find')
                 logger.error(find)
@@ -89,7 +89,7 @@ class RecipeScrapPost(Resource):
                     return {'error': "recipe not found please Retry later "}, 404
                 if content.get('error'):
                     return content, content.pop('status')
-                logger.error("find wes")
+                # logger.error("find wes")
                 if not find:
                     # logger.error('test of saving in a database')
                     content = RecipeCelService.convert_and_store_recipe(content)
