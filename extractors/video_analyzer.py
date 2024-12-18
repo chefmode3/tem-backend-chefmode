@@ -12,6 +12,7 @@ from moviepy.video.io.VideoFileClip import VideoFileClip
 from openai import OpenAI
 from pydub import AudioSegment
 
+from extractors.recipe_extractor_website import group_markdown_to_json
 from utils.settings import BASE_DIR
 
 logger = logging.getLogger(__name__)
@@ -117,45 +118,32 @@ def process_video(video_path):
 
         recipe_img, base_64_frames = get_video_frames(video_path)
 
-        PROMPT_MESSAGES = [
+        prompt_messages = [
             {
                 "role": "user",
-                'content': [
-                     "Extract recipe information from video transcripts in a consistent, structured format. For each recipe described in the video, retrieve ONLY the "
-                        "following fields:"
-                        "title: (The recipe's name),"
-                        "servings: (Number of servings, if stated),"
-                        
-                        "total_time: (Total preparation and cooking time as a single string),"
-                        "ingredients: (Each ingredient should a single line for it),"
-                        "directions: (A list of steps for making the recipe, numbered or as separate entries, exactly as described in the order they appear in the video)."
-                        "No nested objects other than these ones."
-                        "Never output a '''markdown identifier before you begin and return the value in object format that can easily convert into the json"
-                        "Provide this data in the same order and structure for each recipe without additional comments, descriptions, or variations.  maintain the structure."
-
-                    f"You get information from the video: recipe, title, servings,  servings with unit if and only if it available, total time, ingredients, directions. You will output in simple, clear json. Never output a '''markdown identifier before you begin, just the pure formatting. You will ALWAYS supply ingredient amounts."
+                "content": [
+                    f"You are a video recipe summarizer. "
+                    f"You get information from the video: recipe title, servings, total time, ingredients, directions. You will output in simple, clear markdown. Never output a '''markdown identifier before you begin, just the pure formatting. You will ALWAYS supply ingredient amounts."
                     f"Here is a full transcript of the video: {transcript}.\n"
                     "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
                     "These are descriptions of some of the frames from the video. Make sure to analyze the transcript and the frames holistically.",
                     *map(lambda x: {"type": "image_url",
                                     "image_url": {"url": f"data:image/jpeg;base64,{x}", "detail": "low"}},
                          base_64_frames),
-                ]
+                ],
             },
-            {'role': 'user', 'content': f"Here is the transcript of the video {transcript}"}
         ]
 
         params = {
             'model': 'gpt-4o-mini',
-            'messages': PROMPT_MESSAGES,
+            'messages': prompt_messages,
             'max_tokens': 2000,
-            'response_format': {'type': 'json_object'}
         }
 
         result = client.chat.completions.create(**params)
         description = result.choices[0].message.content
-
-        return description, recipe_img
+        recipe_info = group_markdown_to_json(description)
+        return recipe_info, recipe_img
     except Exception as err:
         logger.error(f"An error occurred while processing the video: {err}")
         return None, None

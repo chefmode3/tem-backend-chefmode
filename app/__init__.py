@@ -51,7 +51,8 @@ def create_app(script_info=None):
     migrate.init_app(app, db)
 
     # Enable CORS
-    CORS(app, expose_headers=['X-Client-UUID'])
+    CORS(app, expose_headers=['X-Client-UUID'],
+         allow_headers=['Content-Type', 'Authorization', 'X-Client-UUID'])
 
     # Initialize mail extension
     mail.init_app(app)
