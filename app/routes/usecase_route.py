@@ -64,7 +64,7 @@ class GetRecipeResource(Resource):
             recipe_id = request.args.get('recipe_id', type=str)
 
             recipe = RecipeService.get_recipe_by_id(recipe_id, serving)
-            logger.error('position 1')
+
             if not  recipe:
                 return  {"error": "recipe not found "}
             if serving:

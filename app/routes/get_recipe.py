@@ -43,6 +43,7 @@ class RecipeScrap(Resource):
         try:
             link = LinkRecipeSchema().load(request.get_json())
             user, is_authenticated = get_current_user()
+
             data = {
                 'video_url': link.get('link'),
                 'user': user.id,
