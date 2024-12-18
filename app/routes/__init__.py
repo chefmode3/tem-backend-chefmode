@@ -16,3 +16,4 @@ from app.routes.usecase_route import (
     IsRecipeFlaggedResource,
     SearchRecipesResource
 )
+from app.services import MailService
