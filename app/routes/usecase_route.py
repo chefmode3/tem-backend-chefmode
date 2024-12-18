@@ -41,8 +41,6 @@ nutrition_response_model = convert_marshmallow_to_restx_model(recipe_ns, Nutriti
 @recipe_ns.route('/get_recipe_by_id')
 class GetRecipeResource(Resource):
     @load_or_create_anonymous_user
-    @track_anonymous_requests
-
     @recipe_ns.doc(params={
         'recipe_id': {'description': 'The ID of the recipe to fetch',
                       'required': True,
