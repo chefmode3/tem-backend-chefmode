@@ -80,7 +80,6 @@ class GetRecipeResource(Resource):
 
 @recipe_ns.route('/get_all_recipes')
 class GetAllRecipesResource(Resource):
-    @track_anonymous_requests
     @load_or_create_anonymous_user
     @recipe_ns.doc(params={
         'page': 'Page number (default: 1)',
