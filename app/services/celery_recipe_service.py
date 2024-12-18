@@ -156,9 +156,15 @@ class RecipeCelService:
 
         logger.error(f"user accel: {user}")
 
-        if not recipe_data.get('ingredients') or not recipe_data.get('directions') or not recipe_data.get('title'):
-            logger.warning(f"Recipe from {recipe_data.get('origin')} has no ingredients or processes. Not saved.")
-            return {'error': 'Recipe has no ingredients or processes and was not saved.'}
+        ingredients = recipe_data.get('ingredients', [])
+        if not ingredients or all(not ingredient.get('list') for ingredient in ingredients):
+            logger.warning(f"Recipe from {recipe_data.get('origin')} has no valid ingredients. Not saved.")
+            return {'error': 'Recipe has no valid ingredients and was not saved.'}
+
+        processes = recipe_data.get('processes', [])
+        if not processes or all(not process.get('list') for process in processes):
+            logger.warning(f"Recipe from {recipe_data.get('origin')} has no valid processes. Not saved.")
+            return {'error': 'Recipe has no valid processes and was not saved.'}
         logger.error(f"user accel: {user}")
 
         # logger.info(json.dumps(recipe))
