@@ -54,9 +54,17 @@ def download_instagram_video(instagram_url, output_filename="downloaded_video.mp
 
         # Step 4: Extract video URL
         try:
-            # print(f"Downloading video from: {json.dumps(response, indent=2)}, re")
-            video_versions = response['data']['video_versions']
-            video_url = video_versions[0]['url']  # Use the first available video URL
+            print(f"Downloading video from: {response['data'].keys()}, re")
+
+            if 'video_versions' in response['data'].keys():
+                video_versions = response['data']['video_versions']
+                video_url = video_versions[0]['url']
+            elif 'carousel_media' in response['data'].keys():
+                video_versions = response['data']['carousel_media'][0]['video_versions']
+                video_url = video_versions[0]['url']
+            else:
+                video_url = response['data']['video_url']
+                  # Use the first available video URL
             print(f"Downloading video from: {video_url}")
         except Exception as e:
             print(f"Error downloading video: {e}")
