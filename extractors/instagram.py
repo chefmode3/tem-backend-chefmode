@@ -77,6 +77,7 @@ def instagram_video_downloader(instagram_url):
     Download the video from an Instagram URL.
     """
     try:
+        logger.info("Downloading Instagram video with instaloader ...")
         # Create an instance of Instaloader
         loader = instaloader.Instaloader()
 

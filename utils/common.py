@@ -118,7 +118,7 @@ def download_youtube_video(youtube_url):
         'outtmpl': output_path,  # Full path including filename
         'format': 'best',  # Download the best quality video
     }
-
+    logger.info("Downloading youtube video with YoutubeDL ...")
     try:
         with YoutubeDL(options) as ydl:
             ydl.download([youtube_url])
