@@ -63,3 +63,4 @@ boto3==1.35.71
 gunicorn==23.0.0
 stripe==11.2.0
 yt-dlp==2024.12.13
+SecretStorage==3.3.3
