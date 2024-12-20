@@ -1,10 +1,13 @@
-import http.client
+import re
+import os
 import json
 import logging
-import re
+import http.client
+
 import requests
 
-from utils.common import save_video_to_file
+
+from utils.common import save_video_to_file, download_youtube_video
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +51,7 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
         video_response = requests.get(video_url_with_audio, stream=True)
         if video_response.status_code != 200:
             logger.info("Failed to download the video.")
-            return None
+            return download_youtube_video(youtube_url)
         video_buffer = video_response.content
         # logger.info(video_buffer)
         return save_video_to_file(video_buffer)
@@ -67,3 +70,5 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
 # # Example usage:
 # youtube_url = "https://www.youtube.com/watch?v=1LzFy7Rr89E"  # Or a Shorts URL
 # download_youtube_video(youtube_url)
+
+
