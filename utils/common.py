@@ -8,7 +8,7 @@ from pathlib import Path
 
 import ffmpeg
 from pydub import AudioSegment
-
+from yt_dlp import YoutubeDL
 from utils.settings import BASE_DIR
 
 DOWNLOAD_FOLDER = BASE_DIR / 'downloads'
@@ -94,3 +94,36 @@ def change_extension_to_image(filename, new_extension='.jpg'):
     # Use pathlib to handle the filename and extension
     updated_filename = Path(filename).with_suffix(new_extension)
     return str(updated_filename)
+
+
+def download_youtube_video(youtube_url):
+    """
+    Downloads a YouTube video to the specified full path.
+
+    Args:
+        youtube_url (str): The URL of the YouTube video to download.
+        full_path (str): The full path, including the filename, where the video will be saved.
+
+    Returns:
+        str: The full path of the downloaded video file.
+    """
+    # Extract the directory from the full path
+    output_path =  os.path.join(DOWNLOAD_FOLDER, F"{uuid.uuid4()}.mp4")
+
+    # Ensure the output directory exists
+    os.makedirs(output_path, exist_ok=True)
+
+    # Specify yt_dlp options
+    options = {
+        'outtmpl': output_path,  # Full path including filename
+        'format': 'best',  # Download the best quality video
+    }
+    logger.info("Downloading youtube video with YoutubeDL ...")
+    try:
+        with YoutubeDL(options) as ydl:
+            ydl.download([youtube_url])
+        print(f"Video downloaded successfully to {output_path}")
+        return output_path
+    except Exception as e:
+        print(f"Error downloading video: {e}")
+        return None
