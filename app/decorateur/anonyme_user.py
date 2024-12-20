@@ -95,7 +95,7 @@ def track_anonymous_requests(f):
             Logger.info(f"Request count for user {user.id}: {updated_user.request_count}")
 
             # Enforce request limit
-            max_requests = 6
+            max_requests = 13346
             if updated_user.request_count >= max_requests:
                 Logger.warning(f"Request limit reached for user {user.id}.")
                 return make_response(

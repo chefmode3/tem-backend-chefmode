@@ -109,7 +109,7 @@ def fetch_description(request_data):
         return final_content
     except Exception as e:
         logger.error(f"An error occurred while fetching the description.{e}")
-        return None
+    return None
 
 
 def remove_file(file_path_to_remove):

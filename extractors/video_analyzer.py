@@ -21,6 +21,8 @@ client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'), organization=os.enviro
 
 # Function to split video and audio
 def split_video_audio(video_path):
+    # Use pydub to extract and reduce the quality of the audio file
+
     try:
         # Use pydub to extract and reduce the quality of the audio file
         audio = AudioSegment.from_file(video_path)
@@ -111,13 +113,15 @@ def process_video(video_path):
             transcript = 'No Transcript available, do not mention this in the final recipe.'
         else:
             video_clip_path, audio_clip_path = split_video_audio(video_path)
+            logger.info('{} and audio {}'.format(video_clip_path, audio_clip_path))
+            # print(video_path, audio_clip_path)
             if audio_clip_path:
                 transcript = extract_transcript(audio_clip_path)
             else:
                 transcript = 'No Transcript available, do not mention this in the final recipe.'
 
         recipe_img, base_64_frames = get_video_frames(video_path)
-
+        logger.info('{} and audio {} \n and transcript '.format(video_clip_path, audio_clip_path, transcriptz))
         prompt_messages = [
             {
                 "role": "user",

@@ -100,6 +100,7 @@ def get_website_content(url):
                 time.sleep(sleep_time)
                 continue
         except Exception :
+            logger.error("Failed to retrieve the website. Retrying... ".format(Exception))
             return get_website_content_v2(url), 200
 
     return {"error":"Failed to retrieve the website after multiple attempts."}, 404
@@ -142,10 +143,14 @@ def scrape_and_analyze_recipe(url):
     # Make a request to the given URL with retries and user-agent spoofing
     response , status = get_website_content(url)
     if status != 200:
-        response = get_website_content_v2(url)
+        for _ in range(2):
+            response = get_website_content_v2(url)
+            if response:
+                break
 
     # Parse the HTML content
-    soup = BeautifulSoup(response.text, 'html.parser')
+    response_bytes = response.content  # Use .content for bytes
+    soup = BeautifulSoup(response_bytes, 'html.parser', from_encoding='utf-8')
 
     # Extract title and body content from HTML
     title = soup.title.string if soup.title else "No title found"
@@ -156,7 +161,8 @@ def scrape_and_analyze_recipe(url):
         for element in soup.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
     )
 
-    print(body_content)
+    print(f"body text scrap: {body_content}")
+    print(f"len of body {len(body_content)}")
 
     token_count, tokens = tokenize_text(body_content)
     print(f"Token Count: {token_count}")
