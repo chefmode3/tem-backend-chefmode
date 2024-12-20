@@ -30,7 +30,18 @@ class RecipeService:
 
         old_ingredients = recipe.ingredients
         new_ingredients = []
-        
+        unit_serving = recipe.unit_serving
+        match = re.search(r'(\d+)\s*(.*)', unit_serving)
+        if match:
+            servings_count = int(match.group(1))
+            new_value = abs(servings_count - serving)
+            new_value += serving
+            # Extract the new value based on the position
+            # logger.error(servings_count)
+            update_string = unit_serving.replace(str(servings_count), str(new_value), 1)
+            # logger.error(update_string)
+            recipe.unit_serving = update_string
+
         for ingredient in old_ingredients:
             title_of_ingredient = ingredient.get('title_of_ingredient')
             list_ = ingredient.get('list')
