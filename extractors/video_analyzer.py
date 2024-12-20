@@ -121,7 +121,7 @@ def process_video(video_path):
                 transcript = 'No Transcript available, do not mention this in the final recipe.'
 
         recipe_img, base_64_frames = get_video_frames(video_path)
-        logger.info('{} and audio {} \n and transcript '.format(video_clip_path, audio_clip_path, transcriptz))
+        logger.info('{} and audio {} \n and transcript '.format(video_clip_path, audio_clip_path, transcript))
         prompt_messages = [
             {
                 "role": "user",

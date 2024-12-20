@@ -86,7 +86,7 @@ def get_website_content(url):
         },
     ]
 
-    for _ in range(2):  # Retry up to 5 times
+    for _ in range(5):  # Retry up to 5 times
         headers = random.choice(headers_list)
         try:
             response = session.get(url, headers=headers)
@@ -100,8 +100,12 @@ def get_website_content(url):
                 time.sleep(sleep_time)
                 continue
         except Exception :
-            logger.error("Failed to retrieve the website. Retrying... ".format(Exception))
-            return get_website_content_v2(url), 200
+
+            # Longer, more randomized sleep time to minimize getting blocked
+            sleep_time = random.uniform(10, 20)  # 30 to 60 seconds delay
+            print(f"Sleeping for {sleep_time} seconds to avoid detection.")
+            time.sleep(sleep_time)
+            continue
 
     return {"error":"Failed to retrieve the website after multiple attempts."}, 404
 
