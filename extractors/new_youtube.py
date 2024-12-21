@@ -57,9 +57,9 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
         return save_video_to_file(video_buffer)
 
     except (KeyError, IndexError):
-        logger.error("Error: Unable to fetch video details.")
-        return None
-
+        logger.error(f"Error: Unable to fetch video details., {(KeyError, IndexError)} ")
+        # return None
+    return download_youtube_video(youtube_url)
 # Download the video
     # try:
     #     urllib.request.urlretrieve(video_url, output_filename)
