@@ -109,16 +109,17 @@ def download_youtube_video(youtube_url):
     """
     # Extract the directory from the full path
     output_path =  os.path.join(DOWNLOAD_FOLDER, F"{uuid.uuid4()}.mp4")
-
+    COOKIES_FOLDER = BASE_DIR / 'cookies_files'
     # Ensure the output directory exists
     os.makedirs(output_path, exist_ok=True)
-
+    cookies_path  =  os.path.join(COOKIES_FOLDER, 'cookies.txt')
     # Specify yt_dlp options
     options = {
         'outtmpl': output_path,  # Full path including filename
         'format': 'best',  # Download the best quality video
-        'cookiesfrombrowser': ('chrome',),
+        'cookies': cookies_path,
     }
+
     logger.info("Downloading youtube video with YoutubeDL ...")
     try:
         with YoutubeDL(options) as ydl:
