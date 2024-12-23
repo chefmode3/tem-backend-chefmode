@@ -7,9 +7,12 @@ import uuid
 from pathlib import Path
 
 import ffmpeg
+import requests
 from pydub import AudioSegment
 from yt_dlp import YoutubeDL
 from utils.settings import BASE_DIR
+from pytube import YouTube
+
 
 DOWNLOAD_FOLDER = BASE_DIR / 'downloads'
 
@@ -129,3 +132,17 @@ def download_youtube_video(youtube_url):
     except Exception as e:
         print(f"Error downloading video: {e}")
         return None
+
+def pytube_download_video(download_url):
+    try:
+        video_title = os.path.join(DOWNLOAD_FOLDER, F"{uuid.uuid4()}.mp4")
+        with requests.get(download_url, stream=True) as r:
+            r.raise_for_status()
+            with open(video_title, "wb") as f:
+                for chunk in r.iter_content(chunk_size=18192):
+                    f.write(chunk)
+        print("Video downloaded successfully as:", video_title)
+        return video_title
+    except Exception as e:
+        print("Error during download:", e)
+    return None

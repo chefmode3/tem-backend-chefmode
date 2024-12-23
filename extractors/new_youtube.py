@@ -1,13 +1,11 @@
 import re
-import os
-import json
 import logging
 import http.client
 
 import requests
 
 
-from utils.common import save_video_to_file, download_youtube_video
+from utils.common import download_youtube_video, pytube_download_video
 
 logger = logging.getLogger(__name__)
 
@@ -27,36 +25,44 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
     if not video_id:
         return
 
-    conn = http.client.HTTPSConnection("youtube-media-downloader.p.rapidapi.com")
+    headers = {
+        'x-rapidapi-key': "f2d1322fc9mshd04f3762ac0793ep11069cjsn4e55258922af",
+        'x-rapidapi-host': "youtube-media-downloader.p.rapidapi.com"
+    }
+    querystring = {"videoId": video_id}
+
+    url = "https://youtube-media-downloader.p.rapidapi.com/v2/video/details"
+
     headers = {
         'x-rapidapi-key': "f2d1322fc9mshd04f3762ac0793ep11069cjsn4e55258922af",
         'x-rapidapi-host': "youtube-media-downloader.p.rapidapi.com"
     }
 
-    # Request video details using the video ID
-    conn.request("GET", f"/v2/video/details?videoId={video_id}", headers=headers)
-    res = conn.getresponse()
-    data = res.read()
-
-    # Parse JSON response
-    response = json.loads(data.decode("utf-8"))
+    response = requests.get(url, headers=headers, params=querystring)
 
     try:
-        video_streams = response['videos']['items']
-        video_url_with_audio = video_streams[0].get('url')
+        video_url_with_audio = None
+        video_data = response.json()
+        video_item = video_data.get("videos").get("items")
+        for video in video_item:
+            print("start with request")
+            has_audio = video.get("hasAudio")
+
+            if has_audio:
+                video_url_with_audio = video.get("url")
+                break
+
         if not video_url_with_audio:
             logger.info("Error: No valid video URL found.")
             return None
         logger.info("Downloading video into memory...")
-        logger.info('video_url_with_audio :', video_url_with_audio)
-        video_response = requests.get(video_url_with_audio, stream=True)
-        logger.info(video_response)
-        if video_response.status_code != 200:
-            logger.info("Failed to download the video.")
-            return download_youtube_video(youtube_url)
-        video_buffer = video_response.content
+        # video_response = requests.get(video_url_with_audio, stream=True)
+        # if video_response.status_code != 200:
+        #     logger.info("Failed to download the video.")
+        #     return pytube_download_video(video_url_with_audio)
+        # video_buffer = video_response.content
         # logger.info(video_buffer)
-        return save_video_to_file(video_buffer)
+        return pytube_download_video(video_url_with_audio)
 
     except (KeyError, IndexError):
         logger.error(f"Error: Unable to fetch video details., {(KeyError, IndexError)} ")
@@ -72,5 +78,3 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
 # # Example usage:
 # youtube_url = "https://www.youtube.com/watch?v=1LzFy7Rr89E"  # Or a Shorts URL
 # download_youtube_video(youtube_url)
-
-
