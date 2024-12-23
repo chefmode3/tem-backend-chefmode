@@ -48,7 +48,9 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
             logger.info("Error: No valid video URL found.")
             return None
         logger.info("Downloading video into memory...")
+        logger.info('video_url_with_audio :', video_url_with_audio)
         video_response = requests.get(video_url_with_audio, stream=True)
+        logger.info(video_response)
         if video_response.status_code != 200:
             logger.info("Failed to download the video.")
             return download_youtube_video(youtube_url)
