@@ -117,7 +117,7 @@ def download_youtube_video(youtube_url):
     options = {
         'outtmpl': output_path,  # Full path including filename
         'format': 'best',  # Download the best quality video
-        'cookies': cookies_path,
+        'cookiefile': cookies_path,
     }
 
     logger.info("Downloading youtube video with YoutubeDL ...")
