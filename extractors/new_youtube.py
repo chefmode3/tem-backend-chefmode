@@ -1,6 +1,6 @@
+import os
 import re
 import logging
-import http.client
 
 import requests
 
@@ -24,6 +24,20 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
     video_id = extract_video_id(youtube_url)
     if not video_id:
         return
+    
+    host = os.getenv("YOUTUBE_PROXY_HOST")
+    port = os.getenv("YOUTUBE_PROXY_PORT")
+
+    username = os.getenv("YOUTUBE_PROXY_USERNAME")
+    password = os.getenv("YOUTUBE_PROXY_PASSWORD")
+
+    proxy_url = f'http://{username}:{password}@{host}:{port}'
+
+    proxies = {
+        'https': proxy_url
+    }
+    
+    path_to_brd_ssl_cert = os.path.join(os.path.dirname(__file__), 'brd-ssl-cert.crt')
 
     headers = {
         'x-rapidapi-key': "f2d1322fc9mshd04f3762ac0793ep11069cjsn4e55258922af",
@@ -38,7 +52,11 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
         'x-rapidapi-host': "youtube-media-downloader.p.rapidapi.com"
     }
 
-    response = requests.get(url, headers=headers, params=querystring)
+    response = requests.get(url, headers=headers, params=querystring, proxies=proxies, verify=path_to_brd_ssl_cert)
+    
+    # Log the response status code and content
+    logger.info(f"Response status code: {response.status_code}")
+    logger.info(f"Response content: {response.text}")
 
     try:
         video_url_with_audio = None
@@ -62,12 +80,12 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
         #     return pytube_download_video(video_url_with_audio)
         # video_buffer = video_response.content
         # logger.info(video_buffer)
-        return pytube_download_video(video_url_with_audio)
+        return pytube_download_video(video_url_with_audio, proxies)
 
     except (KeyError, IndexError):
         logger.error(f"Error: Unable to fetch video details., {(KeyError, IndexError)} ")
         # return None
-    return download_youtube_video(youtube_url)
+    return download_youtube_video(youtube_url, proxy_url)
 # Download the video
     # try:
     #     urllib.request.urlretrieve(video_url, output_filename)

@@ -99,7 +99,7 @@ def change_extension_to_image(filename, new_extension='.jpg'):
     return str(updated_filename)
 
 
-def download_youtube_video(youtube_url):
+def download_youtube_video(youtube_url, proxy_url=None):
     """
     Downloads a YouTube video to the specified full path.
 
@@ -121,6 +121,7 @@ def download_youtube_video(youtube_url):
         'outtmpl': output_path,  # Full path including filename
         'format': 'best',  # Download the best quality video
         'cookiefile': cookies_path,
+        'proxy': proxy_url
     }
 
     logger.info("Downloading youtube video with YoutubeDL ...")
@@ -133,10 +134,10 @@ def download_youtube_video(youtube_url):
         print(f"Error downloading video: {e}")
         return None
 
-def pytube_download_video(download_url):
+def pytube_download_video(download_url, proxies=None):
     try:
         video_title = os.path.join(DOWNLOAD_FOLDER, F"{uuid.uuid4()}.mp4")
-        with requests.get(download_url, stream=True) as r:
+        with requests.get(download_url, stream=True, proxies=proxies) as r:
             r.raise_for_status()
             with open(video_title, "wb") as f:
                 for chunk in r.iter_content(chunk_size=18192):
