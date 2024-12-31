@@ -57,28 +57,31 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
     logger.info(f"Response content: {response.text}")
 
     try:
-        video_url_with_audio = None
-        video_data = response.json()
-        video_item = video_data.get("videos").get("items")
-        for video in video_item:
-            print("start with request")
-            has_audio = video.get("hasAudio")
+        if response.status_code == 200:
+            video_url_with_audio = None
+            video_data = response.json()
+            video_item = video_data.get("videos").get("items")
+            for video in video_item:
+                print("start with request")
+                has_audio = video.get("hasAudio")
 
-            if has_audio:
-                video_url_with_audio = video.get("url")
-                break
+                if has_audio:
+                    video_url_with_audio = video.get("url")
+                    break
 
-        if not video_url_with_audio:
-            logger.info("Error: No valid video URL found.")
-            return None
-        logger.info("Downloading video into memory...")
-        # video_response = requests.get(video_url_with_audio, stream=True)
-        # if video_response.status_code != 200:
-        #     logger.info("Failed to download the video.")
-        #     return pytube_download_video(video_url_with_audio)
-        # video_buffer = video_response.content
-        # logger.info(video_buffer)
-        return pytube_download_video(video_url_with_audio, proxies)
+            if not video_url_with_audio:
+                logger.info("Error: No valid video URL found.")
+                return None
+            logger.info("Downloading video into memory...")
+            # video_response = requests.get(video_url_with_audio, stream=True)
+            # if video_response.status_code != 200:
+            #     logger.info("Failed to download the video.")
+            #     return pytube_download_video(video_url_with_audio)
+            # video_buffer = video_response.content
+            # logger.info(video_buffer)
+            return pytube_download_video(video_url_with_audio, proxies)
+        
+        return download_youtube_video(youtube_url, proxy_url)
 
     except (KeyError, IndexError):
         logger.error(f"Error: Unable to fetch video details., {(KeyError, IndexError)} ")
