@@ -31,13 +31,11 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
     username = os.getenv("YOUTUBE_PROXY_USERNAME")
     password = os.getenv("YOUTUBE_PROXY_PASSWORD")
 
-    proxy_url = f'http://{username}:{password}@{host}:{port}'
+    proxy_url = f'http://customer-{username}:{password}@{host}:{port}'
 
     proxies = {
         'https': proxy_url
     }
-    
-    path_to_brd_ssl_cert = os.path.join(os.path.dirname(__file__), 'brd-ssl-cert.crt')
 
     headers = {
         'x-rapidapi-key': "f2d1322fc9mshd04f3762ac0793ep11069cjsn4e55258922af",
@@ -52,7 +50,7 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
         'x-rapidapi-host': "youtube-media-downloader.p.rapidapi.com"
     }
 
-    response = requests.get(url, headers=headers, params=querystring, proxies=proxies, verify=path_to_brd_ssl_cert)
+    response = requests.get(url, headers=headers, params=querystring, proxies=proxies)
     
     # Log the response status code and content
     logger.info(f"Response status code: {response.status_code}")
