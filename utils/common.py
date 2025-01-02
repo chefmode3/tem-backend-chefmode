@@ -114,7 +114,7 @@ def download_youtube_video(youtube_url, proxy_url=None):
     output_path =  os.path.join(DOWNLOAD_FOLDER, F"{uuid.uuid4()}.mp4")
     COOKIES_FOLDER = BASE_DIR / 'cookies_files'
     # Ensure the output directory exists
-    os.makedirs(output_path, exist_ok=True)
+    # os.makedirs(output_path, exist_ok=True)
     cookies_path  =  os.path.join(COOKIES_FOLDER, 'cookies.txt')
     # Specify yt_dlp options
     options = {
@@ -137,7 +137,7 @@ def download_youtube_video(youtube_url, proxy_url=None):
 def pytube_download_video(download_url, proxies=None):
     try:
         video_title = os.path.join(DOWNLOAD_FOLDER, F"{uuid.uuid4()}.mp4")
-        with requests.get(download_url, stream=True, proxies=proxies) as r:
+        with requests.get(download_url, stream=True, proxies=proxies, timeout=30) as r:
             r.raise_for_status()
             with open(video_title, "wb") as f:
                 for chunk in r.iter_content(chunk_size=18192):

@@ -50,7 +50,7 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
         'x-rapidapi-host': "youtube-media-downloader.p.rapidapi.com"
     }
 
-    response = requests.get(url, headers=headers, params=querystring, proxies=proxies)
+    response = requests.get(url, headers=headers, params=querystring, proxies=proxies, timeout=30)
     
     # Log the response status code and content
     logger.info(f"Response status code: {response.status_code}")
