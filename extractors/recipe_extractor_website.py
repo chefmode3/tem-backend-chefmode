@@ -153,8 +153,7 @@ def scrape_and_analyze_recipe(url):
                 break
 
     # Parse the HTML content
-    response_bytes = response.content  # Use .content for bytes
-    soup = BeautifulSoup(response_bytes, 'html.parser', from_encoding='utf-8')
+    soup = BeautifulSoup(response.text, 'html.parser')
 
     # Extract title and body content from HTML
     title = soup.title.string if soup.title else "No title found"
