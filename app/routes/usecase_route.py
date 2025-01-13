@@ -156,8 +156,9 @@ class FlagRecipeResource(Resource):
             user = UserService.get_current_user()
             user_id = user['id']
             recipe = RecipeService.get_recipe_by_id(recipe_id=data['recipe_id'])
-            send_slack_notification_recipe(recipe.origin, head_message='New recipe Flag')
             response = RecipeService.flag_recipe(data['recipe_id'], user_id)
+            flag_status = "flagged" if response['flag'] else "unflagged"
+            send_slack_notification_recipe(recipe.origin, head_message=f'Recipe {flag_status}')
             return response, 201
         except ValidationError as err:
             logger.error(f"Validation error occurred: {str(err)}")

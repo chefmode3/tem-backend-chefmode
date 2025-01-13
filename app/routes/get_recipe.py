@@ -95,9 +95,9 @@ class RecipeScrapPost(Resource):
                     # logger.error('test of saving in a database')
                     content = RecipeCelService.convert_and_store_recipe(content)
                     content = RecipeSerializer().dump(content)
-                app_settings = os.getenv('APP_SETTINGS')
-                if app_settings == 'app.config.ProductionConfig':
-                    send_slack_notification_recipe(content.get('origin'))
+                    app_settings = os.getenv('APP_SETTINGS')
+                    if app_settings == 'app.config.ProductionConfig':
+                        send_slack_notification_recipe(content.get('origin'))
                 return content, 200
 
             elif res.state == 'FAILURE':
