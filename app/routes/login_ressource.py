@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 
 import google.auth.transport.requests
@@ -71,12 +72,13 @@ class CallbackResource(Resource):
             )
 
             user = User.query.filter_by(email=id_info.get('email')).first()
-            access_token = create_access_token(identity=user.email)
+            access_token = create_access_token(identity=id_info.get('email'))
+            print(user)
             if user:
                 user_data = UserRegisterSchema().dump(user)
                 user_data['access_token'] = access_token
                 return user_data, 200
-
+            print(json.dumps(id_info, indent=4))
             user = UserService.create_user(
                         email=id_info.get('email'),
                         name=id_info.get('name'),
