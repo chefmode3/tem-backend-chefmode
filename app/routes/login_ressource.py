@@ -18,7 +18,8 @@ from pip._vendor import cachecontrol
 
 from app.config import flow
 from app.config import GOOGLE_CLIENT_ID
-from app.models import User
+from app.models import User, SubscriptionMembership
+from app.serializers.subscription_serializer import UserSubscriptionSerializer
 from app.serializers.user_serializer import GoogleCallBackSchema
 from app.serializers.user_serializer import UserRegisterSchema
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
@@ -73,12 +74,16 @@ class CallbackResource(Resource):
 
             user = User.query.filter_by(email=id_info.get('email')).first()
             access_token = create_access_token(identity=id_info.get('email'))
-            print(user)
+            subscription_data = None
+            subscription = SubscriptionMembership.query.filter_by(user_id=user['id']).first()
+            if subscription:
+                subscription_data = UserSubscriptionSerializer().dump(subscription)
             if user:
+
                 user_data = UserRegisterSchema().dump(user)
                 user_data['access_token'] = access_token
+                user_data['subscription'] = subscription_data
                 return user_data, 200
-            print(json.dumps(id_info, indent=4))
             user = UserService.create_user(
                         email=id_info.get('email'),
                         name=id_info.get('name'),
@@ -88,6 +93,7 @@ class CallbackResource(Resource):
                         )
             user_data = UserRegisterSchema().dump(user)
             user_data['access_token'] = access_token
+            user_data['subscription'] = subscription_data
             return user_data, 201
 
         except ValidationError as err:
