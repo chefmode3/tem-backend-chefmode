@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 
 import google.auth.transport.requests
@@ -72,7 +73,7 @@ class CallbackResource(Resource):
             )
 
             user = User.query.filter_by(email=id_info.get('email')).first()
-            access_token = create_access_token(identity=user.email)
+            access_token = create_access_token(identity=id_info.get('email'))
             subscription_data = None
             subscription = SubscriptionMembership.query.filter_by(user_id=user['id']).first()
             if subscription:
@@ -83,7 +84,6 @@ class CallbackResource(Resource):
                 user_data['access_token'] = access_token
                 user_data['subscription'] = subscription_data
                 return user_data, 200
-
             user = UserService.create_user(
                         email=id_info.get('email'),
                         name=id_info.get('name'),
