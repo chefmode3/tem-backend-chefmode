@@ -97,7 +97,9 @@ class RecipeScrapPost(Resource):
                     content = RecipeSerializer().dump(content)
                     app_settings = os.getenv('APP_SETTINGS')
                     if app_settings == 'app.config.ProductionConfig':
-                        send_slack_notification_recipe(content.get('origin'))
+                        frontend_recipe_base_url = os.getenv('FRONTEND_RECIPE_BASE_URL')
+                        recipe_chefmode_url = f"{frontend_recipe_base_url}/{content.get('id')}"
+                        send_slack_notification_recipe(content.get('origin'), 'New recipe generated', recipe_chefmode_url)
                 return content, 200
 
             elif res.state == 'FAILURE':

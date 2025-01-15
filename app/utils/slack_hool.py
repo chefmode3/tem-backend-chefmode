@@ -30,14 +30,12 @@ def send_slack_message(message: str):
         assert e.response['error']  # str like 'invalid_auth', 'channel_not_found'
 
 
-def send_slack_notification_recipe(recipe_link: str, head_message: str = 'New recipe generated'):
-    email: str = None
+def send_slack_notification_recipe(recipe_source_link: str, head_message: str = 'New recipe generated', recipe_chefmode_url: str = None):
     get_user_type = 'free'
     if g.get('user', None):
-        email = g.get('user').get('email')
         get_user_type = 'premium'
 
     send_slack_message(
-        message=f"{head_message} \n `recipe_link:{recipe_link},\n user_type: {get_user_type}, \n email : {email}, ` "
+        message=f"{head_message} \n Original source: {recipe_source_link},\n Chefmode source: {recipe_chefmode_url},\n User subscription status: {get_user_type},  "
     )
     logging.info('response')

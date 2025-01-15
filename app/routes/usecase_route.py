@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 
 from flask import request
 from flask_jwt_extended import jwt_required
@@ -158,7 +159,9 @@ class FlagRecipeResource(Resource):
             recipe = RecipeService.get_recipe_by_id(recipe_id=data['recipe_id'])
             response = RecipeService.flag_recipe(data['recipe_id'], user_id)
             flag_status = "flagged" if response['flag'] else "unflagged"
-            send_slack_notification_recipe(recipe.origin, head_message=f'Recipe {flag_status}')
+            frontend_recipe_base_url = os.getenv('FRONTEND_RECIPE_BASE_URL')
+            recipe_chefmode_url = f"{frontend_recipe_base_url}/{recipe.get('id')}"
+            send_slack_notification_recipe(recipe.origin, head_message=f'Recipe {flag_status}', recipe_chefmode_url=recipe_chefmode_url)
             return response, 201
         except ValidationError as err:
             logger.error(f"Validation error occurred: {str(err)}")
