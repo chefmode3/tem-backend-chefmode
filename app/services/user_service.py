@@ -37,7 +37,7 @@ class UserService:
         if not user or not check_password_hash(user.password, password):
             abort(401, description="Invalid credentials.")
         if not user.activate:
-            abort(401, description="user is not activate or delete")
+            abort(401, description="User account is not active or is deleted")
 
         login_user(user)
         return user
