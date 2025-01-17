@@ -219,10 +219,14 @@ class LoginResource(Resource):
         except ValidationError as err:
             logger.error(f'{err.messages} : status ,400')
             return {"errors": err.messages}, 400
+        
+        except HTTPException as http_err:
+            logger.error(f'HTTP Exception: {http_err.description}')
+            return {"error": http_err.description}, http_err.code
 
         except Exception as inter_erro:
             logger.error(f'{str(inter_erro)} : status ,400')
-            return {"errors": " unexpected error occurred"}, 400
+            return {"errors": f" unexpected error occurred: {str(inter_erro)}"}, 400
 
 
 @auth_ns.route('/logout')

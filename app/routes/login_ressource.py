@@ -75,12 +75,11 @@ class CallbackResource(Resource):
             user = User.query.filter_by(email=id_info.get('email')).first()
             access_token = create_access_token(identity=id_info.get('email'))
             subscription_data = None
-            subscription = SubscriptionMembership.query.filter_by(user_id=user['id']).first()
-            if subscription:
-                subscription_data = UserSubscriptionSerializer().dump(subscription)
             if user:
-
                 user_data = UserRegisterSchema().dump(user)
+                subscription = SubscriptionMembership.query.filter_by(user_id=user_data['id']).first()
+                if subscription:
+                    subscription_data = UserSubscriptionSerializer().dump(subscription)
                 user_data['access_token'] = access_token
                 user_data['subscription'] = subscription_data
                 return user_data, 200
@@ -97,11 +96,11 @@ class CallbackResource(Resource):
             return user_data, 201
 
         except ValidationError as err:
-            abort(400, description=err.messages)
-        except MissingCodeError as google_err:
+            return {'error': err.messages}, 400
+        except MissingCodeError as google_err:  
             return {'error': f'{google_err}'}, 400
         except ValueError as e:
             return {'error': f'Failed to create user {e}'}, 401
         except Exception as inter_erro:
             logger.error(f'{str(inter_erro)} : status ,400')
-            return {'errors': ' unexpected error occurred'}, 400
+            return {'errors': f" unexpected error occurred: {str(inter_erro)}"}, 400
