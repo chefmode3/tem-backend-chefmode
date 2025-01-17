@@ -75,12 +75,11 @@ class CallbackResource(Resource):
             user = User.query.filter_by(email=id_info.get('email')).first()
             access_token = create_access_token(identity=id_info.get('email'))
             subscription_data = None
-            subscription = SubscriptionMembership.query.filter_by(user_id=user['id']).first()
-            if subscription:
-                subscription_data = UserSubscriptionSerializer().dump(subscription)
             if user:
-
                 user_data = UserRegisterSchema().dump(user)
+                subscription = SubscriptionMembership.query.filter_by(user_id=user_data['id']).first()
+                if subscription:
+                    subscription_data = UserSubscriptionSerializer().dump(subscription)
                 user_data['access_token'] = access_token
                 user_data['subscription'] = subscription_data
                 return user_data, 200
