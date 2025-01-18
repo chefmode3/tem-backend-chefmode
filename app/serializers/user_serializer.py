@@ -33,8 +33,7 @@ class UserRegisterSchema(SQLAlchemyAutoSchema):
         model = User
         include_relationships = True
         load_instance = True
-        exclude = ('google_token','google_id', 'password', )
-
+        exclude = ('google_token', 'password', )
 
 class UserResponseSchema(Schema):
     id = fields.Str(required=True)
