@@ -27,3 +27,7 @@ class StripeEventSchema(Schema):
     pending_webhooks = fields.Integer()
     type = fields.String(required=True)
     data = fields.Dict(required=True)
+
+
+class ManageSubscriptionSerializer(Schema):
+    price_id = fields.Str(required=True)

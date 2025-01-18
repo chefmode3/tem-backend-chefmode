@@ -41,7 +41,7 @@ class SubscriptionMembership(db.Model):
     __tablename ='subscriptionmembership'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.ForeignKey('user.id'), nullable=False)
-    subscription= db.Column(db.ForeignKey('subscription.id'), nullable=False)
+    subscription = db.Column(db.ForeignKey('subscription.id'), nullable=False)
 
     state = db.Column(db.String(255), default=MembershipStates.NEW.value, nullable=False)
 

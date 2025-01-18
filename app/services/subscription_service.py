@@ -129,6 +129,29 @@ class UserSubscriptionService:
         except StripeError as e:
             raise SubscriptionException(str(e), 400)
 
+    def update_user_subscription(self, price_id: str) -> Optional[SubscriptionMembership]:
+        try:
+            subscription_plan = StripeUserCheckoutSession.query.filter_by(price_id=price_id).first()
+            user_current_sub = SubscriptionMembership.query.filter_by(
+                subscription_id=subscription_plan.subscription_id, user_id=self.user.id
+            ).first()
+            if user_current_sub:
+                stripe.api_key = self.stripe_api_key
+                response = stripe.SubscriptionItem.modify(
+                    subscription_plan.subscription_id,
+                    price=price_id,
+                )
+                if response and (new_sub := Subscription.query.filter_by(price_id=response.get("price", {}).get("id", None)).first()):
+                    user_current_sub.subscription = new_sub.id
+                    user_current_sub.subscription_id =  response.get("subscription")
+                    user_current_sub.product_id = response.get("price", {}).get("product", None)
+                    user_current_sub.purchase_date = datetime.fromtimestamp(response.get("created"))
+                    user_current_sub.price = response.get("price", {}).get("unit_amount", None)
+                    db.session.commit()
+                return user_current_sub
+        except StripeError as e:
+            raise SubscriptionException(str(e), 400)
+
 
 @dataclass
 class SubscriptionWebhookService:
