@@ -131,6 +131,7 @@ class UserSubscriptionService:
 
     def update_user_subscription(self, price_id: str) -> Optional[SubscriptionMembership]:
         try:
+            logger.info("updated customer subscription")
             subscription_plan = StripeUserCheckoutSession.query.filter_by(price_id=price_id).first()
             user_current_sub = SubscriptionMembership.query.filter_by(
                 subscription_id=subscription_plan.subscription_id, user_id=self.user.id
@@ -141,6 +142,7 @@ class UserSubscriptionService:
                     subscription_plan.subscription_id,
                     price=price_id,
                 )
+                logger.info(f"updated customer subscription response{response}")
                 if response and (new_sub := Subscription.query.filter_by(price_id=response.get("price", {}).get("id", None)).first()):
                     user_current_sub.subscription = new_sub.id
                     user_current_sub.subscription_id =  response.get("subscription")
@@ -150,6 +152,7 @@ class UserSubscriptionService:
                     db.session.commit()
                 return user_current_sub
         except StripeError as e:
+            logger.info(f"updated customer subscription error{e}")
             raise SubscriptionException(str(e), 400)
 
 

@@ -85,7 +85,7 @@ class UserPaidSubscriptions(Resource):
         except ValidationError as err:
             abort(400, description=err.messages)
 
-@subscription_ns.route('/manage_subscriptions/')
+@subscription_ns.route('/subscription/manage/')
 class ManageUserSubscriptions(Resource):
     @subscription_ns.expect(manage_subscription_model)
     @subscription_ns.response(200, 'Payment successful.', model=subscription_response)
