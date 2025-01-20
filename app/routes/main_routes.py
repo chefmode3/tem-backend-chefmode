@@ -15,7 +15,9 @@ from werkzeug.exceptions import HTTPException
 
 from app import db
 from app.decorateur.permissions import token_required
+from app.models import SubscriptionMembership
 from app.models.user import RevokedToken, User
+from app.serializers.subscription_serializer import UserSubscriptionSerializer
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services.user_service import UserService
 from app.serializers.user_serializer import (
@@ -203,19 +205,28 @@ class LoginResource(Resource):
                 identity=user_data.email,
                 expires_delta=timedelta(days=1)
             )
+            subscription_data = None
             if user_data:
                 user = user_response_schema.dump(user_data)
+                subscription = SubscriptionMembership.query.filter_by(user_id=user['id']).first()
+                if subscription:
+                    subscription_data = UserSubscriptionSerializer().dump(subscription)
                 user['access_token'] = access_token
+                user['subscription'] = subscription_data
                 return user, 200
             else:
                 abort(401, description="Invalid credentials.")
         except ValidationError as err:
             logger.error(f'{err.messages} : status ,400')
             return {"errors": err.messages}, 400
+        
+        except HTTPException as http_err:
+            logger.error(f'HTTP Exception: {http_err.description}')
+            return {"error": http_err.description}, http_err.code
 
         except Exception as inter_erro:
             logger.error(f'{str(inter_erro)} : status ,400')
-            return {"errors": " unexpected error occurred"}, 400
+            return {"errors": f" unexpected error occurred: {str(inter_erro)}"}, 400
 
 
 @auth_ns.route('/logout')

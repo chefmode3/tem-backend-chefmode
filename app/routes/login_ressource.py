@@ -13,16 +13,19 @@ from flask_restx import Namespace
 from flask_restx import Resource
 from google.oauth2 import id_token
 from marshmallow import ValidationError
+from werkzeug.exceptions import HTTPException
 from oauthlib.oauth2.rfc6749.errors import MissingCodeError
 from pip._vendor import cachecontrol
 
 from app.config import flow
 from app.config import GOOGLE_CLIENT_ID
-from app.models import User
+from app.models import User, SubscriptionMembership
+from app.serializers.subscription_serializer import UserSubscriptionSerializer
 from app.serializers.user_serializer import GoogleCallBackSchema
 from app.serializers.user_serializer import UserRegisterSchema
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services import UserService
+from datetime import timedelta
 
 auth_google_ns = Namespace('auth', description="Opérations d'authentification")
 user_callback_schema = GoogleCallBackSchema()
@@ -72,13 +75,21 @@ class CallbackResource(Resource):
             )
 
             user = User.query.filter_by(email=id_info.get('email')).first()
-            access_token = create_access_token(identity=id_info.get('email'))
-            print(user)
+            access_token = create_access_token(identity=id_info.get('email'),expires_delta=timedelta(days=1))
+            subscription_data = None
             if user:
                 user_data = UserRegisterSchema().dump(user)
+                if not user_data['google_id']:
+                    abort(401, description="User already exists with this email")
+                if not user_data['activate']:
+                    UserService.update_user(id=user_data['id'], activate=True)
+                    user_data['activate'] = True
+                subscription = SubscriptionMembership.query.filter_by(user_id=user_data['id']).first()
+                if subscription:
+                    subscription_data = UserSubscriptionSerializer().dump(subscription)
                 user_data['access_token'] = access_token
+                user_data['subscription'] = subscription_data
                 return user_data, 200
-            print(json.dumps(id_info, indent=4))
             user = UserService.create_user(
                         email=id_info.get('email'),
                         name=id_info.get('name'),
@@ -88,14 +99,18 @@ class CallbackResource(Resource):
                         )
             user_data = UserRegisterSchema().dump(user)
             user_data['access_token'] = access_token
+            user_data['subscription'] = subscription_data
             return user_data, 201
 
         except ValidationError as err:
-            abort(400, description=err.messages)
-        except MissingCodeError as google_err:
+            return {'error': err.messages}, 400
+        except MissingCodeError as google_err:  
             return {'error': f'{google_err}'}, 400
+        except HTTPException as http_err:
+            logger.error(f'HTTP Exception: {http_err.description}')
+            return {"error": http_err.description}, http_err.code
         except ValueError as e:
             return {'error': f'Failed to create user {e}'}, 401
         except Exception as inter_erro:
             logger.error(f'{str(inter_erro)} : status ,400')
-            return {'errors': ' unexpected error occurred'}, 400
+            return {'errors': f" unexpected error occurred: {str(inter_erro)}"}, 400

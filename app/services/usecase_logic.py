@@ -34,10 +34,11 @@ class RecipeService:
         match = re.search(r'(\d+)\s*(.*)', unit_serving)
         if match:
             servings_count = int(match.group(1))
-            new_value = abs(servings_count - serving)
+            new_value = abs(servings_count - old_serving)
+            logger.error(f"servings_count: {new_value}")
             new_value += serving
             # Extract the new value based on the position
-            # logger.error(servings_count)
+            logger.error(f"servings_count: after {new_value}")
             update_string = unit_serving.replace(str(servings_count), str(new_value), 1)
             # logger.error(update_string)
             recipe.unit_serving = update_string
@@ -101,7 +102,10 @@ class RecipeService:
         ).first()
 
         if not user_recipe:
-            return None
+            user_recipe = UserRecipe(
+                user_id=user_id, 
+                recipe_id=recipe_id
+            )
         user_recipe.flag = not user_recipe.flag
 
         try:
@@ -109,7 +113,7 @@ class RecipeService:
             return {
                 'message': 'Recipe flag status updated successfully.',
                 'flag': user_recipe.flag
-            }
+            }, 200
         except Exception as e:
             db.session.rollback()
             logger.error(f"Database error occurred: {str(e)}")

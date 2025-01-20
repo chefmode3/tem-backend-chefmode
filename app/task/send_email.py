@@ -12,7 +12,7 @@ def send_reset_email(email, body, subject,  recipient, type="html"):
         msg = EmailMessage(
             body=body,
             subject=subject,  # Assurez-vous que subject est sans retour à la ligne
-            from_email=recipient,
+            from_email=("Chefmode", recipient),
             to=[email]
         )
         msg.content_subtype = type  # Définit le type de contenu, par exemple "html"
