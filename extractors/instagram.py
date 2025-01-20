@@ -1,107 +1,133 @@
-from __future__ import annotations
-
-import logging
+from instagrapi import Client
 import os
-import re
-import uuid
+from pathlib import Path
+import random
+import time
 
-import instaloader
-import http.client
-
-import requests
-import json
-import urllib.request
-import re
+from utils.common import DOWNLOAD_FOLDER
 
 
-from utils.common import save_video_to_file, DOWNLOAD_FOLDER
-
-logger = logging.getLogger(__name__)
-
-
-def download_instagram_video(instagram_url, output_filename="downloaded_video.mp4"):
-    # Step 1: Extract the shortcode from the provided Instagram URL
-    # Updated regex pattern to include 'reel', 'reels', and 'p'
-    match = re.search(r"(?:[^/]+/)?(reels?|p)/([^/?#&]+)", instagram_url)
-    output_filename =  os.path.join(DOWNLOAD_FOLDER, F"{uuid.uuid4()}.mp4")
-    if not match:
-        raise ValueError("Invalid Instagram URL. Could not extract shortcode.")
-
-    shortcode = match.group(2)  # Extract the actual shortcode
-    print(f"Extracted shortcode: {shortcode}")
-
-    # Step 2: Make the API request
-
-    conn = http.client.HTTPSConnection("instagram-scraper-api2.p.rapidapi.com")
-
-    # url = "https://instagram-scraper-api2.p.rapidapi.com/v1/post_info"
-
-    # querystring = {"code_or_id_or_url": shortcode, "include_insights": "true"}
-
-    headers = {
-        "x-rapidapi-key": "1776083f1dmsh864701c7fc5a69dp1d97f3jsn8cb7620cf8c2",
-        "x-rapidapi-host": "instagram-scraper-api2.p.rapidapi.com"
-    }
-
-
-    for _ in range(4):
-        conn.request("GET", f"/v1/post_info?code_or_id_or_url={shortcode}&include_insights=true", headers=headers)
-        res = conn.getresponse()
-        data = res.read()
-
-        # Step 3: Parse the JSON response
-        response = json.loads(data.decode("utf-8"))
-
-        # Step 4: Extract video URL
-        try:
-            print(f"Downloading video from: {response['data'].keys()}, re")
-
-            if 'video_versions' in response['data'].keys():
-                video_versions = response['data']['video_versions']
-                video_url = video_versions[0]['url']
-            elif 'carousel_media' in response['data'].keys():
-                video_versions = response['data']['carousel_media'][0]['video_versions']
-                video_url = video_versions[0]['url']
-            else:
-                video_url = response['data']['video_url']
-                  # Use the first available video URL
-            print(f"Downloading video from: {video_url}")
-        except Exception as e:
-            print(f"Error downloading video: {e}")
-            continue
-
-        # Step 5: Download the MP4 video
-        try:
-            urllib.request.urlretrieve(video_url, output_filename)
-            print(f"Video downloaded successfully as {output_filename}")
-            return output_filename
-        except Exception as e:
-            print(f"Error downloading video: {e}")
-    return  instagram_video_downloader(instagram_url)
-
-
-def instagram_video_downloader(instagram_url):
+def setup_client() -> Client:
     """
-    Download the video from an Instagram URL.
+    Set up Instagram client with proxy settings.
     """
+    cl = Client()
+    
     try:
-        logger.info("Downloading Instagram video with instaloader ...")
-        # Create an instance of Instaloader
-        loader = instaloader.Instaloader()
-
-        # Load the post
-        post = instaloader.Post.from_shortcode(loader.context, instagram_url)
-
-        # Get the video URL
-        video_url = post.video_url
-
-        # Download the video
-        video_buffer = requests.get(video_url).content
-
-        # Save the video to a file
-        video_path = save_video_to_file(video_buffer)
-
-        return video_path
+        before_ip = cl._send_public_request("https://api.ipify.org/")
+        cl.set_proxy("http://ashishbishnoi18:DW2GTLWb8gzyOQDj@proxy.packetstream.io:31112")
+        after_ip = cl._send_public_request("https://api.ipify.org/")
+        
+        print(f"IP Before proxy: {before_ip}")
+        print(f"IP After proxy: {after_ip}")
+        
+        return cl
     except Exception as e:
-        logger.error(f"An error occurred while downloading the Instagram video: {e}")
-        return None
+        print(f"Error setting up client: {str(e)}")
+        raise
+
+def add_random_delay():
+    """
+    Add a random delay between 1-3 seconds between operations
+    """
+    delay = random.uniform(1, 3)
+    time.sleep(delay)
+
+def get_video_url(media_info):
+    """
+    Extract video URL from media info, handling both direct videos and resources.
+    """
+    # First check if there's a direct video_url
+    if media_info.video_url:
+        return media_info.video_url
+    
+    # If no direct video_url, check resources
+    if hasattr(media_info, 'resources') and media_info.resources:
+        # Look for the first resource that has a video_url
+        for resource in media_info.resources:
+            if resource.video_url:
+                return resource.video_url
+    
+    raise Exception("No video URL found in media info or resources")
+
+def download_instagram_video(url: str, retry_count: int = 0) -> str:
+    """
+    Download an Instagram reel with retry mechanism.
+    
+    Args:
+        url (str): The Instagram reel URL
+        cl (Client): Instagram client with proxy configured
+        download_folder (str): The folder where the video will be saved
+        retry_count (int): Current retry attempt number
+    
+    Returns:
+        Path: The path to the downloaded video file
+    """
+    url = url.strip()
+    cl = setup_client()
+    download_folder = DOWNLOAD_FOLDER
+    MAX_RETRIES = 6
+    try:
+        # Extract media PK from URL
+        media_pk = cl.media_pk_from_url(url)
+        add_random_delay()
+        
+        # Get media info and extract video URL
+        media_info = cl.media_info_a1(media_pk)
+        video_url = get_video_url(media_info)
+        add_random_delay()
+        
+        # Create downloads folder if it doesn't exist
+        if not os.path.exists(download_folder):
+            os.makedirs(download_folder)
+        
+        # Download the video
+        downloaded_path_ = cl.clip_download_by_url(video_url, folder=download_folder)
+        add_random_delay()
+        
+        print(f"Video downloaded successfully to: {downloaded_path_}")
+        return downloaded_path_
+        
+    except Exception as e:
+        if retry_count < MAX_RETRIES - 1:
+            retry_count += 1
+            print(f"Download failed. Retrying ({retry_count}/{MAX_RETRIES-1})...")
+            
+            # Create new client for retry
+            # new_cl = setup_client()
+            return download_instagram_video(url, retry_count)
+        else:
+            print(f"Error downloading video after {MAX_RETRIES} attempts: {str(e)}")
+            raise
+
+#
+# if __name__ == "__main__":
+#     try:
+#         # Get input for URL
+#         url = input("Enter Instagram reel URL: ")
+#
+#         if not url:
+#             print("No URL provided. Exiting...")
+#             exit()
+#
+#         # Get download folder
+#         download_folder = input("Enter download folder path (press Enter for default 'Downloads'): ")
+#
+#         # Use default folder if no input provided
+#         if not download_folder:
+#             download_folder = 'Downloads'
+#
+#         # Initialize client and try to download
+#
+#         try:
+#             downloaded_path = download_instagram_video(url.strip(), cl, download_folder)
+#             print("\nDownload Summary:")
+#             print("Status: Success")
+#             print(f"File: {downloaded_path}")
+#         except Exception as e:
+#             print("\nDownload Summary:")
+#             print("Status: Failed")
+#             print(f"Error: {str(e)}")
+#
+#     except Exception as e:
+#         print(f"An error occurred: {str(e)}")

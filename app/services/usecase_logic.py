@@ -34,12 +34,10 @@ class RecipeService:
         match = re.search(r'(\d+)\s*(.*)', unit_serving)
         if match:
             servings_count = int(match.group(1))
-            new_value = abs(servings_count - serving)
+            new_value = abs(servings_count - old_serving)
             new_value += serving
             # Extract the new value based on the position
-            # logger.error(servings_count)
             update_string = unit_serving.replace(str(servings_count), str(new_value), 1)
-            # logger.error(update_string)
             recipe.unit_serving = update_string
 
         for ingredient in old_ingredients:

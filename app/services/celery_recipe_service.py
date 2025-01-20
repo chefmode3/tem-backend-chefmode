@@ -146,6 +146,11 @@ class RecipeCelService:
         db.session.commit()
         return process
 
+    @staticmethod
+    def get_recipe_by_origin(self):
+        pass
+
+
     # main methode for json treatment and call other methode
     @staticmethod
     def convert_and_store_recipe(recipe_json: dict):
