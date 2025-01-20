@@ -35,12 +35,9 @@ class RecipeService:
         if match:
             servings_count = int(match.group(1))
             new_value = abs(servings_count - old_serving)
-            logger.error(f"servings_count: {new_value}")
             new_value += serving
             # Extract the new value based on the position
-            logger.error(f"servings_count: after {new_value}")
             update_string = unit_serving.replace(str(servings_count), str(new_value), 1)
-            # logger.error(update_string)
             recipe.unit_serving = update_string
 
         for ingredient in old_ingredients:
