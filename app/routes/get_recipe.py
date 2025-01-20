@@ -16,7 +16,7 @@ from app.serializers.recipe_serializer import LinkRecipeSchema
 from app.serializers.recipe_serializer import RecipeSerializer
 from app.serializers.recipe_serializer import TaskIdSchema
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
-from app.services import RecipeCelService
+from app.services import RecipeCelService, RecipeService
 from app.task.fetch_desciption import call_fetch_description
 from app.utils.slack_hool import send_slack_notification_recipe
 from app.utils.utils import get_current_user
@@ -93,11 +93,14 @@ class RecipeScrapPost(Resource):
                 # logger.error("find wes")
                 if not find:
                     # logger.error('test of saving in a database')
-                    content = RecipeCelService.convert_and_store_recipe(content)
-                    content = RecipeSerializer().dump(content)
                     app_settings = os.getenv('APP_SETTINGS')
                     if app_settings == 'app.config.ProductionConfig':
-                        send_slack_notification_recipe(content.get('origin'))
+                        recipe = RecipeService.get_recipe_by_origin(content.get('content').get('origin'))
+                        if recipe is not None:
+                            send_slack_notification_recipe(content.get('content').get('origin'))
+                    content = RecipeCelService.convert_and_store_recipe(content)
+                    content = RecipeSerializer().dump(content)
+
                 return content, 200
 
             elif res.state == 'FAILURE':
