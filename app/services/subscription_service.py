@@ -150,7 +150,7 @@ class UserSubscriptionService:
                 resp = stripe.Subscription.retrieve( user_current_sub.subscription_id)
                 logger.info(resp)
                 if resp:
-                    response = stripe.SubscriptionItem.modify(
+                    response = stripe.Subscription.modify(
                         user_current_sub.subscription_id,
                         items=[{"id": resp.get("items", {}).get("data", [])[0].get("id"), "price": price_id}]
                     )
