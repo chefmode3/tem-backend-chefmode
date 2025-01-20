@@ -2,6 +2,8 @@
 <html>
   <head>
     <title>Chefmode Welcome Email</title>
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
     <style>
       .container {
         color: #333;
@@ -24,20 +26,76 @@
         color: #000;
       }
 
-      /* Mode sombre */
-      @media (prefers-color-scheme: dark) {
+      .content {
+        padding-left: 32px;
+        padding-bottom: 16px;
+        padding-right: 32px;
+        gap: 16px;
+      }
+
+      .content-primary-text {
+        text-align: left;
+        font-weight: 400;
+        font-size: 14px;
+        line-height: 22px;
+        margin-top: 0px;
+      }
+
+      .btn {
+        color: #fff !important;
+        font-weight: 600;
+        padding: 10px 40px;
+        border-radius: 4px;
+        border: none;
+        background-color: #000;
+        display: block;
+        margin: 0 auto;
+        text-decoration: none;
+      }
+
+      .footer-text {
+        text-align: left;
+        font-weight: 400;
+        font-size: 14px;
+        line-height: 22px;
+        padding-left: 32px;
+        padding-right: 32px;
+        margin-top: 0px;
+        margin-bottom: 0px;
+      }
+
+      @media screen and (max-width: 600px) {
         .container {
-          background-color: #fff;
-          color: #333;
+          padding-block: 16px;
+          padding-inline: 8px;
         }
 
         .title {
-          color: #000;
+          padding-block: 16px;
+          padding-inline: 8px;
         }
 
-        a {
-          background-color: black;
-          color: white;
+        .content {
+          padding-left: 8px;
+          padding-bottom: 8px;
+          padding-right: 8px;
+        }
+
+        .footer-text {
+          padding-left: 8px;
+          padding-right: 8px;
+        }
+      }
+
+      /* Mode sombre */
+      @media (prefers-color-scheme: dark) {
+        .container {
+          background-color: transparent !important;
+          color: #fff !important;
+        }
+
+        .title {
+          color: #fff !important;
         }
       }
 
@@ -53,48 +111,21 @@
         }
 
         a {
-          background-color: black;
-          color: white;
+          background-color: #000;
+          color: #fff;
         }
       }
     </style>
   </head>
   <body style="font-family: Arial, sans-serif; box-sizing: border-box">
-    <div
-      class="container"
-      style="
-        color: #333;
-        font-size: 14px;
-        background-color: #fff;
-        padding: 32px;
-        margin: 0 auto;
-        max-width: 600px;
-        text-align: center;
-      "
-    >
+    <div class="container">
       <div id="header" style="margin: 0 auto; width: fit-content">
         <img src="{{ logo_url }}" alt="Chefmode logo" />
       </div>
       <div id="main">
         <h1 id="heading" class="title">Welcome to chefmode!</h1>
-        <div
-          id="content"
-          style="
-            padding-left: 32px;
-            padding-bottom: 16px;
-            padding-right: 32px;
-            gap: 16px;
-          "
-        >
-          <p
-            style="
-              text-align: left;
-              font-weight: 400;
-              font-size: 14px;
-              line-height: 22px;
-              margin-top: 0px;
-            "
-          >
+        <div id="content" class="content">
+          <p class="content-primary-text">
             Our goal is to enable chefs everywhere to cook to the best of their
             ability. We provide you with tools that reduce your time to cooking
             excellent meals for you and your loved ones.
@@ -113,39 +144,12 @@
             Please follow this link to activate your account:
           </p>
           <div style="display: flex; justify-content: center">
-            <a
-              style="
-                color: #fff;
-                font-weight: 600;
-                padding: 10px 40px;
-                border-radius: 4px;
-                border: none;
-                background-color: #000;
-                display: block;
-                margin: 0 auto;
-                text-decoration: none;
-              "
-              href="{{ reset_url }}"
-              >Activate</a
-            >
+            <a class="btn" href="{{ reset_url }}">Activate</a>
           </div>
         </div>
       </div>
       <div id="footer">
-        <p
-          style="
-            text-align: left;
-            font-weight: 400;
-            font-size: 14px;
-            line-height: 22px;
-            padding-left: 32px;
-            padding-right: 32px;
-            margin-top: 0px;
-            margin-bottom: 0px;
-          "
-        >
-          Thanks, <br />chefmode team
-        </p>
+        <p class="footer-text">Thanks, <br />chefmode team</p>
       </div>
     </div>
   </body>
