@@ -138,7 +138,7 @@ class UserSubscriptionService:
                 stripe.api_key = self.stripe_api_key
                 response = stripe.SubscriptionItem.modify(
                     subscription_plan.subscription_id,
-                    price=price_id,
+                    items=[{"id": subscription_plan.subscription_id , "deleted": True}, {"price": price_id}]
                 )
                 logger.info(f"updated customer subscription response{response}")
                 if response and (new_sub := Subscription.query.filter_by(price_id=response.get("price", {}).get("id", None)).first()):
