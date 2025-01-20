@@ -134,6 +134,8 @@ class UserSubscriptionService:
             logger.info("updated customer subscription")
             subscription_plan = Subscription.query.filter_by(price_id=price_id).first()
             user_current_sub = SubscriptionMembership.query.filter_by(user_id=self.user.id).first()
+            logger.info(subscription_plan.price_id)
+            logger.info(user_current_sub.subscription_id)
             if user_current_sub and subscription_plan:
                 logger.info(f"updated customer subscription subscription={subscription_plan.subscription_id}")
                 stripe.api_key = self.stripe_api_key
@@ -153,6 +155,19 @@ class UserSubscriptionService:
         except StripeError as e:
             logger.info(f"updated customer subscription error{e}")
             raise SubscriptionException(str(e), 400)
+
+
+    def cancel_subscription(self) -> bool:
+        user_current_sub = SubscriptionMembership.query.filter_by(user_id=self.user.id).first()
+        if user_current_sub:
+            try:
+                stripe.api_key = self.stripe_api_key
+                stripe.Subscription.cancel(user_current_sub.subscription_id)
+                return True
+            except StripeError as e:
+                raise SubscriptionException(str(e), 400)
+        return False
+
 
 
 @dataclass
