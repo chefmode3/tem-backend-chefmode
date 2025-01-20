@@ -101,7 +101,10 @@ class RecipeService:
         ).first()
 
         if not user_recipe:
-            return None
+            user_recipe = UserRecipe(
+                user_id=user_id, 
+                recipe_id=recipe_id
+            )
         user_recipe.flag = not user_recipe.flag
 
         try:
@@ -109,7 +112,7 @@ class RecipeService:
             return {
                 'message': 'Recipe flag status updated successfully.',
                 'flag': user_recipe.flag
-            }
+            }, 200
         except Exception as e:
             db.session.rollback()
             logger.error(f"Database error occurred: {str(e)}")
