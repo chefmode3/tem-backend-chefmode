@@ -17,6 +17,7 @@ from app.serializers.recipe_serializer import RecipeSerializer
 from app.serializers.recipe_serializer import TaskIdSchema
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
 from app.services import RecipeCelService
+from app.services.usecase_logic import RecipeService
 from app.task.fetch_desciption import call_fetch_description
 from app.utils.slack_hool import send_slack_notification_recipe
 from app.utils.utils import get_current_user
@@ -82,16 +83,14 @@ class RecipeScrapPost(Resource):
                 result: dict = res.result
 
                 content = result.get('result')
-                # logger.error("eee12")
-                # logger.info(content)
-                find = result.get('find')
-                logger.error(find)
+
                 if not content:
                     return {'error': "recipe not found please Retry later "}, 404
                 if content.get('error'):
                     return content, content.pop('status')
                 # logger.error("find wes")
-                if not find:
+                recipe = RecipeService.get_recipe_by_origin(content.get('content').get('origin'))
+                if not recipe:
                     # logger.error('test of saving in a database')
                     content = RecipeCelService.convert_and_store_recipe(content)
                     content = RecipeSerializer().dump(content)
