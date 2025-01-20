@@ -132,11 +132,9 @@ class UserSubscriptionService:
     def update_user_subscription(self, price_id: str) -> Optional[SubscriptionMembership]:
         try:
             logger.info("updated customer subscription")
-            subscription_plan = StripeUserCheckoutSession.query.filter_by(price_id=price_id).first()
-            user_current_sub = SubscriptionMembership.query.filter_by(
-                subscription_id=subscription_plan.subscription_id, user_id=self.user.id
-            ).first()
-            if user_current_sub:
+            subscription_plan = Subscription.query.filter_by(price_id=price_id).first()
+            user_current_sub = SubscriptionMembership.query.filter_by(user_id=self.user.id).first()
+            if user_current_sub and subscription_plan:
                 stripe.api_key = self.stripe_api_key
                 response = stripe.SubscriptionItem.modify(
                     subscription_plan.subscription_id,
