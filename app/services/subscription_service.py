@@ -148,6 +148,7 @@ class UserSubscriptionService:
                 logger.info(f"updated customer subscription subscription={user_current_sub.subscription_id}")
                 stripe.api_key = self.stripe_api_key
                 resp = stripe.Subscription.retrieve( user_current_sub.subscription_id)
+                logger.info(resp)
                 if resp:
                     response = stripe.SubscriptionItem.modify(
                         user_current_sub.subscription_id,
