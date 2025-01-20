@@ -107,6 +107,26 @@ class ManageUserSubscriptions(Resource):
         return "Can not update User subscription.", 400
 
 
+@subscription_ns.route('/subscription/cancel/')
+class CancelUserSubscription(Resource):
+    @subscription_ns.response(200, 'Payment successful.', model=subscription_response)
+    @subscription_ns.response(400, 'Bad Request.')
+    @subscription_ns.response(401, 'User does not exist.')
+    @token_required
+    @jwt_required(verify_type=False)
+    def post(self):
+        token = get_jwt()
+        user = User.query.filter_by(email=token['sub']).first()
+        user_subscription = UserSubscriptionService(
+            user=user,
+            stripe_api_key=get_api_key()
+        )
+        subscription = user_subscription.cancel_subscription()
+        if subscription:
+            return "Subscription cancelled", 200
+        return "Can not cancel User subscription.", 400
+
+
 @subscription_ns.route('/subscription/webhook/')
 class SubscriptionWebhook(Resource):
 
