@@ -16,7 +16,9 @@ from app.serializers.recipe_serializer import LinkRecipeSchema
 from app.serializers.recipe_serializer import RecipeSerializer
 from app.serializers.recipe_serializer import TaskIdSchema
 from app.serializers.utils_serialiser import convert_marshmallow_to_restx_model
+from app.services.user_service import UserService
 from app.services import RecipeCelService
+from app.services.usecase_logic import RecipeService
 from app.task.fetch_desciption import call_fetch_description
 from app.utils.slack_hool import send_slack_notification_recipe
 from app.utils.utils import get_current_user
@@ -82,16 +84,14 @@ class RecipeScrapPost(Resource):
                 result: dict = res.result
 
                 content = result.get('result')
-                # logger.error("eee12")
-                # logger.info(content)
-                find = result.get('find')
-                logger.error(find)
+
                 if not content:
                     return {'error': "recipe not found please Retry later "}, 404
                 if content.get('error'):
                     return content, content.pop('status')
                 # logger.error("find wes")
-                if not find:
+                recipe = RecipeService.get_recipe_by_origin(content.get('content').get('origin'))
+                if not recipe:
                     # logger.error('test of saving in a database')
                     content = RecipeCelService.convert_and_store_recipe(content)
                     content = RecipeSerializer().dump(content)
@@ -99,7 +99,10 @@ class RecipeScrapPost(Resource):
                     if app_settings == 'app.config.ProductionConfig':
                         frontend_recipe_base_url = os.getenv('FRONTEND_RECIPE_BASE_URL')
                         recipe_chefmode_url = f"{frontend_recipe_base_url}/{content.get('id')}"
-                        send_slack_notification_recipe(content.get('origin'), 'New recipe generated', recipe_chefmode_url)
+                        user = UserService.get_user_by_token()
+                        user_id = user.id if user else None
+                        send_slack_notification_recipe(content.get('origin'), 'New recipe generated', recipe_chefmode_url, user_id=user_id)
+                            
                 return content, 200
 
             elif res.state == 'FAILURE':

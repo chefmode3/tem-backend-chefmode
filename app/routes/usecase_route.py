@@ -155,14 +155,22 @@ class FlagRecipeResource(Resource):
         try:
             data = flag_recipe_schema.load(request.get_json())
             user = UserService.get_current_user()
+            
+            if not user:
+                return {'error': 'Authentication required'}, 401
             user_id = user['id']
             recipe = RecipeService.get_recipe_by_id(recipe_id=data['recipe_id'])
-            response = RecipeService.flag_recipe(data['recipe_id'], user_id)
-            flag_status = "flagged" if response['flag'] else "unflagged"
-            frontend_recipe_base_url = os.getenv('FRONTEND_RECIPE_BASE_URL')
-            recipe_chefmode_url = f"{frontend_recipe_base_url}/{recipe.get('id')}"
-            send_slack_notification_recipe(recipe.origin, head_message=f'Recipe {flag_status}', recipe_chefmode_url=recipe_chefmode_url)
-            return response, 201
+            response, status = RecipeService.flag_recipe(data['recipe_id'], user_id)
+            app_settings = os.getenv('APP_SETTINGS')
+            
+            if app_settings == 'app.config.ProductionConfig':
+                if recipe and status == 200:
+                    flag_status = "flagged" if response['flag'] else "unflagged"
+                    frontend_recipe_base_url = os.getenv('FRONTEND_RECIPE_BASE_URL')
+                    recipe_chefmode_url = f"{frontend_recipe_base_url}/{recipe.id}"
+                    send_slack_notification_recipe(recipe.origin, head_message=f'Recipe {flag_status}', recipe_chefmode_url=recipe_chefmode_url, user_id=user_id)
+                    return response, 201
+            return {'error': 'Recipe not found'}, 404
         except ValidationError as err:
             logger.error(f"Validation error occurred: {str(err)}")
             return {'errors': err.messages}, 400

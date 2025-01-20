@@ -1,7 +1,10 @@
 import logging
+import jwt
+import os
 from datetime import datetime
 
 from flask import abort
+from flask import request
 from flask_jwt_extended import get_jwt_identity
 from flask_login import login_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -186,3 +189,13 @@ class UserService:
             db.session.rollback()
             # Rollback si erreur
             return {"error": str(e)}, 400
+    
+    @staticmethod
+    def get_user_by_token():
+        token = request.headers.get('Authorization')
+        if not token or not token.startswith('Bearer '):
+            return None
+        decoded = jwt.decode(token.split()[1], os.environ.get("SECRET_KEY"), algorithms=['HS256'])
+        user_email = decoded.get("sub")
+        user = UserService.get_user_by_email(user_email)
+        return user
