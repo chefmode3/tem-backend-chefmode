@@ -129,6 +129,16 @@ class UserSubscriptionService:
         except StripeError as e:
             raise SubscriptionException(str(e), 400)
 
+    def get_user_subscription_item(self, subscription_id) -> Optional[str]:
+        try:
+            stripe.api_key = self.stripe_api_key
+            response = stripe.Subscription.retrieve(subscription_id)
+            if response:
+                return response.get("id")
+        except StripeError as e:
+            raise SubscriptionException(str(e), 400)
+
+
     def update_user_subscription(self, price_id: str) -> Optional[SubscriptionMembership]:
         try:
             logger.info("updated customer subscription")
@@ -137,19 +147,21 @@ class UserSubscriptionService:
             if user_current_sub:
                 logger.info(f"updated customer subscription subscription={user_current_sub.subscription_id}")
                 stripe.api_key = self.stripe_api_key
-                response = stripe.SubscriptionItem.modify(
-                    user_current_sub.subscription_id,
-                    price=price_id
-                )
-                logger.info(f"updated customer subscription response{response}")
-                if response and (new_sub := Subscription.query.filter_by(price_id=response.get("price", {}).get("id", None)).first()):
-                    user_current_sub.subscription = new_sub.id
-                    user_current_sub.subscription_id =  response.get("subscription")
-                    user_current_sub.product_id = response.get("price", {}).get("product", None)
-                    user_current_sub.purchase_date = datetime.fromtimestamp(response.get("created"))
-                    user_current_sub.price = response.get("price", {}).get("unit_amount", None)
-                    db.session.commit()
-                return user_current_sub
+                resp = stripe.Subscription.retrieve( user_current_sub.subscription_id)
+                if resp:
+                    response = stripe.SubscriptionItem.modify(
+                        user_current_sub.subscription_id,
+                        items=[{"id": resp.get("id"), "price": price_id}]
+                    )
+                    logger.info(f"updated customer subscription response{response}")
+                    if response and (new_sub := Subscription.query.filter_by(price_id=response.get("price", {}).get("id", None)).first()):
+                        user_current_sub.subscription = new_sub.id
+                        user_current_sub.subscription_id =  response.get("subscription")
+                        user_current_sub.product_id = response.get("price", {}).get("product", None)
+                        user_current_sub.purchase_date = datetime.fromtimestamp(response.get("created"))
+                        user_current_sub.price = response.get("price", {}).get("unit_amount", None)
+                        db.session.commit()
+                    return user_current_sub
         except StripeError as e:
             logger.info(f"updated customer subscription error{e}")
             raise SubscriptionException(str(e), 400)
