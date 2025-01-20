@@ -135,10 +135,11 @@ class UserSubscriptionService:
             subscription_plan = Subscription.query.filter_by(price_id=price_id).first()
             user_current_sub = SubscriptionMembership.query.filter_by(user_id=self.user.id).first()
             if user_current_sub and subscription_plan:
+                logger.info(f"updated customer subscription subscription={subscription_plan.subscription_id}")
                 stripe.api_key = self.stripe_api_key
                 response = stripe.SubscriptionItem.modify(
-                    subscription_plan.subscription_id,
-                    items=[{"id": subscription_plan.subscription_id , "deleted": True}, {"price": price_id}]
+                    user_current_sub.subscription_id,
+                    items=[{"id": user_current_sub.subscription_id , "deleted": True}, {"price": price_id}]
                 )
                 logger.info(f"updated customer subscription response{response}")
                 if response and (new_sub := Subscription.query.filter_by(price_id=response.get("price", {}).get("id", None)).first()):
