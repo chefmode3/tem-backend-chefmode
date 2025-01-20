@@ -152,7 +152,7 @@ class UserSubscriptionService:
                 if resp:
                     response = stripe.SubscriptionItem.modify(
                         user_current_sub.subscription_id,
-                        items=[{"id": resp.get("id"), "price": price_id}]
+                        items=[{"id": resp.get("items", {}).get("data", [])[0].get("id"), "price": price_id}]
                     )
                     logger.info(f"updated customer subscription response{response}")
                     if response and (new_sub := Subscription.query.filter_by(price_id=response.get("price", {}).get("id", None)).first()):
