@@ -4,7 +4,7 @@ import logging
 import os
 
 from flask import abort
-from flask import render_template
+from flask import render_template, url_for
 from itsdangerous import URLSafeTimedSerializer
 
 from app.services import UserService
@@ -45,7 +45,8 @@ def activation_or_reset_email(
 
     name = name
     to = os.getenv('DEFAULT_FROM_EMAIL')
+    logo_url = url_for('static', filename='images/chefmode-logo.png', _external=True)
     # Render the HTML template with context
-    body = render_template(template, name=name, reset_url=reset_url)
+    body = render_template(template, name=name, reset_url=reset_url, logo_url=logo_url)
     send_reset_email.delay(email=email, body=body, subject=subject, recipient=to)
     logger.info('status: Email task sent to queue, 200')
