@@ -154,8 +154,9 @@ class UserSubscriptionService:
                         user_current_sub.subscription_id,
                         items=[{"id": resp.get("items", {}).get("data", [])[0].get("id"), "price": price_id}]
                     )
-                    logger.info(f"updated customer subscription response{response}")
                     if response and (new_sub := Subscription.query.filter_by(price_id=response.get("plan", {}).get("id", None)).first()):
+                        logger.info("updated customer subscription response")
+                        logger.info(new_sub)
                         user_current_sub.subscription = new_sub.id
                         user_current_sub.subscription_id =  response.get("id")
                         user_current_sub.product_id = response.get("plan", {}).get("product", None)
