@@ -12,8 +12,6 @@ import tiktoken  # Import tiktoken
 from bs4 import BeautifulSoup
 from openai import OpenAI
 from PIL import Image
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 from app.utils.s3_storage import save_image_to_s3_from_url
 
@@ -35,33 +33,6 @@ def extract_main_image(soup):
         logger.info(image_tags)
         return image_tags[0]['src']
     return None
-
-def get_website_content_v2(url):
-    """
-        Function to get website content using ScrapeNinja API.
-        """
-    api_url = 'https://scrapeninja.p.rapidapi.com/scrape'
-
-    querystring = {'url': url}
-
-    headers = {
-        'x-rapidapi-key': '1776083f1dmsh864701c7fc5a69dp1d97f3jsn8cb7620cf8c2',
-        'x-rapidapi-host': 'scrapeninja.p.rapidapi.com'
-    }
-
-    api_response = requests.get(api_url, headers=headers, params=querystring)
-    api_response.raise_for_status()  # Raise an exception for HTTP errors
-
-    # data = api_response.json()
-    # body = data.get('body', '')
-
-    # Create a mock response object with a .text attribute containing body
-    class MockResponse:
-        def __init__(self, text):
-            self.text = text
-
-    return MockResponse(api_response.content)
-
 
 def extract_main_image(soup):
     """
