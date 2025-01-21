@@ -52,62 +52,58 @@ def get_website_content_v2(url):
     api_response = requests.get(api_url, headers=headers, params=querystring)
     api_response.raise_for_status()  # Raise an exception for HTTP errors
 
-    data = api_response.json()
-    body = data.get('body', '')
+    # data = api_response.json()
+    # body = data.get('body', '')
 
     # Create a mock response object with a .text attribute containing body
     class MockResponse:
         def __init__(self, text):
             self.text = text
 
-    return MockResponse(body)
+    return MockResponse(api_response.content)
+
+
+def extract_main_image(soup):
+    """
+    Attempt to extract the main image from a given soup object.
+    """
+    image = soup.find('meta', property='og:image')
+    if image and 'content' in image.attrs:
+        return image['content']
+    image_tags = soup.find_all('img', src=True)  # Fallback for cases where no og:image
+    if image_tags:
+        return image_tags[0]['src']
+    return None
 
 
 def get_website_content(url):
     """
-    Function to handle website requests with retries and proper delays to reduce the risk of being blocked.
+    Function to handle website requests with retries for handling 403 errors.
     """
-    session = requests.Session()
-    retries = Retry(total=2, backoff_factor=2, status_forcelist=[403, 429, 500, 502, 503, 504])
-    session.mount('https://', HTTPAdapter(max_retries=retries))
-
     headers_list = [
         {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Referer": "https://www.google.com/"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
         },
         {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15",
-            "Accept-Language": "en-US,en;q=0.8",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Referer": "https://www.google.com/"
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36"
+        },
+        {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36"
         },
     ]
-
     for _ in range(5):  # Retry up to 5 times
         headers = random.choice(headers_list)
         try:
-            response = session.get(url, headers=headers)
+            response = requests.get(url, headers=headers)
             response.raise_for_status()
-            return response, 200
+            return response
         except requests.exceptions.HTTPError as e:
-            if response.status_code in [403, 429]:
-                # Longer, more randomized sleep time to minimize getting blocked
-                sleep_time = random.uniform(10, 20)  # 30 to 60 seconds delay
-                print(f"Sleeping for {sleep_time} seconds to avoid detection.")
-                time.sleep(sleep_time)
+            if response.status_code == 403:
+                time.sleep(random.uniform(1, 3))  # Random sleep to avoid being blocked
                 continue
-        except Exception :
-
-            # Longer, more randomized sleep time to minimize getting blocked
-            sleep_time = random.uniform(10, 20)  # 30 to 60 seconds delay
-            print(f"Sleeping for {sleep_time} seconds to avoid detection.")
-            time.sleep(sleep_time)
-            continue
-
-    return {"error":"Failed to retrieve the website after multiple attempts."}, 404
+            else:
+                raise e
+    raise requests.exceptions.RequestException("Failed to retrieve the website after multiple attempts.")
 
 
 def get_image_with_retry(image_url, retries=5):
@@ -145,26 +141,33 @@ def save_image_locally(image, filename='recipe_image.jpg'):
 
 def scrape_and_analyze_recipe(url):
     # Make a request to the given URL with retries and user-agent spoofing
-    response , status = get_website_content(url)
-    if status != 200:
-        for _ in range(2):
-            response = get_website_content_v2(url)
-            if response:
-                break
+    start = time.time()
+    response = get_website_content(url)
+    end = time.time()
+    print(f"get_website_content took {end - start} seconds")
 
     # Parse the HTML content
+    start = time.time()
     soup = BeautifulSoup(response.text, 'html.parser')
+    end = time.time()
+    print(f"parsing html took {end - start} seconds")
 
     # Extract title and body content from HTML
     title = soup.title.string if soup.title else "No title found"
 
+    start = time.time()
     # Extract all text content from various relevant tags
-    body_content = " ".join(
-        element.get_text(separator=" ", strip=True)
-        for element in soup.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
-    )
 
-    print(f"body text scrap: {body_content}")
+    body_content = soup.body.get_text(separator=" ", strip=True)
+    end = time.time()
+    # print(f"Extract all
+    # # Extract all text content from various relevant tags
+    # body_content = " ".join(
+    #     element.get_text(separator=" ", strip=True)
+    #     for element in soup.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
+    # )
+
+    # print(f"body text scrap: {body_content}")
     print(f"len of body {len(body_content)}")
 
     token_count, tokens = tokenize_text(body_content)
