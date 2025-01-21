@@ -42,7 +42,9 @@ def call_fetch_description(self, data):
             return {
                 'status': 'success',
                 'find': True,
-                'result': RecipeSerializer().dump(description_result)
+                'result': {
+                        'content': RecipeSerializer().dump(description_result)
+                    }
                 }
         description_result = fetch_description(data)
 
