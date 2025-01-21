@@ -8,7 +8,6 @@ import tempfile
 import uuid
 
 import cv2
-from moviepy.video.io.VideoFileClip import VideoFileClip
 from openai import OpenAI
 from pydub import AudioSegment
 
