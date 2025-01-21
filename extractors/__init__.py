@@ -16,6 +16,7 @@ from extractors.recipe_extractor_website import scrape_and_analyze_recipe
 from extractors.tiktok import download_tiktok
 from extractors.video_analyzer import process_video
 from extractors.x_scraper import download_twitter_video
+from extractors.youtube import download_youtube_video
 from utils.common import identify_platform
 from utils.settings import BASE_DIR
 
@@ -64,7 +65,7 @@ def fetch_description(request_data):
         # Dictionary to map platforms to their respective download functions
         download_functions = {
             'tiktok': download_tiktok,
-            'youtube': download_youtube,
+            'youtube': download_youtube_video,
             'instagram': download_instagram_video,
             'x': download_twitter_video,
             'facebook': download_facebook_video

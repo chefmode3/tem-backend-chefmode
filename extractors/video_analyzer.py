@@ -8,7 +8,6 @@ import tempfile
 import uuid
 
 import cv2
-from moviepy.video.io.VideoFileClip import VideoFileClip
 from openai import OpenAI
 from pydub import AudioSegment
 
@@ -99,16 +98,27 @@ def get_video_frames(video_path):
     logger.info(f"Number of Frames Captured: {len(base64Frames)}")
     return recipe_img, base64Frames
 
+def has_audio(video_path):
+    try:
+        # Open the video file
+        video = cv2.VideoCapture(video_path)
+        # Get audio channel count (if 0, no audio is present)
+        audio_channels = int(video.get(cv2.CAP_PROP_AUDIO_BASE_INDEX))
+        return audio_channels > 0
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
+
 
 def process_video(video_path):
     try:
         description = ''
         # filename = os.path.basename(video_path)
         logger.info(f"Processing {video_path}...")
-        recipe_img = ''
-        video = VideoFileClip(video_path)
+        # recipe_img = ''
+        # video = VideoFileClip(video_path)
 
-        if not video.audio:
+        if not has_audio(video_path):
             logger.info('No audio track found in the video.')
             transcript = 'No Transcript available, do not mention this in the final recipe.'
         else:
@@ -121,7 +131,7 @@ def process_video(video_path):
                 transcript = 'No Transcript available, do not mention this in the final recipe.'
 
         recipe_img, base_64_frames = get_video_frames(video_path)
-        logger.info('{} and audio {} \n and transcript '.format(video_clip_path, audio_clip_path, transcript))
+        # logger.info('{} and audio {} \n and transcript '.format(video_clip_path, audio_clip_path, transcript))
         prompt_messages = [
             {
                 "role": "user",

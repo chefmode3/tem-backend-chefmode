@@ -8,6 +8,7 @@ from celery.utils.log import get_task_logger
 from app.serializers.recipe_serializer import RecipeSerializer
 from app.services import RecipeCelService, AnonymeUserService
 from app.services.usecase_logic import RecipeService
+from app.utils.utils import get_current_user
 from extractors import fetch_description
 
 logger = get_task_logger(__name__)
@@ -41,7 +42,9 @@ def call_fetch_description(self, data):
             return {
                 'status': 'success',
                 'find': True,
-                'result': RecipeSerializer().dump(description_result)
+                'result': {
+                        'content': RecipeSerializer().dump(description_result)
+                    }
                 }
         description_result = fetch_description(data)
 

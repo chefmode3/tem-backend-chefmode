@@ -81,34 +81,35 @@ class RecipeScrapPost(Resource):
             if res.state == 'PENDING':
                 return {'status': 'PENDING'}, 202
             elif res.state == 'SUCCESS':
-                result: dict = res.result
+                res_result_dict: dict = res.result
 
-                content = result.get('result')
+                fetch_result = res_result_dict.get('result')
 
-                if not content:
+                if not fetch_result:
                     return {'error': "recipe not found please Retry later "}, 404
-                if content.get('error'):
-                    return content, content.pop('status')
+                if fetch_result.get('error'):
+                    return fetch_result, fetch_result.pop('status')
                 # logger.error("find wes")
-                recipe = RecipeService.get_recipe_by_origin(content.get('content').get('origin'))
+                fetch_result_content = fetch_result.get('content')
+                recipe = RecipeService.get_recipe_by_origin(fetch_result_content.get('origin'))
                 if not recipe:
                     # logger.error('test of saving in a database')
-                    content = RecipeCelService.convert_and_store_recipe(content)
-                    content = RecipeSerializer().dump(content)
+                    fetch_result = RecipeCelService.convert_and_store_recipe(fetch_result)
+                    fetch_result = RecipeSerializer().dump(fetch_result)
                     app_settings = os.getenv('APP_SETTINGS')
                     if app_settings == 'app.config.ProductionConfig':
                         frontend_recipe_base_url = os.getenv('FRONTEND_RECIPE_BASE_URL')
-                        recipe_chefmode_url = f"{frontend_recipe_base_url}/{content.get('id')}"
+                        recipe_chefmode_url = f"{frontend_recipe_base_url}/{fetch_result.get('id')}"
                         user = UserService.get_user_by_token()
                         user_id = user.id if user else None
-                        send_slack_notification_recipe(content.get('origin'), 'New recipe generated', recipe_chefmode_url, user_id=user_id)
+                        send_slack_notification_recipe(fetch_result.get('origin'), 'New recipe generated', recipe_chefmode_url, user_id=user_id)
                             
-                return content, 200
+                return fetch_result, 200
 
             elif res.state == 'FAILURE':
                 return {'status': 'FAILURE', 'message': str(res.result)}, 400
             else:
                 return {'status': res.state}, 202
         except Exception as e:
-            logger.error(f"unpexted request occured {e}, 500")
+            logger.error(f"unexpected request occured {e}, 500")
             abort(400, description=f"unpexted request occured")

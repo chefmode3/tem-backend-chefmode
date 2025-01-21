@@ -1,3 +1,4 @@
+version: '4.0'
 
 services:
   redis:
@@ -6,7 +7,7 @@ services:
   web:
     build:
       context: .
-      target: dev-container
+#      target: dev-container
     container_name: web
     ports:
       - "0.0.0.0:5001:5001"
@@ -17,16 +18,35 @@ services:
     depends_on:
       - chef_mode_db
     restart: always
+    develop:
+      watch:
+        - action: sync
+          path: ./app/web
+          target: /app/web
+          ignore:
+            - node_modules/
 
   celery:
-    build: .
-    restart: always
-    volumes:
-      - .:/app
+    build:
+      context: .
+      target: dev-container
+    container_name: celery
     command: celery -A manage.celery worker --loglevel=info
+    volumes:
+      - .:/app/:delegated
+    networks:
+      - default
     depends_on:
       - redis
       - web
+    restart: always
+    develop:
+      watch:
+        - action: sync
+          path: ./app/task
+          target: /app/app/task
+          ignore:
+            - node_modules/
 
   chef_mode_db:
     image: postgres:16-alpine
