@@ -1,4 +1,3 @@
-
 services:
   redis:
     image: redis
@@ -44,4 +43,4 @@ services:
 
 volumes:
   pgdata:
-    driver: local
+    driver: localw

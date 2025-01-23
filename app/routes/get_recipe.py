@@ -71,7 +71,7 @@ class RecipeScrapPost(Resource):
             TaskIdSchema().load({'task_id': task_id})
         except ValidationError as ve:
             abort(400, description=ve.messages)
-        logger.error("find")
+        # logger.error(f"find wes {res.state}")
         try:
             res = AsyncResult(task_id)
         except Exception as e:
@@ -94,17 +94,19 @@ class RecipeScrapPost(Resource):
                 recipe = RecipeService.get_recipe_by_origin(fetch_result_content.get('origin'))
                 if not recipe:
                     # logger.error('test of saving in a database')
-                    fetch_result_content = RecipeCelService.convert_and_store_recipe(fetch_result)
-                    fetch_result_content = RecipeSerializer().dump(fetch_result_content)
+                    recipe = RecipeCelService.convert_and_store_recipe(fetch_result)
+                    recipe = RecipeSerializer().dump(recipe)
                     app_settings = os.getenv('APP_SETTINGS')
                     if app_settings == 'app.config.ProductionConfig':
                         frontend_recipe_base_url = os.getenv('FRONTEND_RECIPE_BASE_URL')
-                        recipe_chefmode_url = f"{frontend_recipe_base_url}/{fetch_result_content.get('id')}"
+                        recipe_chefmode_url = f"{frontend_recipe_base_url}/{recipe.get('id')}"
                         user = UserService.get_user_by_token()
                         user_id = user.id if user else None
-                        send_slack_notification_recipe(fetch_result_content.get('origin'), 'New recipe generated', recipe_chefmode_url, user_id=user_id)
-                            
-                return fetch_result_content, 200
+                        send_slack_notification_recipe(recipe.get('origin'), 'New recipe generated', recipe_chefmode_url, user_id=user_id)
+
+                    return recipe, 200
+
+                return RecipeSerializer().dump(recipe), 200
 
             elif res.state == 'FAILURE':
                 return {'status': 'FAILURE', 'message': str(res.result)}, 400

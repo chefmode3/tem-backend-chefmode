@@ -67,37 +67,37 @@ def download_youtube_video(url,  max_retries=4):
     while retry_count < max_retries:
         # Get a random proxy for this attempt
         proxy = get_random_proxy()
-        
+
         ydl_opts = {
             # Best video (mp4) + best audio
             'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            
+
             # Proxy settings
             'proxy': proxy,
-            
+
             # Progress and logging
             'logger': MyLogger(),
             'progress_hooks': [my_progress_hook],
-            
+
             # Output template
             'outtmpl': '%(title)s-%(id)s.%(ext)s' if not output_path else output_path,
-            
+
             # Other options
             'ignoreerrors': True,  # Continue on download errors
             'nocheckcertificate': True,  # Ignore HTTPS certificate validation
             'verbose': True,
-            
+
             # Post-processing
             'postprocessors': [{
                 # Merge video and audio
                 'key': 'FFmpegVideoConvertor',
                 'preferedformat': 'mp4',
             }],
-            
+
             # Network settings
             'socket_timeout': 30,  # Timeout for socket operations
-            'retries': 5,  # Number of retries for failed downloads per proxy
-            
+            'retries': 3,  # Number of retries for failed downloads per proxy
+
             # Fragment downloads
             'concurrent_fragments': 5,  # Number of fragments to download concurrently
         }
@@ -106,20 +106,20 @@ def download_youtube_video(url,  max_retries=4):
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 logging.info(f'Attempt {retry_count + 1}/{max_retries} - Starting download for: {url}')
                 error_code = ydl.download([url])
-                
+
                 if error_code == 0:
                     logging.info('Download completed successfully')
                     return output_path
                 else:
                     logging.error(f'Download failed with code: {error_code}')
                     retry_count += 1
-                    
+
         except Exception as e:
             logging.error(f'Error with proxy {proxy.split("@")[1]}: {str(e)}')
             retry_count += 1
             if retry_count < max_retries:
                 logging.info(f'Retrying with different proxy...')
                 continue
-    
+
     logging.error(f'All download attempts failed after {max_retries} tries')
     return None
