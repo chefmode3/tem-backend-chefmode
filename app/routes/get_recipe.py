@@ -71,7 +71,7 @@ class RecipeScrapPost(Resource):
             TaskIdSchema().load({'task_id': task_id})
         except ValidationError as ve:
             abort(400, description=ve.messages)
-        logger.error("find")
+        # logger.error(f"find wes {res.state}")
         try:
             res = AsyncResult(task_id)
         except Exception as e:
@@ -104,7 +104,7 @@ class RecipeScrapPost(Resource):
                         user_id = user.id if user else None
                         send_slack_notification_recipe(fetch_result_content.get('origin'), 'New recipe generated', recipe_chefmode_url, user_id=user_id)
                             
-                return fetch_result_content, 200
+                return RecipeSerializer().dump(recipe), 200
 
             elif res.state == 'FAILURE':
                 return {'status': 'FAILURE', 'message': str(res.result)}, 400
