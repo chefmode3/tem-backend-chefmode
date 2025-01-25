@@ -88,7 +88,7 @@ def get_website_content(url, retry_count: int=0, proxies=None):
         },
     ]
 
-    MAX_RETRIES = 10
+    MAX_RETRIES = 5
     # for _ in range(5):  # Retry up to 5 times
     status_code = None
     try:

@@ -43,4 +43,4 @@ services:
 
 volumes:
   pgdata:
-    driver: localw
+    driver: local

@@ -27,10 +27,10 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
     
 
 
-    headers = {
-        'x-rapidapi-key': "f2d1322fc9mshd04f3762ac0793ep11069cjsn4e55258922af",
-        'x-rapidapi-host': "youtube-media-downloader.p.rapidapi.com"
-    }
+    # headers = {
+    #     'x-rapidapi-key': "f2d1322fc9mshd04f3762ac0793ep11069cjsn4e55258922af",
+    #     'x-rapidapi-host': "youtube-media-downloader.p.rapidapi.com"
+    # }
     querystring = {"videoId": video_id}
 
     url = "https://youtube-media-downloader.p.rapidapi.com/v2/video/details"
@@ -38,6 +38,18 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
     headers = {
         'x-rapidapi-key': "f2d1322fc9mshd04f3762ac0793ep11069cjsn4e55258922af",
         'x-rapidapi-host': "youtube-media-downloader.p.rapidapi.com"
+    }
+
+    host = os.getenv("YOUTUBE_PROXY_HOST")
+    port = os.getenv("YOUTUBE_PROXY_PORT")
+
+    username = os.getenv("YOUTUBE_PROXY_USERNAME")
+    password = os.getenv("YOUTUBE_PROXY_PASSWORD")
+
+    proxy_url = f'http://customer-{username}:{password}@{host}:{port}'
+
+    proxies = {
+        'https': proxy_url
     }
 
     response = requests.get(url, headers=headers, params=querystring, proxies=proxies, timeout=30)
