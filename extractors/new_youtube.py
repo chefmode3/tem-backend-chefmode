@@ -25,6 +25,21 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
     if not video_id:
         return
     
+
+
+    # headers = {
+    #     'x-rapidapi-key': "f2d1322fc9mshd04f3762ac0793ep11069cjsn4e55258922af",
+    #     'x-rapidapi-host': "youtube-media-downloader.p.rapidapi.com"
+    # }
+    querystring = {"videoId": video_id}
+
+    url = "https://youtube-media-downloader.p.rapidapi.com/v2/video/details"
+
+    headers = {
+        'x-rapidapi-key': "f2d1322fc9mshd04f3762ac0793ep11069cjsn4e55258922af",
+        'x-rapidapi-host': "youtube-media-downloader.p.rapidapi.com"
+    }
+
     host = os.getenv("YOUTUBE_PROXY_HOST")
     port = os.getenv("YOUTUBE_PROXY_PORT")
 
@@ -35,19 +50,6 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
 
     proxies = {
         'https': proxy_url
-    }
-
-    headers = {
-        'x-rapidapi-key': "f2d1322fc9mshd04f3762ac0793ep11069cjsn4e55258922af",
-        'x-rapidapi-host': "youtube-media-downloader.p.rapidapi.com"
-    }
-    querystring = {"videoId": video_id}
-
-    url = "https://youtube-media-downloader.p.rapidapi.com/v2/video/details"
-
-    headers = {
-        'x-rapidapi-key': "f2d1322fc9mshd04f3762ac0793ep11069cjsn4e55258922af",
-        'x-rapidapi-host': "youtube-media-downloader.p.rapidapi.com"
     }
 
     response = requests.get(url, headers=headers, params=querystring, proxies=proxies, timeout=30)

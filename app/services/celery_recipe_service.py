@@ -150,6 +150,20 @@ class RecipeCelService:
     def get_recipe_by_origin(self):
         pass
 
+    @staticmethod
+    def clean_ingredients(ingredients):
+        # Filter out ingredients where title is None or list is None/empty
+        return [
+            ingredient for ingredient in ingredients
+            if ingredient.get('title_of_ingredient') and ingredient.get('list') and len(ingredient['list']) > 0
+        ]
+
+    @staticmethod
+    def clean_directions(directions):
+        return [
+            ingredient for ingredient in directions
+            if ingredient.get('title_of_direction') and ingredient.get('list') and len(ingredient['list']) > 0
+        ]
 
     # main methode for json treatment and call other methode
     @staticmethod
@@ -161,16 +175,23 @@ class RecipeCelService:
 
         logger.error(f"user accel: {user}")
 
+
+        if not recipe_data.get('ingredients') or not recipe_data.get('directions') or not recipe_data.get('title'):
+            logger.warning(f"Recipe from {recipe_data.get('origin')} has no valid data. Not saved.")
+            return {'error': 'Recipe has no valid data and was not saved.'}
+
         ingredients = recipe_data.get('ingredients', [])
-        if not ingredients or all(not ingredient.get('list') for ingredient in ingredients):
-            logger.warning(f"Recipe from {recipe_data.get('origin')} has no valid ingredients. Not saved.")
+        ingredients_clean = RecipeCelService.clean_ingredients(ingredients)
+
+        if  not ingredients_clean:
+            logger.warning(f"Recipe from {recipe_data.get('origin')} has no valid Recipe ingredients. Not saved.")
             return {'error': 'Recipe has no valid ingredients and was not saved.'}
 
         directions = recipe_data.get('directions', [])
-        if not directions or all(not direction.get('list') for direction in directions):
-            logger.warning(f"Recipe from {recipe_data.get('origin')} has no valid directions. Not saved.")
+        directions_clean = RecipeCelService.clean_directions(directions)
+        if not directions_clean :
+            logger.warning(f"Recipe from {recipe_data.get('origin')} has no valid Recipe directions. Not saved.")
             return {'error': 'Recipe has no valid directions and was not saved.'}
-        logger.error(f"user accel: {user}")
 
         # logger.info(json.dumps(recipe))
 
