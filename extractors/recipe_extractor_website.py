@@ -47,32 +47,7 @@ def extract_main_image(soup):
     return None
 
 
-def get_website_content_v2(url):
-    """
-        Function to get website content using ScrapeNinja API.
-        """
-    api_url = 'https://scrapeninja.p.rapidapi.com/scrape'
-
-    try:
-        querystring = {'url': url}
-
-        headers = {
-            'x-rapidapi-key': '1776083f1dmsh864701c7fc5a69dp1d97f3jsn8cb7620cf8c2',
-            'x-rapidapi-host': 'scrapeninja.p.rapidapi.com'
-        }
-
-        api_response = requests.get(api_url, headers=headers, params=querystring)
-        api_response.raise_for_status()  # Raise an exception for HTTP errors
-
-        # data = api_response.json()
-
-        return api_response
-    except Exception:
-        return None
-
-
-
-def get_website_content(url, retry_count: int=0, proxies=None):
+def get_website_content(url):
     """
     Function to handle website requests with retries for handling 403 errors.
     """
@@ -87,41 +62,19 @@ def get_website_content(url, retry_count: int=0, proxies=None):
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36"
         },
     ]
-
-    MAX_RETRIES = 5
-    # for _ in range(5):  # Retry up to 5 times
-    status_code = None
-    try:
+    for _ in range(5):  # Retry up to 5 times
         headers = random.choice(headers_list)
-        response = requests.get(url, headers=headers, proxies=proxies)
-        print(response.text)
-        response.raise_for_status()
-        status_code = response.status_code
-        return response
-    except Exception as e:
-        logger.error(e)
-        logger.error(f"status code {status_code}")
-        if retry_count < MAX_RETRIES + 1:
-            retry_count += 1
-            print(f"Download failed. Retrying ({retry_count}/{MAX_RETRIES - 1})...")
-            host = os.getenv("YOUTUBE_PROXY_HOST")
-            port = os.getenv("YOUTUBE_PROXY_PORT")
-
-            username = os.getenv("YOUTUBE_PROXY_USERNAME")
-            password = os.getenv("YOUTUBE_PROXY_PASSWORD")
-
-            proxies = {
-                'https': f'http://ashishbishnoi18:DW2GTLWb8gzyOQDj@proxy.packetstream.io:31112',
-            }
-
-            if status_code == 403:
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            return response
+        except requests.exceptions.HTTPError as e:
+            if response.status_code == 403:
                 time.sleep(random.uniform(1, 3))  # Random sleep to avoid being blocked
-                return get_website_content(url, proxies=proxies, retry_count=retry_count)
-            time.sleep(random.uniform(1, 15))
-
-            return get_website_content(url, proxies=proxies, retry_count=retry_count)
-        else:
-            return get_website_content_v2(url) #get_website_content_v2(url)
+                continue
+            else:
+                raise e
+    raise requests.exceptions.RequestException("Failed to retrieve the website after multiple attempts.")
 
 
 def get_image_with_retry(image_url, retries=5):
@@ -160,10 +113,7 @@ def save_image_locally(image, filename='recipe_image.jpg'):
 def scrape_and_analyze_recipe(url):
     # Make a request to the given URL with retries and user-agent spoofing
     start = time.time()
-
     response = get_website_content(url)
-    if not response:
-        return {'error': 'Failed to fetch website content. Please try again.'}, False, None
     end = time.time()
     print(f"get_website_content took {end - start} seconds")
 
