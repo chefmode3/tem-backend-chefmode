@@ -25,11 +25,11 @@ def download_youtube(youtube_url, output_filename="downloaded_video.mp4"):
     if not video_id:
         return
     
-    host = os.getenv("YOUTUBE_PROXY_HOST")
-    port = os.getenv("YOUTUBE_PROXY_PORT")
+    host = os.getenv("RESIDENTIAL_PROXY_HOST")
+    port = os.getenv("RESIDENTIAL_PROXY_PORT")
 
-    username = os.getenv("YOUTUBE_PROXY_USERNAME")
-    password = os.getenv("YOUTUBE_PROXY_PASSWORD")
+    username = os.getenv("RESIDENTIAL_PROXY_USERNAME")
+    password = os.getenv("RESIDENTIAL_PROXY_PASSWORD")
 
     proxy_url = f'http://customer-{username}:{password}@{host}:{port}'
 

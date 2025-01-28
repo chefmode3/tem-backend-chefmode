@@ -104,14 +104,14 @@ def get_website_content(url, retry_count: int=0, proxies=None):
         if retry_count < MAX_RETRIES + 1:
             retry_count += 1
             print(f"Download failed. Retrying ({retry_count}/{MAX_RETRIES - 1})...")
-            host = os.getenv("YOUTUBE_PROXY_HOST")
-            port = os.getenv("YOUTUBE_PROXY_PORT")
+            host = os.getenv("RESIDENTIAL_PROXY_HOST")
+            port = os.getenv("RESIDENTIAL_PROXY_PORT")
 
-            username = os.getenv("YOUTUBE_PROXY_USERNAME")
-            password = os.getenv("YOUTUBE_PROXY_PASSWORD")
+            username = os.getenv("RESIDENTIAL_PROXY_USERNAME")
+            password = os.getenv("RESIDENTIAL_PROXY_PASSWORD")
 
             proxies = {
-                'https': f'http://ashishbishnoi18:DW2GTLWb8gzyOQDj@proxy.packetstream.io:31112',
+                'https': f'http://customer-{username}:{password}@{host}:{port}',
             }
 
             if status_code == 403:
