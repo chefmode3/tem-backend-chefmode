@@ -189,12 +189,14 @@ class RecipeCelService:
 
         directions = recipe_data.get('directions', [])
         directions_clean = RecipeCelService.clean_directions(directions)
+
         if not directions_clean :
             logger.warning(f"Recipe from {recipe_data.get('origin')} has no valid Recipe directions. Not saved.")
             return {'error': 'Recipe has no valid directions and was not saved.'}
 
         # logger.info(json.dumps(recipe))
-
+        recipe_data['directions'] = directions_clean
+        recipe_data['ingredients'] = ingredients_clean
         #  create and store recipe
         recipe, _ = RecipeCelService.get_or_create_recipe(recipe_data)
         # link recipe to a user
