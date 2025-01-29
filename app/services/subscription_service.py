@@ -160,7 +160,6 @@ class UserSubscriptionService:
                         ],
                         proration_behavior='create_prorations'
                     )
-                    logger.info(response)
                     if response and (new_sub := Subscription.query.filter_by(price_id=response.get("plan", {}).get("id", None)).first()):
                         logger.info("updated customer subscription response")
                         logger.info(new_sub)
