@@ -153,7 +153,11 @@ class UserSubscriptionService:
                     response = stripe.Subscription.modify(
                         user_current_sub.subscription_id,
                         items=[
-                            {"id": resp.get("items", {}).get("data", [])[0].get("id")}, {"price": price_id}
+                            {
+                                "id": resp.get("items", {}).get("data", [])[0].get("id"),
+                                "deleted": True,
+                                "price": price_id
+                             },
                         ]
                     )
                     if response and (new_sub := Subscription.query.filter_by(price_id=response.get("plan", {}).get("id", None)).first()):
