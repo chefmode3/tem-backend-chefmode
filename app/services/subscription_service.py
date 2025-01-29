@@ -159,8 +159,10 @@ class UserSubscriptionService:
                              },
                             {
                                 "price": price_id,
+                                "quantity": 1,
                             }
-                        ]
+                        ],
+                        proration_behavior='create_prorations'
                     )
                     logger.info(response)
                     if response and (new_sub := Subscription.query.filter_by(price_id=response.get("plan", {}).get("id", None)).first()):
