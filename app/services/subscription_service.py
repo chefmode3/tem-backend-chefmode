@@ -148,13 +148,14 @@ class UserSubscriptionService:
                 logger.info(f"updated customer subscription subscription={user_current_sub.subscription_id}")
                 stripe.api_key = self.stripe_api_key
                 resp = stripe.Subscription.retrieve( user_current_sub.subscription_id)
-                logger.info(resp)
+                logger.info(f"new price id = {price_id}")
                 if resp:
                     response = stripe.Subscription.modify(
                         user_current_sub.subscription_id,
                         items=[
                             {
                                 "id": resp.get("items", {}).get("data", [])[0].get("id"),
+                                "deleted": True,
                                 "price": price_id,
                             }
                         ],
