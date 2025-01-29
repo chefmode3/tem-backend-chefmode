@@ -101,6 +101,7 @@ class ManageUserSubscriptions(Resource):
             user=user,
             stripe_api_key=get_api_key()
         )
+        logger.info(data)
         subscription = user_subscription.update_user_subscription(data.get("price"))
         if subscription:
             return UserSubscriptionSerializer().dump(subscription), 201

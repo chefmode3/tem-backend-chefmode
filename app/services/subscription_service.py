@@ -155,9 +155,8 @@ class UserSubscriptionService:
                         items=[
                             {
                                 "id": resp.get("items", {}).get("data", [])[0].get("id"),
-                                "deleted": True,
-                            },
-                            {"price": price_id}
+                                "price": price_id
+                            }
                         ],
                         proration_behavior='create_prorations'
                     )
