@@ -165,8 +165,8 @@ class UserSubscriptionService:
                         user_current_sub.purchase_date = datetime.fromtimestamp(response.get("created"))
                         user_current_sub.price = response.get("plan", {}).get("amount", None)
                         user_current_sub.payment_frequency = response.get("plan", {}).get("interval")
-                        db.session.commit()
-                    return user_current_sub
+                db.session.commit()
+                return user_current_sub
         except StripeError as e:
             logger.info(f"updated customer subscription error{e}")
             raise SubscriptionException(str(e), 400)
