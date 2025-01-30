@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import random
@@ -94,7 +95,7 @@ def get_website_content(url, retry_count: int=0, proxies=None):
     try:
         headers = random.choice(headers_list)
         response = requests.get(url, headers=headers, proxies=proxies)
-        print(response.text)
+        # print(response.text)
         response.raise_for_status()
         status_code = response.status_code
         return response
@@ -166,6 +167,7 @@ def scrape_and_analyze_recipe(url):
 
     # Parse the HTML content
     start = time.time()
+    # print(response.text)
     soup = BeautifulSoup(response.text, 'html.parser')
     end = time.time()
     print(f"parsing html took {end - start} seconds")
@@ -179,13 +181,13 @@ def scrape_and_analyze_recipe(url):
     body_content = soup.body.get_text(separator=" ", strip=True)
     end = time.time()
     # print(f"Extract all
-    # # Extract all text content from various relevant tags
-    # body_content = " ".join(
-    #     element.get_text(separator=" ", strip=True)
-    #     for element in soup.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
-    # )
+    # Extract all text content from various relevant tags
+    body_content = " ".join(
+        element.get_text(separator=" ", strip=True)
+        for element in soup.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
+    )
 
-    # print(f"body text scrap: {body_content}")
+    print(f"body text scrap: {body_content}")
     print(f"len of body {len(body_content)}")
 
     token_count, tokens = tokenize_text(body_content)
@@ -206,6 +208,21 @@ def scrape_and_analyze_recipe(url):
 
     # Analyze content using AI
     try:
+
+        recipe_info = get_promp_recipe(body_content, title)
+        logger.error(recipe_info)
+        # s3_file_name = f'{uuid.uuid4()}_image.jpg'
+        # s3_url = save_image_to_s3_from_url(main_image_url, s3_file_name)
+        # logger.info(f"s3_image: {s3_url}")
+        return None, got_image, None
+    except Exception as e:
+        logger.error(f"An error occurred while processing the recipe analysis failed: {e}")
+    return None, False, None
+
+def get_promp_recipe(body_content, title, max_retry: int=0):
+    # Analyze content using AI
+    MAX_TRY=3
+    try:
         start = time.time()
         ai_response = client.chat.completions.create(
             model='gpt-4o-mini',
@@ -217,7 +234,7 @@ def scrape_and_analyze_recipe(url):
                         "directions. "
                         "You will output in simple markdown. You will not output any description of the recipe. "
                         "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
-                        "You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text."
+                        "You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text. and must give the complete recipe and"
                     )
                 },
                 {"role": "user", "content": f"Title: {title}\nContent: {body_content}\n\n"
@@ -232,17 +249,16 @@ def scrape_and_analyze_recipe(url):
         recipe_info = ai_response.choices[0].message.content
         logger.error(recipe_info)
         recipe_info = group_markdown_to_json(recipe_info)
-        logger.error(recipe_info)
-        s3_file_name = f'{uuid.uuid4()}_image.jpg'
-        s3_url = save_image_to_s3_from_url(main_image_url, s3_file_name)
-        logger.info(f"s3_image: {s3_url}")
-        return recipe_info, got_image, s3_url
+        logger.error(json.loads(recipe_info))
+        return  recipe_info
     except Exception as e:
         logger.error(f"An error occurred while processing the recipe analysis failed: {e}")
-    return None, False, None
+        if max_retry <= MAX_TRY:
+            max_retry += 1
+            return get_promp_recipe(body_content, title, max_retry)
+    return None
 
-
-def analyse_nutrition_base_ingredient(ingredient):
+def analyse_nutrition_base_ingredient(ingredient, max_retry=None):
     try:
         start = time.time()
         ai_response = client.chat.completions.create(
@@ -270,15 +286,21 @@ def analyse_nutrition_base_ingredient(ingredient):
         logger.error(f"OpenAI took {end - start} seconds")
 
         nutrtition_info = ai_response.choices[0].message.content
+
         # logger.error(nutrtition_info)
+        logger.error(json.loads(nutrtition_info))
         return nutrtition_info
     except Exception as e:
+        MAX_TRY: int = 3
         logger.error(f"AI analysis failed: {e}")
-        nutrtition_info = None
-    return nutrtition_info
+        if max_retry <= MAX_TRY:
+            max_retry += 1
+            return analyse_nutrition_base_ingredient(ingredient, max_retry)
+    return None
 
 
-def group_markdown_to_json(markdown_text):
+def group_markdown_to_json(markdown_text, max_retry: int = 0):
+
     try:
         start = time.time()
         ai_response = client.chat.completions.create(
@@ -335,9 +357,12 @@ def group_markdown_to_json(markdown_text):
         logger.error(f"OpenAI took {end - start} seconds")
 
         json_info = ai_response.choices[0].message.content
-        logger.error(json_info)
+        logger.error(json.loads(json_info))
         return json_info
     except Exception as e:
+        MAX_TRY: int=3
         logger.error(f"AI analysis failed: {e}")
-        json_info = None
-    return json_info
+        if max_retry <= MAX_TRY:
+            max_retry += 1
+            return group_markdown_to_json(markdown_text, max_retry)
+    return None

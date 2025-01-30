@@ -102,13 +102,18 @@ def fetch_description(request_data):
         logger.info(image_url)
         recipe_info['image_url'] = image_url
         recipe_info['origin'] = video_url
-        # logger.info(json.loads(recipe))
+        logger.info(json.loads(recipe))
+        logger.error(f"recipe_info { recipe_info}")
         final_content = {
             'content': recipe_info,
         }
 
         return final_content
+    except json.JSONDecodeError as e:
+        logger.error(f"An error occurred while decoding JSON: {e}")
+        return None #'(request_data)
     except Exception as e:
+
         logger.error(f"An error occurred while fetching the description.{e}")
     return None
 
