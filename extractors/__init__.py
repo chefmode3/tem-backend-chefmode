@@ -10,6 +10,7 @@ import uuid
 from app.utils.s3_storage import upload_to_s3
 from extractors.facebook import download_facebook_video
 from extractors.instagram import download_instagram_video
+from extractors.new_tiktok import download_video_new_tiktok
 from extractors.new_youtube import download_youtube
 from extractors.recipe_extractor_website import analyse_nutrition_base_ingredient
 from extractors.recipe_extractor_website import scrape_and_analyze_recipe
@@ -64,7 +65,7 @@ def fetch_description(request_data):
         # logger.info(output_filepath)
         # Dictionary to map platforms to their respective download functions
         download_functions = {
-            'tiktok': download_tiktok,
+            'tiktok': download_video_new_tiktok,
             'youtube': download_youtube_video,
             'instagram': download_instagram_video,
             'x': download_twitter_video,

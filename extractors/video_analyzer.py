@@ -98,16 +98,36 @@ def get_video_frames(video_path):
     logger.info(f"Number of Frames Captured: {len(base64Frames)}")
     return recipe_img, base64Frames
 
-def has_audio(video_path):
+
+def has_audio(video_path: str) -> bool:
+    """
+    Check for audio using pydub.
+    Good for audio processing but requires FFmpeg.
+
+    Args:
+        video_path: Path to the video file
+
+    Returns:
+        bool: True if video has audio, False otherwise
+    """
     try:
-        # Open the video file
-        video = cv2.VideoCapture(video_path)
-        # Get audio channel count (if 0, no audio is present)
-        audio_channels = int(video.get(cv2.CAP_PROP_AUDIO_BASE_INDEX))
-        return audio_channels > 0
+        audio = AudioSegment.from_file(video_path)
+        return len(audio) > 0
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Pydub Error: {str(e)}")
         return False
+
+
+# def has_audio(video_path):
+#     try:
+#         # Open the video file
+#         video = cv2.VideoCapture(video_path)
+#         # Get audio channel count (if 0, no audio is present)
+#         audio_channels = int(video.get(cv2.CAP_PROP_AUDIO_BASE_INDEX))
+#         return audio_channels > 0
+#     except Exception as e:
+#         print(f"Error: {e}")
+#         return False
 
 
 def process_video(video_path):
@@ -131,7 +151,7 @@ def process_video(video_path):
                 transcript = 'No Transcript available, do not mention this in the final recipe.'
 
         recipe_img, base_64_frames = get_video_frames(video_path)
-        # logger.info('{} and audio {} \n and transcript '.format(video_clip_path, audio_clip_path, transcript))
+        logger.info('{} and audio \n and transcript '.format( transcript))
         prompt_messages = [
             {
                 "role": "user",
@@ -156,6 +176,9 @@ def process_video(video_path):
 
         result = client.chat.completions.create(**params)
         description = result.choices[0].message.content
+        description_1 = result.choices[0].message.content
+        logger.info(description)
+        logger.error(description_1)
         recipe_info = group_markdown_to_json(description)
         return recipe_info, recipe_img
     except Exception as err:
