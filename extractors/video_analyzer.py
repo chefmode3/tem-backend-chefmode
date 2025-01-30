@@ -77,7 +77,11 @@ def get_video_frames(video_path):
     logger.info(f"Total Frame Count: {frame_count}")
     logger.info(f"Video Length (seconds): {video_length_seconds}")
     logger.info(f"Calculated Frame Step: {frame_step}")
+    #  Save the final frame as 'recipe_image.jpg' locally
+    video.set(cv2.CAP_PROP_POS_FRAMES, frame_count - frame_count)
+    success, frame_img = video.read()
 
+    recipe_img = BASE_DIR / 'downloads' / f'{uuid.uuid4()}_recipe_img.jpg'
     base64Frames = []
     for second in range(0, int(video_length_seconds), frame_step):
         video.set(cv2.CAP_PROP_POS_MSEC, second * 1000)
@@ -85,14 +89,9 @@ def get_video_frames(video_path):
         if success:
             base64Frames.append(encode_frame(frame))
 
-    #  Save the final frame as 'recipe_image.jpg' locally
-    video.set(cv2.CAP_PROP_POS_FRAMES, frame_count - frame_count)
-    success, frame = video.read()
-
-    recipe_img = BASE_DIR / 'downloads' / f'{uuid.uuid4()}_recipe_img.jpg'
     #  change_extension_to_image(video_path)
     if success:
-        cv2.imwrite(recipe_img, frame)
+        cv2.imwrite(recipe_img, frame_img)
 
     video.release()
     logger.info(f"Number of Frames Captured: {len(base64Frames)}")
