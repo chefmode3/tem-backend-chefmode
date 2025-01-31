@@ -20,13 +20,6 @@ logging.basicConfig(
     ]
 )
 
-# List of proxy configurations
-PROXIES = [
-    "socks5://ashishbishnoi18215139:VGgkmK1dnNHA@x282.fxdx.in:17170",
-    "socks5://ashishbishnoi18215006:mG6c01qq55Ll@x282.fxdx.in:17169",
-    "socks5://ashishbishnoi18214338:nxTN1usMbqHd@x378.fxdx.in:14896"
-]
-
 class MyLogger:
     def debug(self, msg):
         if msg.startswith('[debug] '):
@@ -55,12 +48,18 @@ def my_progress_hook(d):
     elif d['status'] == 'error':
         logging.error(f'Error occurred: {d.get("error")}')
 
-def get_random_proxy():
-    """Randomly select a proxy from the list"""
-    proxy = random.choice(PROXIES)
-    logging.info(f'Selected proxy: {proxy.split("@")[1]}')  # Log only the host:port part for security
-    return proxy
+def get_proxy():
+    """Get oxylabs mobile proxy"""
+    host = os.getenv("RESIDENTIAL_PROXY_HOST")
+    port = os.getenv("RESIDENTIAL_PROXY_PORT")
 
+    username = os.getenv("MOBILE_PROXY_USERNAME")
+    password = os.getenv("MOBILE_PROXY_PASSWORD")
+
+    proxy_url = f'http://customer-{username}:{password}@{host}:{port}'
+    logging.info(f'Selected proxy: {proxy_url.split("@")[1]}')  # Log only the host:port part for security
+    
+    return proxy_url
 
 def download_youtube_video(url, max_retries=3):
     """Download video with retry logic and proxy rotation"""
@@ -70,7 +69,7 @@ def download_youtube_video(url, max_retries=3):
 
     while retry_count < max_retries:
         # Get a random proxy for this attempt
-        proxy = get_random_proxy()
+        proxy = get_proxy()
 
         ydl_opts = {
             'format': '(bestvideo[height=240]/bestvideo[height<=360][height>240])[ext=mp4]+bestaudio[ext=m4a]/(best[height=240]/best[height<=360][height>240])[ext=mp4]',
