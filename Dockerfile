@@ -20,13 +20,10 @@ RUN apt-get update && \
     cmake \
     pkg-config \
     yasm \
-    libtiff4-dev \
     libjpeg-dev \
-    libjasper-dev \
     libavcodec-dev \
     libavformat-dev \
     libswscale-dev \
-    libdc1394-22-dev \
     libxine2-dev \
     libgstreamer1.0-dev \
     libgstreamer-plugins-base1.0-dev \
@@ -34,7 +31,6 @@ RUN apt-get update && \
     python3-dev \
     python3-numpy \
     libtbb-dev \
-    libqt4-dev \
     libgtk2.0-dev \
     ffmpeg \
     && apt-get clean
