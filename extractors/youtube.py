@@ -4,10 +4,6 @@ import uuid
 import yt_dlp
 import sys
 import logging
-import random
-from datetime import datetime
-
-from extractors import logger
 from utils.common import DOWNLOAD_FOLDER
 
 # Configure logging
