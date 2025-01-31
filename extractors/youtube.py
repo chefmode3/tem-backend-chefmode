@@ -99,8 +99,15 @@ def download_youtube_video(url, max_retries=3):
                 size_mb = None
                 if 'filesize' in info:
                     size_mb = info['filesize'] / (1024 * 1024)
-                elif 'filesize_approximate' in info:
-                    size_mb = info['filesize_approximate'] / (1024 * 1024)
+                else:
+                    # Iterate through formats to find a valid size
+                    for f in info.get('formats', []):
+                        if f.get('filesize'):
+                            size_mb = f['filesize'] / (1024 * 1024)
+                            break  # Stop searching once a size is found
+                        elif f.get('filesize_approx'):
+                            size_mb = f['filesize_approx'] / (1024 * 1024)
+                            break
 
                 # Vérifier la taille avant de télécharger
                 if size_mb is None:
