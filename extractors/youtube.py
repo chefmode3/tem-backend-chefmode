@@ -1,10 +1,10 @@
 import os
 import uuid
-
+import ffmpeg
 import yt_dlp
 import sys
 import logging
-from utils.common import DOWNLOAD_FOLDER
+from utils.common import DOWNLOAD_FOLDER, convert_video_to_mp4
 
 # Configure logging
 logging.basicConfig(
@@ -32,6 +32,7 @@ class MyLogger:
     def error(self, msg):
         logging.error(msg)
 
+
 def my_progress_hook(d):
     if d['status'] == 'downloading':
         try:
@@ -43,6 +44,7 @@ def my_progress_hook(d):
         logging.info('Download completed. Now converting...')
     elif d['status'] == 'error':
         logging.error(f'Error occurred: {d.get("error")}')
+
 
 def get_proxy():
     """Get oxylabs mobile proxy"""
@@ -56,6 +58,21 @@ def get_proxy():
     logging.info(f'Selected proxy: {proxy_url.split("@")[1]}')  # Log only the host:port part for security
     
     return proxy_url
+
+
+def get_video_format(input_video_path: str) -> str:
+    """
+    Récupère le format de la vidéo à partir de ses métadonnées.
+    """
+    try:
+        probe = ffmpeg.probe(input_video_path)
+        format_name = probe['format']['format_name']
+        return format_name
+    except ffmpeg.Error as e:
+        print(f"Erreur lors de l'analyse du fichier vidéo : {e}")
+        return None
+
+
 
 def download_youtube_video(url, max_retries=3):
     """Download video with retry logic and proxy rotation"""
@@ -121,7 +138,8 @@ def download_youtube_video(url, max_retries=3):
 
                 if error_code == 0:
                     logging.info('Download completed successfully')
-                    return output_path
+
+                    return convert_video_to_mp4(output_path)
 
                 logging.error(f'Download failed with code: {error_code}')
                 retry_count += 1
@@ -133,8 +151,8 @@ def download_youtube_video(url, max_retries=3):
                 logging.info('Retrying with different proxy...')
                 continue
 
-    logging.error(f'All {max_retries} attempts failed')
-    return None
+    # logging.error(f'All {max_retries} attempts failed')
+    # return None
     
     logging.error(f'All download attempts failed after {max_retries} tries')
     return None
