@@ -10,6 +10,7 @@ import uuid
 from app.utils.s3_storage import upload_to_s3
 from extractors.facebook import download_facebook_video
 from extractors.instagram import download_instagram_video
+# from extractors.new_tiktok import download_video_new_tiktok
 from extractors.new_youtube import download_youtube
 from extractors.recipe_extractor_website import analyse_nutrition_base_ingredient
 from extractors.recipe_extractor_website import scrape_and_analyze_recipe
@@ -102,13 +103,18 @@ def fetch_description(request_data):
         logger.info(image_url)
         recipe_info['image_url'] = image_url
         recipe_info['origin'] = video_url
-        # logger.info(json.loads(recipe))
+        logger.info(json.loads(recipe))
+        logger.error(f"recipe_info { recipe_info}")
         final_content = {
             'content': recipe_info,
         }
 
         return final_content
+    except json.JSONDecodeError as e:
+        logger.error(f"An error occurred while decoding JSON: {e}")
+        return None #'(request_data)
     except Exception as e:
+
         logger.error(f"An error occurred while fetching the description.{e}")
     return None
 

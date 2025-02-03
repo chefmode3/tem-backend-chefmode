@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import random
@@ -34,18 +35,6 @@ def extract_main_image(soup):
         return image_tags[0]['src']
     return None
 
-def extract_main_image(soup):
-    """
-    Attempt to extract the main image from a given soup object.
-    """
-    image = soup.find('meta', property='og:image')
-    if image and 'content' in image.attrs:
-        return image['content']
-    image_tags = soup.find_all('img', src=True)  # Fallback for cases where no og:image
-    if image_tags:
-        return image_tags[0]['src']
-    return None
-
 
 def get_website_content_v2(url):
     """
@@ -71,8 +60,7 @@ def get_website_content_v2(url):
         return None
 
 
-
-def get_website_content(url, retry_count: int=0, proxies=None):
+def get_website_content(url, retry_count: int = 0, proxies=None):
     """
     Function to handle website requests with retries for handling 403 errors.
     """
@@ -121,7 +109,7 @@ def get_website_content(url, retry_count: int=0, proxies=None):
 
             return get_website_content(url, proxies=proxies, retry_count=retry_count)
         else:
-            return get_website_content_v2(url) #get_website_content_v2(url)
+            return get_website_content_v2(url)  # get_website_content_v2(url)
 
 
 def get_image_with_retry(image_url, retries=5):
@@ -160,7 +148,10 @@ def save_image_locally(image, filename='recipe_image.jpg'):
 def scrape_and_analyze_recipe(url):
     # Make a request to the given URL with retries and user-agent spoofing
     start = time.time()
+
     response = get_website_content(url)
+    if not response:
+        return {'error': 'Failed to fetch website content. Please try again.'}, False, None
     end = time.time()
     print(f"get_website_content took {end - start} seconds")
 
@@ -180,12 +171,12 @@ def scrape_and_analyze_recipe(url):
     end = time.time()
     # print(f"Extract all
     # # Extract all text content from various relevant tags
-    # body_content = " ".join(
-    #     element.get_text(separator=" ", strip=True)
-    #     for element in soup.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
-    # )
+    body_content = " ".join(
+        element.get_text(separator=" ", strip=True)
+        for element in soup.find_all(['p', 'div', 'span', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a'])
+    )
 
-    # print(f"body text scrap: {body_content}")
+    print(f"body text scrap: {body_content}")
     print(f"len of body {len(body_content)}")
 
     token_count, tokens = tokenize_text(body_content)
@@ -206,32 +197,31 @@ def scrape_and_analyze_recipe(url):
 
     # Analyze content using AI
     try:
-        start = time.time()
-        ai_response = client.chat.completions.create(
-            model='gpt-4o-mini',
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You get information from recipe websites: recipe title, servings, total time, ingredients, "
-                        "directions. "
-                        "You will output in simple markdown. You will not output any description of the recipe. "
-                        "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
-                        "You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text."
-                    )
-                },
-                {"role": "user", "content": f"Title: {title}\nContent: {body_content}\n\n"
-                                            f"Never output a '''markdown identifier before you begin, just the pure "
-                                            f"formatting."}
+        analyse_recipe_message = [
+            {
+                "role": "system",
+                "content": (
+                    "You get information from recipe websites: recipe title, servings, total time, ingredients, directions. "
+                    "You will output in simple markdown. You will not output any description of the recipe. "
+                    "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
+                    "You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text. "
+                    "YOU MUST AND WILL ALWAYS GIVE THE FULL RECIPES, AND MUST BE IN ORDER. "
+                    "IMPORTANT: The recipe **MUST NOT BE TRUNCATED**. Include every section: title, servings, total time, ingredients, and directions. Complete information is mandatory."
 
-            ]
-        )
-        end = time.time()
-        logger.error(f"OpenAI took {end - start} seconds")
+                )
+            },
+            {
+                "role": "user",
+                "content": f"Title: {title}\nContent: {body_content}\n\n"
+                           f"Never output a '''markdown identifier before you begin, just the pure formatting. "
+                           "IMPORTANT: The recipe **MUST NOT BE TRUNCATED**. Include every section: title, servings, total time, ingredients, and directions. Complete information is mandatory."
 
-        recipe_info = ai_response.choices[0].message.content
-        logger.error(recipe_info)
-        recipe_info = group_markdown_to_json(recipe_info)
+            }
+        ]
+        recipe_info_markdown = get_complete_response(messages=analyse_recipe_message)
+
+        logger.error(recipe_info_markdown)
+        recipe_info = group_markdown_to_json(recipe_info_markdown)
         logger.error(recipe_info)
         s3_file_name = f'{uuid.uuid4()}_image.jpg'
         s3_url = save_image_to_s3_from_url(main_image_url, s3_file_name)
@@ -244,32 +234,24 @@ def scrape_and_analyze_recipe(url):
 
 def analyse_nutrition_base_ingredient(ingredient):
     try:
-        start = time.time()
-        ai_response = client.chat.completions.create(
-            model='gpt-4o-mini',
-            messages=[
-                {
-                    'role': 'system',
-                    'content': (
-                        'calculate the nutritional information based on the provided details.  '
-                        ' Ensure the response returned is strictly in JSON format and follows this exact structure:  '
-                        'only return the result in a json format and not in markdown'
-                        "  'nutritions': [ "
-                        '    { '
-                        '      "name": "string" '
-                        "      'quantity': float, "
-                        "      'unit': 'string', "
-                        '    } '
-                        '  ], '
-                        )
-                },
-                {'role': 'user', 'content': f"Here is the  recipe:\n\n{ingredient}"}
-            ]
-        )
-        end = time.time()
-        logger.error(f"OpenAI took {end - start} seconds")
-
-        nutrtition_info = ai_response.choices[0].message.content
+        nutrition_base_ingredient_message = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a nutrition calculation assistant. "
+                    "Your task is to analyze recipes and provide accurate nutritional information. "
+                    "Ensure ingredient names NEVER appear as nutrients. "
+                    "Instead, use categories like 'calories', 'protein', 'fats', 'carbohydrates', and micronutrients such as 'vitamin C', 'fiber', etc. "
+                    "Your response MUST strictly follow this JSON format: "
+                    "{ 'nutritions': [ "
+                    "    { 'name': 'string', 'quantity': float, 'unit': 'string' } "
+                    "]}. "
+                    "If specific nutrients cannot be determined, set quantity as 0."
+                )
+            },
+            {"role": "user", "content": f"Here is the recipe:\n\n{ingredient}"}
+        ]
+        nutrtition_info = get_complete_response(messages=nutrition_base_ingredient_message)
         # logger.error(nutrtition_info)
         return nutrtition_info
     except Exception as e:
@@ -278,66 +260,111 @@ def analyse_nutrition_base_ingredient(ingredient):
     return nutrtition_info
 
 
-def group_markdown_to_json(markdown_text):
+def group_markdown_to_json(recipe_info_markdown):
     try:
-        start = time.time()
-        ai_response = client.chat.completions.create(
-            model='gpt-4o-mini',
-            messages=[
-                {
-                    'role': 'system',
-                    'content': (
-                        "You get information from recipe websites: recipe, title, servings with unit if and only if it available, total time, ingredients, "
-                        "directions. "
-                        "For each recipe described in the text, retrieve ONLY the "
-                        "following fields:"
-                        "title: (The recipe's name),"
-                        "servings: (Number of servings, if stated),"
-                        
-                        "total_time: (Total preparation and cooking time as a single string),"
-                        "ingredients: (Each ingredient should a single line for it),"
-                        "directions: (A list of steps for making the recipe, numbered or as separate entries, exactly as described in the order they appear in the video)."
-                        "if title of ingredient  or title direction is not available, use 'None' as the title value"
-                        "No nested objects other than these ones."
-                        "Never output a '''markdown identifier before you begin and return the value in object format that can easily convert into the json"
-                        "You will output in simple json. You will not output any description of the recipe. "
-                        "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
-                        "You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text."
+        group_markdown_to_json_messages = [
+            {
+                'role': 'system',
+                'content': (
+                    "You get information from recipe websites: recipe, title, servings with unit if and only if it available, total time, ingredients, "
+                    "directions. "
+                    "For each recipe described in the text, retrieve ONLY the "
+                    "following fields:"
+                    "title: (The recipe's name),"
+                    "servings: (Number of servings, if stated),"
 
-                        "'title': 'string',"
-                         " 'servings': 'string',"
-                         " 'preparation_time': 'string',"
-                        
-                          "'ingredients': ["
-                        " {"
-                         "     'title_of_ingredient': 'string',"
-                          "    'list': ["
-                           "     'string'"
-                        "  ]"
-                        "   }"
-                        " ],"
-                         " 'directions': ["
-                        "  {"
-                         "     'title_of_direction': 'string',"
-                          "    'list': ["
-                           "     'string'"
-                        "  ]"
-                        "   },"
+                    "total_time: (Total preparation and cooking time as a single string),"
+                    "ingredients: (Each ingredient should a single line for it),"
+                    "directions: (A list of steps for making the recipe, numbered or as separate entries, exactly as described in the order they appear in the video)."
+                    "if title of ingredient  or title direction is not available, use 'None' as the title value"
+                    "No nested objects other than these ones."
+                    "Never output a '''markdown identifier before you begin and return the value in object format that can easily convert into the json"
+                    "You will output in simple json. You will not output any description of the recipe. "
+                    "If there is no content to review, do not make up a recipe, instead output this: 'Cannot identify Recipe. Please try again with another link.'"
+                    "You will ALWAYS supply ingredient amounts. You will supply EXACTLY what you find in the text."
 
-                        "  ]"
+                    "'title': 'string',"
+                    " 'servings': 'string',"
+                    " 'preparation_time': 'string',"
 
-                        )
-                },
-                {'role': 'user', 'content': f"Here is the  markdown text:\n\n{markdown_text}"}
-            ]
-        )
-        end = time.time()
-        logger.error(f"OpenAI took {end - start} seconds")
+                    "'ingredients': ["
+                    " {"
+                    "     'title_of_ingredient': 'string',"
+                    "    'list': ["
+                    "     'string'"
+                    "  ]"
+                    "   }"
+                    " ],"
+                    " 'directions': ["
+                    "  {"
+                    "     'title_of_direction': 'string',"
+                    "    'list': ["
+                    "     'string'"
+                    "  ]"
+                    "   },"
 
-        json_info = ai_response.choices[0].message.content
+                    "  ]"
+                    "IMPORTANT: The recipe **MUST NOT BE TRUNCATED**. Include every section: title, servings, total time, ingredients, and directions. Complete information is mandatory."
+
+                )
+            },
+            {'role': 'user', 'content': f"Here is the  markdown text:\n\n{recipe_info_markdown}"}
+        ]
+        json_info = get_complete_response(messages=group_markdown_to_json_messages)
+
         logger.error(json_info)
         return json_info
     except Exception as e:
         logger.error(f"AI analysis failed: {e}")
         json_info = None
     return json_info
+
+
+def get_complete_response(messages):
+    complete_response = ""
+    max_retries = 3
+    attempts = 0
+
+    while attempts < max_retries:
+        start = time.time()
+        ai_response = client.chat.completions.create(
+            model='gpt-4-turbo',
+            messages=messages,
+        )
+        end = time.time()
+        logger.error(f"OpenAI took {end - start} seconds")
+        break_out = False
+        # Extract content and finish reason from response
+        # choice = ai_response.choices[0]
+        for choice in ai_response.choices:
+            current_response = choice.message.content
+            finish_reason_1 = choice.finish_reason
+            logger.error(f"Finish reason: {finish_reason_1}")
+
+            complete_response += current_response.strip() + "\n"
+
+            # Break if generation is complete
+            if finish_reason_1 == "stop":
+                break_out = True
+                logger.error(f"Finish reason: {current_response}")
+                logger.info("bread out ")
+                break
+            if finish_reason_1 == "content_filter":
+                break_out = True
+                logger.info("bread out content_filter")
+                break
+
+        if break_out:
+            break
+
+        # logger.warning("Truncated response detected, requesting continuation...")
+        # # messages.append({"role": "assistant", "content": current_response})
+        # messages.append({"role": "user", "content": "IMPORTANT: The recipe **MUST NOT BE TRUNCATED**.."})
+
+        attempts += 1
+
+    if attempts == max_retries:
+        logger.error("Maximum continuation attempts reached. Recipe may be incomplete.")
+
+    return complete_response.strip()
+

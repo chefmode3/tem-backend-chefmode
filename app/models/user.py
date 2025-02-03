@@ -19,8 +19,9 @@ class UserRecipe(db.Model):
 class AnonymousUserRecipe(db.Model):
     __tablename__ = 'anonymous_user_recipe'
 
-    anonymous_user_id = db.Column(db.String(255), db.ForeignKey('anonymous_user.id'), primary_key=True)
-    recipe_id = db.Column(db.String(255), db.ForeignKey('recipes.id'), primary_key=True)
+    anonymous_user_id = db.Column(db.String(255), db.ForeignKey('anonymous_user.id', ondelete='CASCADE'),
+                                  primary_key=True)
+    recipe_id = db.Column(db.String(255), db.ForeignKey('recipes.id', ondelete='RESTRICT'), primary_key=True)
     flag = db.Column(db.Boolean, default=False)
     anonymous_user = db.relationship('AnonymousUser', back_populates='recipes_association')
     recipe = db.relationship('Recipe', back_populates='anonymous_users_association')

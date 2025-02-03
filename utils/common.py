@@ -80,7 +80,26 @@ def is_audio_valid_pydub(audio_path):
         return False
 
 
-def change_extension_to_image(filename, new_extension='.jpg'):
+def convert_video_to_mp4(input_video_path: str) -> None:
+    """
+    Convertit une vidéo en MP4 si ce n'est pas déjà le format MP4.
+    """
+    try:
+        output_video_path: str = change_extension_files(input_video_path, new_extension='vide_.mp4')
+        print(f"Conversion de {input_video_path} en MP4...")
+        ffmpeg.input(input_video_path).output(output_video_path).run()
+        print(f"Conversion terminée : {output_video_path}")
+        #     deletete the old file
+
+        os.rename(output_video_path, input_video_path)
+        # os.remove(output_video_path)
+        return input_video_path
+    except ffmpeg.Error as e:
+        print(f"Erreur lors de la conversion : {e}")
+    return None
+
+
+def change_extension_files(filename, new_extension='.jpg'):
     """
     Change the extension of the given filename to the specified image format.
 

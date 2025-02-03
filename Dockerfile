@@ -14,9 +14,27 @@ ENV PATH="/home/pythonrunner/.local/bin:${VIRTUAL_ENV}/bin:${PATH}"
 
 # install environment dependencies
 RUN apt-get update && \
-    apt-get install  -y  &&\
-    apt-get install -y ffmpeg \
-    && apt-get -q clean
+    apt-get install -y \
+    build-essential \
+    checkinstall \
+    cmake \
+    pkg-config \
+    yasm \
+    libjpeg-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
+    libxine2-dev \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    libv4l-dev \
+    python3-dev \
+    python3-numpy \
+    libtbb-dev \
+    libgtk2.0-dev \
+    ffmpeg \
+    && apt-get clean
+
 
 # install dependencies
 RUN pip install --upgrade pip

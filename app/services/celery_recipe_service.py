@@ -155,16 +155,26 @@ class RecipeCelService:
         # Filter out ingredients where title is None or list is None/empty
         return [
             ingredient for ingredient in ingredients
-            if ingredient.get('title_of_ingredient') and ingredient.get('list') and len(ingredient['list']) > 0
+            if RecipeCelService.is_valid_title(ingredient.get('title_of_ingredient').strip().lower())
+               and RecipeCelService.is_valid_list(ingredient.get('list'))
+               and len(RecipeCelService.is_valid_list(ingredient.get('list'))) > 0
         ]
 
     @staticmethod
     def clean_directions(directions):
         return [
-            ingredient for ingredient in directions
-            if ingredient.get('title_of_direction') and ingredient.get('list') and len(ingredient['list']) > 0
+            direction for direction in directions
+            if RecipeCelService.is_valid_title(direction.get('title_of_direction', '').strip().lower())
+               and RecipeCelService.is_valid_list(direction.get('list'))
+               and len(RecipeCelService.is_valid_list(direction.get('list'))) > 0
         ]
 
+    @staticmethod
+    def is_valid_title(value):
+        return value not in [None, 'None', 'Null', '']
+    @staticmethod
+    def is_valid_list(directions):
+        return [direction for direction in directions if RecipeCelService.is_valid_title(direction) ]
     # main methode for json treatment and call other methode
     @staticmethod
     def convert_and_store_recipe(recipe_json: dict):
